@@ -27,6 +27,8 @@ questions.forEach(q => {
   if (r.table) { // rows come from the stored table that the primary paragraph owns or is
     const cells = cellsOf(r.table.id); r.table.rows.forEach(w => w.cells.forEach(c => { out.fragments++; if (cells && c && !cells.has(norm(c))) out.violations.push({ q, what: 'table cell', text: norm(c).slice(0, 80), why: 'not in the stored table' }); }));
   } else (r.points || []).forEach(p => check(q, 'point', p.text, p.cite && p.cite.clause));
+  // the heading line shown above a table ("For Speeds above 100 Kmph ...:") must be printed in the paragraph that owns the table
+  [r.table].concat(r.ownedTables || []).forEach(t => { if (t && t.context) { out.fragments++; const k = (globalThis.RDSO_TABLES[t.id] || {}).k; if (!k || !clauseHay(k).includes(norm(t.context))) out.violations.push({ q, what: 'table heading', text: norm(t.context).slice(0, 80), why: 'not printed in the owning paragraph' }); } });
   (r.ownedTables || []).forEach(t => { const cells = cellsOf(t.id); t.rows.forEach(w => w.cells.forEach(c => { out.fragments++; if (cells && c && !cells.has(norm(c))) out.violations.push({ q, what: 'owned table cell', text: norm(c).slice(0, 80), why: 'not in the stored table' }); })); });
   (r.alsoSee || []).forEach(p => check(q, 'also relevant', p.text, p.cite && p.cite.clause));
   // edition line and correction-slip marks: the edition must be the registry's, every mark must be printed in the cited paragraph

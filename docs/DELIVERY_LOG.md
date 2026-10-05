@@ -703,3 +703,67 @@ Checks: a dialogue test for the utility vehicle question, a sweep over the table
 - Browser suites: 18/18 before and after the `expert.html` split.
 
 **Open.** Legacy prototype scripts are listed, not deleted. No product behaviour changed.
+
+### 37.48 Re-grade of the 20 real questions — 2026-10-05
+
+**Method.**
+- Ran the 20 questions in `eval/real_questions_irpwm.jsonl` through the current chat (`lib/rdso_chat.js`, same code path as `tests/chat_real.js`).
+- Read every shown answer in full and checked doubtful items against the paragraph text in `canonical/nodes.jsonl`.
+- **Stricter rule than §37.42:** "correct" means every item the question asks for is shown and readable. Showing the key numbers somewhere is not enough.
+- Grades are stored as `graded_2026_10_05`, with a `grade_note_2026_10_05` where useful. The 2026-10-01 grades are kept.
+
+**Result.**
+- **15 of 20 correct (75%), 5 partial, 0 wrong.** The 2026-10-01 grade was 17 of 20.
+- Retrieval is unchanged: the expected paragraph is cited first for all 20.
+
+**Changes from 2026-10-01.**
+- R5 and R11 move from correct to partial:
+  - R5: the answer table drops the weight column, so the ERC-J weight (1 kg) is missing.
+  - R11: the position of station '0' is not shown, and Para 429 does not state it.
+- Still partial:
+  - R3: the 13 to 15 mm measuring depth is not in any IRPWM paragraph text.
+  - R18: the acceleration limits are shown without their speed bands.
+  - R20: the 20 mm and 40 mm versine bands are not shown.
+
+**Readability notes (graded correct).**
+- R7: flattened speed columns.
+- R9: an unrelated "WCMS – 6mm" line.
+- R17: the 875 m condition is shown as a sentence fragment.
+
+**What it means.**
+- The §40 target (at least 75% fully answered) is met, with no margin, on a set the answer builder was tuned on.
+- Three of the five partials share one cause: wide tables are flattened or have columns dropped (R5, R18, R20). Keeping all columns and the row and column headers of the owning table would address them.
+- R3 and R11 cannot be fixed from paragraph text.
+- One grader (Claude), not independent. Real questions from the other five manuals are still the missing test.
+
+### 37.49 Tables in answers: all columns, all cases, case headings — 2026-10-05
+
+**Why.** Three of the five partial real answers in §37.48 (R5, R18 and R20) failed for the same reason: the chat cut tables down.
+- The weight column was dropped from a 7-column table. A wide table showed at most 6 columns, and a counting bug spent the column budget on columns that were already kept.
+- Only the best-matching row was shown, even when the question asked "across different speed bands".
+- Tables printed once per case (one per speed band in IRPWM Para 522) carried no name for their case.
+
+**What changed.**
+- `scripts/extract_tables.py` records `context` for each table: the short heading line ending in ":" printed within 150 pt above it, for example "For Speeds above 100 Kmph and up to 110 Kmph:". Lead-in lines ("... as under:") and "Note:" are skipped. A continuation table on the next page inherits the heading.
+- `scripts/build_table_data.py` passes the heading to the browser as `x`, but only when it is printed in the paragraph that owns the table. The first version of Gate Y caught one heading that belonged to another paragraph.
+- `lib/rdso_chat.js`:
+  - Tables of up to 8 columns are shown whole, and the column-budget bug is fixed.
+  - A question with across, different, various, each, every or all shows every row of a table of up to 8 rows when each row matches.
+  - A paragraph's tables are scored by distinct question words per row. Before, a merged cell repeated across a row counted several times.
+  - Across a paragraph with one headed table per case, up to 6 cases are shown, one table each, under their heading.
+- `chat.html` and `index.html` show the heading above the table.
+- Gate Y (`tests/answer_verifier.js`) also checks that every shown heading is printed in the owning paragraph.
+
+**Measured.**
+- 20 real questions: **18 correct, 2 partial, 0 wrong** (§37.48: 15/5/0). R5, R18 and R20 are now correct.
+- R3 and R11 stay partial, because the missing facts are not in the paragraph text.
+- R19 also improved: a tool list in its answer was replaced by a second tolerance table. That table shows its case without a heading (noted in the eval file).
+- The other answers are unchanged. This was checked by diffing all 20 shown answers before and after.
+- Gate Y: 367 answered and 42 refused, unchanged from main; 0 violations over 7,594 fragments.
+- Rebuild is reproducible. pytest: 280 passed, including 3 new tests in `tests/test_table_answers.py`. Gates A to AA pass. Browser suites: 18/18.
+- 33 of 375 browser tables carry a heading.
+
+**Limits.**
+- One grader (Claude), and the question set is the one the fixes were made for.
+- The heading rule finds only short lines ending in ":". A heading printed as a sentence, or placed below its table, is not picked up.
+- The across-cases rule is triggered by keywords.
