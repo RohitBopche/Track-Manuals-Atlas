@@ -735,3 +735,35 @@ Checks: a dialogue test for the utility vehicle question, a sweep over the table
 - Three of the five partials share one cause: wide tables are flattened or have columns dropped (R5, R18, R20). Keeping all columns and the row and column headers of the owning table would address them.
 - R3 and R11 cannot be fixed from paragraph text.
 - One grader (Claude), not independent. Real questions from the other five manuals are still the missing test.
+
+### 37.49 Tables in answers: all columns, all cases, case headings — 2026-10-05
+
+**Why.** Three of the five partial real answers in §37.48 (R5, R18 and R20) failed for the same reason: the chat cut tables down.
+- The weight column was dropped from a 7-column table. A wide table showed at most 6 columns, and a counting bug spent the column budget on columns that were already kept.
+- Only the best-matching row was shown, even when the question asked "across different speed bands".
+- Tables printed once per case (one per speed band in IRPWM Para 522) carried no name for their case.
+
+**What changed.**
+- `scripts/extract_tables.py` records `context` for each table: the short heading line ending in ":" printed within 150 pt above it, for example "For Speeds above 100 Kmph and up to 110 Kmph:". Lead-in lines ("... as under:") and "Note:" are skipped. A continuation table on the next page inherits the heading.
+- `scripts/build_table_data.py` passes the heading to the browser as `x`, but only when it is printed in the paragraph that owns the table. The first version of Gate Y caught one heading that belonged to another paragraph.
+- `lib/rdso_chat.js`:
+  - Tables of up to 8 columns are shown whole, and the column-budget bug is fixed.
+  - A question with across, different, various, each, every or all shows every row of a table of up to 8 rows when each row matches.
+  - A paragraph's tables are scored by distinct question words per row. Before, a merged cell repeated across a row counted several times.
+  - Across a paragraph with one headed table per case, up to 6 cases are shown, one table each, under their heading.
+- `chat.html` and `index.html` show the heading above the table.
+- Gate Y (`tests/answer_verifier.js`) also checks that every shown heading is printed in the owning paragraph.
+
+**Measured.**
+- 20 real questions: **18 correct, 2 partial, 0 wrong** (§37.48: 15/5/0). R5, R18 and R20 are now correct.
+- R3 and R11 stay partial, because the missing facts are not in the paragraph text.
+- R19 also improved: a tool list in its answer was replaced by a second tolerance table. That table shows its case without a heading (noted in the eval file).
+- The other answers are unchanged. This was checked by diffing all 20 shown answers before and after.
+- Gate Y: 367 answered and 42 refused, unchanged from main; 0 violations over 7,594 fragments.
+- Rebuild is reproducible. pytest: 280 passed, including 3 new tests in `tests/test_table_answers.py`. Gates A to AA pass. Browser suites: 18/18.
+- 33 of 375 browser tables carry a heading.
+
+**Limits.**
+- One grader (Claude), and the question set is the one the fixes were made for.
+- The heading rule finds only short lines ending in ":". A heading printed as a sentence, or placed below its table, is not picked up.
+- The across-cases rule is triggered by keywords.

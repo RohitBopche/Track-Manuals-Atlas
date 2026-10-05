@@ -8,6 +8,9 @@ Writes data/knowledge-graph/raw/tables.jsonl, one record per data table:
     header_rows  number of leading header rows (heuristic: rows before the first row containing a number);
                  a table that continues on the next page inherits the previous header (header_inherited)
     caption   nearest "Table ..." line above the table on the same page, if any
+    context   the heading line printed just above the table that says which case it covers, e.g.
+              "(2) For Speeds above 100 Kmph and up to 110 Kmph:" (a short line ending in ":", within 150 pt above);
+              a table continued from the previous page with the same owner and width inherits it; "" if none
     clause    canonical clause that owns the table (the last clause head above it in reading order)
     page_sha256  hash of the page text (same as evidence records), so the table can be re-verified
 
@@ -30,6 +33,15 @@ ROOT = Path(__file__).resolve().parents[1]
 KG = ROOT / "data" / "knowledge-graph"
 OUT = KG / "raw" / "tables.jsonl"
 CAPTION = re.compile(r"^\s*(table|tbl)\b[\s.\-–:]*[0-9A-Za-z][^\n]{0,80}", re.I)
+CONTEXT = re.compile(r"^[^:]*[A-Za-z][^:]*:$")      # a short heading line ending in a colon
+LEAD_IN = re.compile(r"\b(below|under|follows?|following form)\s*:$", re.I)      # "... as under:" introduces, it does not name a case
+
+
+def context_line(lines: list, top: float) -> str:
+    """The closest short heading line ending in ':' printed within 150 pt above the table, verbatim."""
+    near = [txt for y, txt in lines if y < top and top - y < 150 and txt and CONTEXT.match(txt) and 2 <= len(txt.split()) <= 16
+            and not txt[0].islower() and not LEAD_IN.search(txt) and not txt.lower().startswith("note")]
+    return near[-1] if near else ""
 
 
 def read_jsonl(p: Path) -> list[dict]:
@@ -159,9 +171,13 @@ def main() -> int:
                 if hdr == 0 and prev and prev["document_id"] == doc_id and prev["page"] == pno - 1 and prev["n_cols"] == width and prev["header_rows"]:
                     rows = prev["rows"][:prev["header_rows"]] + rows      # continuation of a table from the previous page
                     hdr, inherited = prev["header_rows"], True
+                context = context_line(lines, t.bbox[1])
+                if not context and prev and prev["document_id"] == doc_id and prev["page"] in (pno, pno - 1) \
+                        and prev["n_cols"] == width and prev["clause"] == owner:
+                    context = prev.get("context", "")      # continuation of the previous table: same case
                 records.append({"table_id": f"TBL:{alias}:P{pno:04d}:{k:02d}", "document_id": doc_id, "page": pno,
                                 "bbox": [round(v, 1) for v in t.bbox], "rows": rows, "n_rows": len(rows), "n_cols": width,
-                                "header_rows": hdr, "header_inherited": inherited, "caption": clean(above[-1]) if above else "",
+                                "header_rows": hdr, "header_inherited": inherited, "caption": clean(above[-1]) if above else "", "context": clean(context),
                                 "clause": owner, "page_sha256": page_hash})
     OUT.write_text("".join(json.dumps(r, ensure_ascii=False) + "\n" for r in records), encoding="utf-8")
     print(f"{len(records)} data tables on {len({(r['document_id'], r['page']) for r in records})} pages -> {OUT.relative_to(ROOT)}")

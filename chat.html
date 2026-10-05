@@ -241,6 +241,7 @@
       if (r.interpreted) h += '<div class="muted">Understood as: ' + esc(r.interpreted) + '</div>';
       if (r.table) {
         var T = r.table;
+        if (T.context) h += '<div class="muted">' + esc(T.context) + '</div>';
         h += '<table class="tb"><thead><tr>' + T.columns.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
              T.rows.map(function (row) { return '<tr>' + row.cells.map(function (c, i) { return '<td' + (row.hit[i] ? ' class="hit"' : '') + '>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
         if (T.truncatedColumns) h += '<div class="muted">Only the matching columns are shown.</div>';
@@ -248,7 +249,7 @@
         h += '<ul>' + r.points.map(function (p) { return '<li>' + hl(p.text, q) + '</li>'; }).join('') + '</ul>';
       }
       (r.ownedTables || []).forEach(function (O) {
-        h += '<div class="muted" style="margin-top:6px">Table in this paragraph (page ' + esc(O.page) + ')</div><table class="tb"><thead><tr>' + O.columns.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        h += '<div class="muted" style="margin-top:6px">Table in this paragraph (page ' + esc(O.page) + ')' + (O.context ? ': <b>' + esc(O.context) + '</b>' : '') + '</div><table class="tb"><thead><tr>' + O.columns.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
              O.rows.map(function (row) { return '<tr>' + row.cells.map(function (c, i) { return '<td' + (row.hit[i] ? ' class="hit"' : '') + '>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
       });
       if (r.edition) h += '<div class="muted" id="edition" style="margin-top:6px">From: ' + esc(r.edition) + (r.amendments && r.amendments.length ? ' · this paragraph carries correction-slip marks ' + esc(r.amendments.join(', ')) + ' (amended text)' : '') + '</div>';
