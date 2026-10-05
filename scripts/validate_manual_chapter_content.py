@@ -181,7 +181,7 @@ def validate_payload(payload: dict) -> tuple[list[str], list[str]]:
                     msg = f"{cid}: page {page} falls outside owning chapter {chapter_id} range {page_range}"
                     if clause_parser.PROFILES.get(doc_id, {}).get("kind") == "decimal":
                         # Decimally numbered manuals: the numbering owns the chapter; the hand-written
-                        # registry page range is known to be unreliable there (see PROJECT_MASTER §37.10).
+                        # registry page range is known to be unreliable there (see docs/DELIVERY_LOG.md §37.10).
                         warnings.append(msg + " (registry range disagrees with numbering)")
                     else:
                         errors.append(msg)

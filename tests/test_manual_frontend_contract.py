@@ -19,7 +19,8 @@ INDEX = ROOT / "expert.html"
 
 def _source() -> str:
     assert INDEX.exists(), f"missing {INDEX}"
-    return INDEX.read_text(encoding="utf-8")
+    # expert.html keeps its logic in ui/expert.js and styles in ui/expert.css; check them together.
+    return "\n".join(p.read_text(encoding="utf-8") for p in (INDEX, ROOT / "ui" / "expert.js", ROOT / "ui" / "expert.css"))
 
 
 def test_manual_frontend_uses_authoritative_structure():

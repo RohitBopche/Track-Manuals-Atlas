@@ -1,3208 +1,13 @@
-"""
-DEPRECATED: index.html is now maintained directly; running this would overwrite it with an older
-template that reads the removed RDSO_MANUALS_KNOWLEDGE view. Kept only for history.
-
-build_updated_app.py
-Compiles index.html integrating both the Canonical Knowledge Core (rdso_canonical_kg.json)
-and Deep Extracted Dossiers (rdso_extracted_knowledge.json) with Semantic Modes and
-Engineering Answer Cards in full compliance with the Knowledge Graph Improvement Blueprint.
-"""
-
-import json
-import os
-import subprocess
-import sys
-
-REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-data_dir = os.path.join(REPO_ROOT, "data")
-
-# Generate data/rdso_kg_data.js bundle if needed
-try:
-    export_script = os.path.join(REPO_ROOT, "scripts", "export_kg_bundle.py")
-    if os.path.exists(export_script):
-        subprocess.run([sys.executable, export_script], check=True)
-except Exception as e:
-    print(f"[!] Warning updating bundle: {e}")
-
-
-html_template = r'''<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>RDSO Railway Track Knowledge Graph Studio | Intelligent Rail Ontology & Asset Digital Twin</title>
-  <style>
-    :root {
-      --bg-space: #060911;
-      --bg-panel: rgba(11, 17, 30, 0.94);
-      --bg-card: rgba(18, 27, 46, 0.88);
-      --bg-hover: rgba(28, 42, 70, 0.95);
-      --border-subtle: rgba(56, 96, 160, 0.35);
-      --border-glow: rgba(0, 240, 255, 0.55);
-      --border-amber: rgba(255, 214, 10, 0.55);
-      --border-crimson: rgba(255, 51, 102, 0.6);
-      --text-main: #f0f4fc;
-      --text-muted: #8fa0b8;
-      --text-dim: #5c6c82;
-      --accent-cyan: #00f0ff;
-      --accent-green: #00ff88;
-      --accent-orange: #ff9d00;
-      --accent-purple: #9d4edd;
-      --accent-red: #ff3366;
-      --accent-yellow: #ffd60a;
-      --accent-blue: #3a86ff;
-      --accent-pink: #f72585;
-      --font-stack: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Inter", Helvetica, Arial, sans-serif;
-      --font-mono: "SF Mono", Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      user-select: none;
-    }
-
-    body {
-      background-color: var(--bg-space);
-      color: var(--text-main);
-      font-family: var(--font-stack);
-      overflow: hidden;
-      height: 100vh;
-      width: 100vw;
-    }
-
-    #kg-canvas-container {
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      z-index: 1;
-    }
-
-    /* Command Header */
-    header {
-      position: absolute;
-      top: 0;
-      left: 0;
-      right: 0;
-      height: 64px;
-      background: linear-gradient(180deg, rgba(6, 10, 18, 0.96) 0%, rgba(6, 10, 18, 0.75) 100%);
-      backdrop-filter: blur(14px);
-      border-bottom: 1px solid var(--border-subtle);
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 16px;
-      gap: 8px;
-    }
-
-    .brand-section {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      flex-shrink: 0;
-      white-space: nowrap;
-    }
-
-    .brand-icon {
-      font-size: 22px;
-      filter: drop-shadow(0 0 10px var(--accent-cyan));
-    }
-
-    .brand-titles h1 {
-      font-size: 13.5px;
-      font-weight: 800;
-      letter-spacing: 0.3px;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      white-space: nowrap;
-    }
-
-    .badge-ver {
-      font-size: 8.5px;
-      padding: 1.5px 5px;
-      border-radius: 4px;
-      background: rgba(0, 240, 255, 0.18);
-      border: 1px solid var(--accent-cyan);
-      color: var(--accent-cyan);
-      font-family: var(--font-mono);
-      font-weight: 700;
-    }
-
-    .brand-titles p {
-      font-size: 9.5px;
-      color: var(--text-muted);
-      margin-top: 1px;
-      white-space: nowrap;
-    }
-
-    /* Semantic Modes Selector */
-    .semantic-modes-bar {
-      display: flex;
-      align-items: center;
-      background: rgba(14, 22, 38, 0.9);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 3px;
-      gap: 2px;
-    }
-
-    .semantic-mode-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 700;
-      padding: 6px 12px;
-      border-radius: 6px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .semantic-mode-btn:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.08);
-    }
-
-    .semantic-mode-btn.active {
-      background: linear-gradient(135deg, rgba(0, 240, 255, 0.25) 0%, rgba(58, 134, 255, 0.3) 100%);
-      color: var(--accent-cyan);
-      border: 1px solid var(--border-glow);
-      box-shadow: 0 0 12px rgba(0, 240, 255, 0.25);
-    }
-
-    /* Segregated Knowledge Universes Switcher (Blueprint §2.1 & §8.3) */
-    .universe-switcher-bar {
-      display: flex;
-      align-items: center;
-      background: rgba(10, 16, 28, 0.95);
-      border: 1px solid rgba(0, 240, 255, 0.35);
-      border-radius: 8px;
-      padding: 3px;
-      gap: 4px;
-      box-shadow: 0 0 16px rgba(0, 240, 255, 0.15);
-    }
-
-    .universe-btn {
-      background: transparent;
-      border: 1px solid transparent;
-      color: var(--text-muted);
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .universe-btn:hover {
-      background: rgba(255, 255, 255, 0.08);
-      color: var(--text-main);
-    }
-
-    .universe-btn.active[data-universe="drawings"] {
-      background: linear-gradient(135deg, rgba(0, 240, 255, 0.25) 0%, rgba(0, 150, 255, 0.35) 100%);
-      border-color: var(--accent-cyan);
-      color: #fff;
-      box-shadow: 0 0 12px rgba(0, 240, 255, 0.4);
-    }
-
-    .universe-btn.active[data-universe="manuals"] {
-      background: linear-gradient(135deg, rgba(157, 78, 221, 0.28) 0%, rgba(247, 37, 133, 0.38) 100%);
-      border-color: var(--accent-purple);
-      color: #fff;
-      box-shadow: 0 0 12px rgba(157, 78, 221, 0.4);
-    }
-
-    .universe-btn.active[data-universe="combined"] {
-      background: linear-gradient(135deg, rgba(0, 240, 255, 0.2) 0%, rgba(157, 78, 221, 0.28) 100%);
-      border-color: #72efdd;
-      color: #fff;
-      box-shadow: 0 0 14px rgba(114, 239, 221, 0.45);
-    }
-
-    /* Hierarchy Expansion & Level Controls */
-    .hierarchy-controls-bar {
-      display: flex;
-      align-items: center;
-      background: rgba(14, 22, 38, 0.92);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 3px 6px;
-      gap: 5px;
-    }
-
-    .hierarchy-btn {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: var(--text-main);
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-size: 10px;
-      font-weight: 600;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.18s ease;
-    }
-
-    .hierarchy-btn:hover {
-      background: rgba(0, 240, 255, 0.15);
-      border-color: var(--accent-cyan);
-      color: var(--accent-cyan);
-    }
-
-    .hierarchy-status-badge {
-      font-size: 9.5px;
-      font-family: var(--font-mono);
-      color: var(--accent-green);
-      background: rgba(0, 255, 136, 0.1);
-      border: 1px solid rgba(0, 255, 136, 0.25);
-      padding: 3px 8px;
-      border-radius: 4px;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      white-space: nowrap;
-    }
-
-    /* Global Search & Result Cards */
-    .search-wrapper {
-      position: relative;
-      width: 220px;
-      flex-shrink: 1;
-      transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    .search-wrapper:focus-within {
-      width: 320px;
-    }
-
-    .search-input {
-      width: 100%;
-      height: 36px;
-      background: rgba(18, 27, 46, 0.9);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 0 34px 0 32px;
-      color: #fff;
-      font-size: 12px;
-      font-family: var(--font-stack);
-      outline: none;
-      transition: all 0.2s;
-    }
-
-    .search-input:focus {
-      border-color: var(--accent-cyan);
-      box-shadow: 0 0 14px rgba(0, 240, 255, 0.35);
-      background: rgba(22, 34, 58, 0.98);
-    }
-
-    .search-icon {
-      position: absolute;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 13px;
-      color: var(--text-muted);
-    }
-
-    .search-shortcut {
-      position: absolute;
-      right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: 10px;
-      background: rgba(255, 255, 255, 0.12);
-      border: 1px solid rgba(255, 255, 255, 0.2);
-      border-radius: 4px;
-      padding: 1px 5px;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-    }
-
-    .search-dropdown {
-      position: absolute;
-      top: 44px;
-      left: 0;
-      width: 540px;
-      max-width: 90vw;
-      background: rgba(10, 16, 28, 0.98);
-      border: 1px solid var(--border-glow);
-      border-radius: 8px;
-      max-height: 520px;
-      overflow-y: auto;
-      display: none;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.85), 0 0 15px rgba(0, 240, 255, 0.2);
-      backdrop-filter: blur(20px);
-      z-index: 1000;
-      padding: 6px;
-    }
-
-    .search-dropdown-header {
-      padding: 6px 10px 8px;
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .search-card {
-      padding: 10px 12px;
-      margin: 6px 0;
-      background: rgba(18, 27, 46, 0.7);
-      border: 1px solid rgba(56, 96, 160, 0.3);
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      display: flex;
-      flex-direction: column;
-      gap: 5px;
-    }
-
-    .search-card:hover, .search-card.selected {
-      background: rgba(24, 38, 68, 0.95);
-      border-color: var(--accent-cyan);
-      box-shadow: 0 4px 12px rgba(0, 240, 255, 0.15);
-      transform: translateY(-1px);
-    }
-
-    .search-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .search-card-title {
-      font-size: 12.5px;
-      font-weight: 700;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .search-card-type-badge {
-      font-size: 9px;
-      font-weight: 700;
-      text-transform: uppercase;
-      padding: 2px 6px;
-      border-radius: 4px;
-      font-family: var(--font-mono);
-      letter-spacing: 0.5px;
-      white-space: nowrap;
-    }
-
-    .search-card-rev-badge {
-      font-size: 9.5px;
-      color: var(--accent-yellow);
-      background: rgba(255, 214, 10, 0.12);
-      border: 1px solid rgba(255, 214, 10, 0.3);
-      padding: 1px 6px;
-      border-radius: 3px;
-      font-family: var(--font-mono);
-      white-space: nowrap;
-    }
-
-    .search-card-body {
-      font-size: 11px;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    .search-card-footer {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-top: 4px;
-      padding-top: 5px;
-      border-top: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .search-card-evidence {
-      font-size: 9.5px;
-      color: var(--accent-green);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      font-weight: 600;
-    }
-
-    .search-card-actions {
-      display: flex;
-      gap: 6px;
-    }
-
-    .search-card-btn {
-      padding: 3px 8px;
-      font-size: 9.5px;
-      border-radius: 4px;
-      background: rgba(0, 240, 255, 0.1);
-      border: 1px solid rgba(0, 240, 255, 0.3);
-      color: var(--accent-cyan);
-      cursor: pointer;
-      font-weight: 600;
-      transition: all 0.15s;
-    }
-
-    .search-card-btn:hover {
-      background: var(--accent-cyan);
-      color: #060911;
-    }
-
-    /* Context Breadcrumbs */
-    .drawer-breadcrumbs {
-      padding: 8px 14px;
-      background: rgba(14, 22, 38, 0.95);
-      border-bottom: 1px solid var(--border-subtle);
-      font-size: 11px;
-      color: var(--text-muted);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 6px;
-    }
-
-    .breadcrumb-trail {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      overflow-x: auto;
-      white-space: nowrap;
-    }
-
-    .breadcrumb-item {
-      color: var(--text-muted);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .breadcrumb-item:hover {
-      color: var(--accent-cyan);
-      text-decoration: underline;
-    }
-
-    .breadcrumb-active {
-      color: var(--accent-cyan);
-      font-weight: 700;
-    }
-
-    .breadcrumb-sep {
-      color: var(--text-dim);
-      font-size: 9px;
-    }
-
-    .breadcrumb-back-btn {
-      padding: 2px 8px;
-      background: rgba(255, 255, 255, 0.08);
-      border: 1px solid var(--border-subtle);
-      border-radius: 4px;
-      color: var(--text-main);
-      font-size: 10px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      white-space: nowrap;
-      transition: all 0.15s;
-    }
-
-    .breadcrumb-back-btn:hover {
-      background: rgba(0, 240, 255, 0.15);
-      border-color: var(--accent-cyan);
-      color: var(--accent-cyan);
-    }
-
-    /* 9-Section Drawing Overview Styles */
-    .drawing-section {
-      background: rgba(18, 27, 46, 0.6);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 12px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .drawing-section-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      padding-bottom: 6px;
-    }
-
-    .drawing-section-title {
-      font-size: 11.5px;
-      font-weight: 700;
-      color: var(--accent-cyan);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .drawing-section-badge {
-      font-size: 9px;
-      font-family: var(--font-mono);
-      padding: 1px 6px;
-      border-radius: 3px;
-      background: rgba(0, 240, 255, 0.1);
-      color: var(--accent-cyan);
-    }
-
-    .drawing-meta-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 8px;
-    }
-
-    .drawing-meta-item {
-      background: rgba(10, 16, 28, 0.6);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      border-radius: 5px;
-      padding: 6px 8px;
-    }
-
-    .drawing-meta-label {
-      font-size: 9.5px;
-      color: var(--text-dim);
-      text-transform: uppercase;
-      font-weight: 600;
-      margin-bottom: 2px;
-    }
-
-    .drawing-meta-value {
-      font-size: 11.5px;
-      color: #fff;
-      font-weight: 600;
-    }
-
-    .drawing-timeline {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-top: 4px;
-    }
-
-    .timeline-node-card {
-      background: rgba(10, 16, 28, 0.6);
-      border-left: 3px solid var(--border-glow);
-      border-radius: 0 5px 5px 0;
-      padding: 6px 10px;
-    }
-
-    .timeline-node-card.active-rev {
-      border-left-color: var(--accent-green);
-      background: rgba(0, 255, 136, 0.05);
-    }
-
-    .timeline-rev-title {
-      font-size: 11px;
-      font-weight: 700;
-      color: #fff;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .timeline-rev-desc {
-      font-size: 10px;
-      color: var(--text-muted);
-      margin-top: 2px;
-      line-height: 1.35;
-    }
-
-    /* Phase 2: Revision Diff & Lineage Engine Styles */
-    .diff-control-bar {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      padding: 10px 12px;
-      background: rgba(10, 16, 28, 0.85);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-    }
-
-    .diff-select-group {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 11px;
-    }
-
-    .diff-select {
-      background: #060a14;
-      border: 1px solid var(--border-subtle);
-      color: #fff;
-      font-family: var(--font-mono);
-      font-size: 11px;
-      padding: 4px 8px;
-      border-radius: 4px;
-    }
-
-    .diff-metrics-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 8px;
-      margin: 8px 0;
-    }
-
-    .diff-metric-pill {
-      background: rgba(14, 22, 38, 0.7);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 8px;
-      text-align: center;
-    }
-
-    .diff-metric-val {
-      font-size: 16px;
-      font-weight: 800;
-      font-family: var(--font-mono);
-    }
-
-    .diff-metric-lbl {
-      font-size: 9.5px;
-      text-transform: uppercase;
-      color: var(--text-dim);
-      font-weight: 600;
-      margin-top: 2px;
-    }
-
-    .diff-card {
-      background: rgba(14, 22, 38, 0.6);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-
-    .diff-card-added {
-      border-left: 3.5px solid var(--accent-green);
-      background: rgba(0, 255, 136, 0.04);
-    }
-
-    .diff-card-modified {
-      border-left: 3.5px solid var(--accent-yellow);
-      background: rgba(255, 214, 10, 0.04);
-    }
-
-    .diff-card-removed {
-      border-left: 3.5px solid var(--accent-red);
-      background: rgba(255, 51, 102, 0.04);
-    }
-
-    .diff-card-unchanged {
-      border-left: 3.5px solid var(--text-dim);
-      opacity: 0.75;
-    }
-
-    .diff-tag-badge {
-      font-size: 9px;
-      font-weight: 800;
-      font-family: var(--font-mono);
-      padding: 1px 6px;
-      border-radius: 3px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .diff-tag-added {
-      background: rgba(0, 255, 136, 0.15);
-      color: var(--accent-green);
-      border: 1px solid rgba(0, 255, 136, 0.35);
-    }
-
-    .diff-tag-modified {
-      background: rgba(255, 214, 10, 0.15);
-      color: var(--accent-yellow);
-      border: 1px solid rgba(255, 214, 10, 0.35);
-    }
-
-    .diff-tag-removed {
-      background: rgba(255, 51, 102, 0.15);
-      color: var(--accent-red);
-      border: 1px solid rgba(255, 51, 102, 0.35);
-    }
-
-    .diff-tag-unchanged {
-      background: rgba(255, 255, 255, 0.06);
-      color: var(--text-dim);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    /* Revision Impact Tree */
-    .impact-tree-flow {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 8px 0;
-    }
-
-    .impact-step-card {
-      background: rgba(10, 16, 28, 0.7);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 8px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .impact-level-pill {
-      font-size: 9px;
-      font-weight: 800;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: var(--font-mono);
-    }
-
-    .impact-critical {
-      background: rgba(255, 51, 102, 0.2);
-      color: var(--accent-red);
-      border: 1px solid rgba(255, 51, 102, 0.4);
-    }
-
-    .impact-major {
-      background: rgba(255, 214, 10, 0.2);
-      color: var(--accent-yellow);
-      border: 1px solid rgba(255, 214, 10, 0.4);
-    }
-
-    .impact-procurement {
-      background: rgba(247, 37, 133, 0.2);
-      color: var(--accent-pink);
-      border: 1px solid rgba(247, 37, 133, 0.4);
-    }
-
-    /* Conflict Dashboard Styles */
-    .conflict-card {
-      background: rgba(18, 27, 46, 0.7);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .conflict-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      padding-bottom: 6px;
-    }
-
-    .conflict-status-badge {
-      font-size: 9px;
-      font-weight: 700;
-      font-family: var(--font-mono);
-      padding: 2px 6px;
-      border-radius: 3px;
-      background: rgba(0, 240, 255, 0.12);
-      color: var(--accent-cyan);
-      border: 1px solid rgba(0, 240, 255, 0.3);
-    }
-
-    .conflict-compare-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 8px;
-      margin-top: 4px;
-    }
-
-    .conflict-box {
-      background: rgba(10, 16, 28, 0.8);
-      border-radius: 5px;
-      padding: 8px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .conflict-box-historical {
-      border-left: 3px solid var(--accent-orange);
-    }
-
-    .conflict-box-statutory {
-      border-left: 3px solid var(--accent-green);
-    }
-
-    /* Phase 3: Graph Intelligence & Path Finder Styles (Blueprint §13 & §14) */
-    .pathfinder-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .path-template-pills {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 6px;
-      margin-bottom: 4px;
-    }
-
-    .path-template-btn {
-      background: rgba(14, 22, 38, 0.75);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 7px 9px;
-      color: var(--text-main);
-      font-size: 10px;
-      font-weight: 600;
-      text-align: left;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      transition: all 0.2s ease;
-    }
-
-    .path-template-btn:hover {
-      background: rgba(0, 240, 255, 0.12);
-      border-color: var(--accent-cyan);
-      transform: translateY(-1px);
-    }
-
-    .path-template-title {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      color: #fff;
-      font-size: 10.5px;
-      font-weight: 700;
-    }
-
-    .path-template-sub {
-      font-size: 9px;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .path-selector-box {
-      background: rgba(10, 16, 28, 0.7);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-
-    .path-select-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .path-entity-select {
-      flex: 1;
-      height: 32px;
-      background: #090e1a;
-      border: 1px solid var(--border-subtle);
-      color: #fff;
-      border-radius: 5px;
-      padding: 0 8px;
-      font-size: 11px;
-      font-family: var(--font-stack);
-      outline: none;
-    }
-
-    .path-entity-select:focus {
-      border-color: var(--accent-cyan);
-    }
-
-    .path-swap-btn {
-      background: rgba(0, 240, 255, 0.1);
-      border: 1px solid rgba(0, 240, 255, 0.3);
-      color: var(--accent-cyan);
-      border-radius: 5px;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      font-size: 14px;
-      flex-shrink: 0;
-    }
-
-    .path-swap-btn:hover {
-      background: rgba(0, 240, 255, 0.25);
-    }
-
-    .path-step-card {
-      background: rgba(14, 22, 38, 0.85);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 8px 10px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-    }
-
-    .path-step-card:hover {
-      border-color: var(--accent-cyan);
-      background: rgba(20, 32, 56, 0.95);
-    }
-
-    .path-hop-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 6px 0;
-      position: relative;
-    }
-
-    .path-hop-line {
-      flex: 1;
-      height: 1px;
-      background: repeating-linear-gradient(90deg, var(--border-subtle), var(--border-subtle) 4px, transparent 4px, transparent 8px);
-    }
-
-    .path-hop-badge {
-      font-size: 9.5px;
-      font-family: var(--font-mono);
-      font-weight: 700;
-      padding: 2px 8px;
-      border-radius: 12px;
-      background: rgba(0, 240, 255, 0.12);
-      border: 1px solid var(--border-glow);
-      color: var(--accent-cyan);
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      cursor: pointer;
-    }
-
-    .path-hop-badge:hover {
-      background: rgba(0, 240, 255, 0.25);
-      box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
-    }
-
-    .pred-family-toggle:hover {
-      color: #fff;
-    }
-
-    /* =========================================================================
-       PHASE 4: WORKFLOW STYLES (Field Inspection, Procurement, Answer Cards)
-       ========================================================================= */
-    .inspection-header {
-      background: rgba(14, 22, 38, 0.85);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .compliance-meter-bar {
-      width: 100%;
-      height: 8px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
-      overflow: hidden;
-      margin-top: 4px;
-    }
-
-    .compliance-meter-fill {
-      height: 100%;
-      background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
-      transition: width 0.3s ease;
-    }
-
-    .inspection-card {
-      background: rgba(10, 16, 28, 0.7);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      transition: all 0.2s ease;
-    }
-
-    .inspection-card-pass {
-      border-left: 3.5px solid var(--accent-green);
-    }
-
-    .inspection-card-defect {
-      border-left: 3.5px solid var(--accent-red);
-      background: rgba(255, 51, 102, 0.06);
-    }
-
-    .inspection-pill {
-      font-size: 9.5px;
-      font-weight: 800;
-      font-family: var(--font-mono);
-      padding: 2px 7px;
-      border-radius: 3px;
-      letter-spacing: 0.5px;
-    }
-
-    .inspection-pill-pass {
-      background: rgba(0, 255, 136, 0.15);
-      color: var(--accent-green);
-      border: 1px solid rgba(0, 255, 136, 0.35);
-    }
-
-    .inspection-pill-defect {
-      background: rgba(255, 51, 102, 0.2);
-      color: var(--accent-red);
-      border: 1px solid rgba(255, 51, 102, 0.45);
-      animation: pulseAlert 1.5s infinite;
-    }
-
-    @keyframes pulseAlert {
-      0%, 100% { opacity: 1; }
-      50% { opacity: 0.65; }
-    }
-
-    .inspection-input {
-      width: 80px;
-      height: 28px;
-      background: #090e1a;
-      border: 1px solid var(--border-subtle);
-      border-radius: 4px;
-      color: #fff;
-      font-family: var(--font-mono);
-      font-size: 12px;
-      font-weight: 700;
-      padding: 0 6px;
-      text-align: right;
-      outline: none;
-    }
-
-    .inspection-input:focus {
-      border-color: var(--accent-cyan);
-    }
-
-    /* Procurement & Spares Calculator */
-    .procurement-calc-bar {
-      background: rgba(14, 22, 38, 0.85);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 10px 12px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .procurement-input {
-      width: 60px;
-      height: 30px;
-      background: #090e1a;
-      border: 1px solid var(--border-glow);
-      color: #fff;
-      font-family: var(--font-mono);
-      font-size: 13px;
-      font-weight: 800;
-      text-align: center;
-      border-radius: 4px;
-      outline: none;
-    }
-
-    .procurement-preset-btn {
-      background: rgba(0, 240, 255, 0.08);
-      border: 1px solid rgba(0, 240, 255, 0.25);
-      color: var(--accent-cyan);
-      font-size: 10px;
-      font-weight: 700;
-      padding: 4px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .procurement-preset-btn:hover {
-      background: rgba(0, 240, 255, 0.2);
-    }
-
-    .list-a-pill {
-      font-size: 8.5px;
-      font-weight: 800;
-      font-family: var(--font-mono);
-      background: rgba(247, 37, 133, 0.2);
-      color: var(--accent-pink);
-      border: 1px solid rgba(247, 37, 133, 0.4);
-      padding: 1px 5px;
-      border-radius: 3px;
-      white-space: nowrap;
-    }
-
-    .formula-pill {
-      font-size: 9.5px;
-      font-family: var(--font-mono);
-      color: var(--accent-yellow);
-      background: rgba(255, 214, 10, 0.08);
-      padding: 2px 6px;
-      border-radius: 3px;
-      border: 1px solid rgba(255, 214, 10, 0.2);
-      display: inline-block;
-    }
-
-    /* Unified Answer Card Toolbar */
-    .answer-toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
-      padding-top: 8px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .answer-tool-btn {
-      background: rgba(14, 22, 38, 0.7);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-main);
-      font-size: 9.5px;
-      font-weight: 600;
-      padding: 4px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.15s ease;
-    }
-
-    .answer-tool-btn:hover {
-      background: rgba(0, 240, 255, 0.15);
-      border-color: var(--accent-cyan);
-      color: #fff;
-    }
-
-    /* =========================================================================
-       PHASE 5: QUESTION INTERFACE & ANSWER CARDS (§15, §16)
-       ========================================================================= */
-    .qa-container {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding: 4px;
-    }
-
-    .qa-input-wrap {
-      display: flex;
-      gap: 8px;
-      background: rgba(10, 16, 28, 0.85);
-      border: 1px solid var(--accent-cyan);
-      box-shadow: 0 0 12px rgba(0, 240, 255, 0.15);
-      border-radius: 8px;
-      padding: 8px 12px;
-      align-items: center;
-    }
-
-    .qa-input {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: #fff;
-      font-size: 13px;
-      font-family: inherit;
-      outline: none;
-    }
-
-    .qa-input::placeholder {
-      color: var(--text-dim);
-    }
-
-    .qa-ask-btn {
-      background: var(--accent-cyan);
-      color: #000;
-      border: none;
-      font-weight: 700;
-      font-size: 11px;
-      padding: 6px 12px;
-      border-radius: 4px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .qa-ask-btn:hover {
-      box-shadow: 0 0 10px var(--accent-cyan);
-      transform: translateY(-1px);
-    }
-
-    .qa-chips-section {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .qa-chips-label {
-      font-size: 10px;
-      font-weight: 700;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .qa-chips-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-
-    .qa-chip {
-      background: rgba(14, 22, 38, 0.85);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-main);
-      font-size: 10.5px;
-      padding: 5px 9px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-
-    .qa-chip:hover {
-      border-color: var(--accent-cyan);
-      color: #fff;
-      background: rgba(0, 240, 255, 0.1);
-      transform: translateY(-1px);
-    }
-
-    /* Full Answer Card (Blueprint §15) */
-    .qa-answer-card {
-      background: linear-gradient(145deg, rgba(14, 22, 38, 0.95), rgba(8, 14, 24, 0.98));
-      border: 1px solid rgba(0, 240, 255, 0.35);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 240, 255, 0.1);
-      border-radius: 8px;
-      padding: 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      animation: fadeInAnswer 0.25s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    @keyframes fadeInAnswer {
-      from { opacity: 0; transform: translateY(6px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-
-    .qa-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      gap: 8px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      padding-bottom: 10px;
-    }
-
-    .qa-intent-badge {
-      font-size: 9.5px;
-      font-weight: 800;
-      font-family: var(--font-mono);
-      text-transform: uppercase;
-      padding: 3px 8px;
-      border-radius: 4px;
-      letter-spacing: 0.5px;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .qa-confidence-meter {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 10px;
-      font-family: var(--font-mono);
-      color: var(--accent-green);
-      font-weight: 700;
-    }
-
-    .qa-confidence-bar {
-      width: 48px;
-      height: 4px;
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-
-    .qa-confidence-fill {
-      height: 100%;
-      background: var(--accent-green);
-      border-radius: 2px;
-    }
-
-    .qa-statement-box {
-      font-size: 13px;
-      color: #fff;
-      line-height: 1.5;
-      font-weight: 500;
-      background: rgba(0, 240, 255, 0.04);
-      border-left: 3px solid var(--accent-cyan);
-      padding: 8px 12px;
-      border-radius: 0 4px 4px 0;
-    }
-
-    .qa-param-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 11px;
-      background: rgba(10, 16, 28, 0.7);
-      border-radius: 6px;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.06);
-    }
-
-    .qa-param-table th {
-      background: rgba(14, 22, 38, 0.9);
-      padding: 6px 10px;
-      color: var(--text-dim);
-      font-size: 9.5px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      text-align: left;
-    }
-
-    .qa-param-table td {
-      padding: 6px 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
-      color: var(--text-main);
-    }
-
-    .qa-traversal-path {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px;
-      background: rgba(10, 16, 28, 0.6);
-      padding: 8px 10px;
-      border-radius: 6px;
-      border: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .qa-traversal-node {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      background: rgba(18, 27, 46, 0.85);
-      border: 1px solid var(--border-subtle);
-      border-radius: 4px;
-      padding: 3px 7px;
-      font-size: 10px;
-      color: #fff;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .qa-traversal-node:hover {
-      border-color: var(--accent-cyan);
-      color: var(--accent-cyan);
-      background: rgba(0, 240, 255, 0.1);
-    }
-
-    .qa-provenance-card {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background: rgba(14, 22, 38, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 11px;
-    }
-
-    .qa-conflict-box {
-      background: rgba(255, 51, 102, 0.08);
-      border: 1px solid rgba(255, 51, 102, 0.3);
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 10.5px;
-      color: #ff99aa;
-      line-height: 1.4;
-    }
-
-    .qa-card-toolbar {
-      display: flex;
-      gap: 8px;
-      margin-top: 4px;
-    }
-
-    /* =========================================================================
-       PHASE 6: LEARNING SYSTEM & TRAINING ACADEMY (§17)
-       ========================================================================= */
-    .learning-container {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding: 4px;
-    }
-
-    .learning-subnav {
-      display: flex;
-      gap: 6px;
-      background: rgba(10, 16, 28, 0.7);
-      padding: 4px;
-      border-radius: 6px;
-      border: 1px solid var(--border-subtle);
-    }
-
-    .learning-subnav-btn {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 10.5px;
-      font-weight: 600;
-      padding: 6px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      transition: all 0.15s ease;
-    }
-
-    .learning-subnav-btn:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    .learning-subnav-btn.active {
-      background: rgba(0, 240, 255, 0.2);
-      color: var(--accent-cyan);
-      border: 1px solid var(--border-glow);
-    }
-
-    .learning-track-card {
-      background: linear-gradient(135deg, rgba(14, 22, 38, 0.9), rgba(8, 14, 24, 0.95));
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      transition: all 0.2s ease;
-    }
-
-    .learning-track-card:hover {
-      border-color: var(--accent-cyan);
-      box-shadow: 0 4px 16px rgba(0, 240, 255, 0.1);
-    }
-
-    .learning-stage-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 8px 10px;
-      background: rgba(10, 16, 28, 0.6);
-      border-radius: 5px;
-      border: 1px solid rgba(255, 255, 255, 0.04);
-      font-size: 11px;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .learning-stage-row:hover {
-      border-color: var(--accent-cyan);
-      background: rgba(0, 240, 255, 0.06);
-    }
-
-    .learning-stage-badge {
-      font-size: 9px;
-      font-weight: 800;
-      font-family: var(--font-mono);
-      padding: 2px 6px;
-      border-radius: 3px;
-      text-transform: uppercase;
-      display: inline-block;
-    }
-
-    /* 3D Flip Flashcard */
-    .flashcard-box {
-      perspective: 1000px;
-      min-height: 220px;
-      cursor: pointer;
-    }
-
-    .flashcard-card {
-      width: 100%;
-      height: 100%;
-      min-height: 220px;
-      position: relative;
-      transform-style: preserve-3d;
-      transition: transform 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      border-radius: 8px;
-    }
-
-    .flashcard-card.flipped {
-      transform: rotateY(180deg);
-    }
-
-    .flashcard-front, .flashcard-back {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      backface-visibility: hidden;
-      border-radius: 8px;
-      padding: 16px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      box-sizing: border-box;
-    }
-
-    .flashcard-front {
-      background: linear-gradient(145deg, rgba(16, 26, 46, 0.95), rgba(10, 16, 28, 0.98));
-      border: 1px solid var(--accent-cyan);
-      box-shadow: 0 0 16px rgba(0, 240, 255, 0.15);
-    }
-
-    .flashcard-back {
-      background: linear-gradient(145deg, rgba(14, 30, 28, 0.95), rgba(8, 20, 24, 0.98));
-      border: 1px solid var(--accent-green);
-      box-shadow: 0 0 16px rgba(0, 255, 136, 0.15);
-      transform: rotateY(180deg);
-    }
-
-    /* Quiz Styles */
-    .quiz-question-box {
-      background: rgba(14, 22, 38, 0.9);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .quiz-option-btn {
-      text-align: left;
-      background: rgba(10, 16, 28, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      color: var(--text-main);
-      padding: 8px 12px;
-      border-radius: 6px;
-      font-size: 11px;
-      cursor: pointer;
-      transition: all 0.15s ease;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .quiz-option-btn:hover {
-      border-color: var(--accent-cyan);
-      background: rgba(0, 240, 255, 0.08);
-      color: #fff;
-    }
-
-    .quiz-option-btn.selected {
-      border-color: var(--accent-cyan);
-      background: rgba(0, 240, 255, 0.18);
-      color: #fff;
-      font-weight: 700;
-    }
-
-    .quiz-option-btn.correct {
-      border-color: var(--accent-green) !important;
-      background: rgba(0, 255, 136, 0.18) !important;
-      color: #fff !important;
-    }
-
-    .quiz-option-btn.wrong {
-      border-color: var(--accent-red) !important;
-      background: rgba(255, 51, 102, 0.18) !important;
-      color: #fff !important;
-    }
-
-    /* Competency Matrix Styles */
-    .competency-card {
-      background: rgba(14, 22, 38, 0.85);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .competency-bar-track {
-      width: 100%;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.08);
-      border-radius: 3px;
-      overflow: hidden;
-    }
-
-    .competency-bar-fill {
-      height: 100%;
-      border-radius: 3px;
-      transition: width 0.3s ease;
-    }
-
-    /* =========================================================================
-       PHASE 7: SEMANTIC INTELLIGENCE & HYBRID RETRIEVAL (§24, §36)
-       ========================================================================= */
-    .semantic-container {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      padding: 4px;
-    }
-
-    .semantic-subnav {
-      display: flex;
-      gap: 6px;
-      background: rgba(10, 16, 28, 0.7);
-      padding: 4px;
-      border-radius: 6px;
-      border: 1px solid var(--border-subtle);
-    }
-
-    .semantic-subnav-btn {
-      flex: 1;
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 10.5px;
-      font-weight: 600;
-      padding: 6px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 5px;
-      transition: all 0.15s ease;
-    }
-
-    .semantic-subnav-btn:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    .semantic-subnav-btn.active {
-      background: rgba(180, 80, 255, 0.2);
-      color: var(--accent-purple);
-      border: 1px solid rgba(180, 80, 255, 0.4);
-    }
-
-    .concept-neighbor-card {
-      background: linear-gradient(135deg, rgba(16, 24, 42, 0.9), rgba(10, 16, 28, 0.95));
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      transition: all 0.2s ease;
-      cursor: pointer;
-    }
-
-    .concept-neighbor-card:hover {
-      border-color: var(--accent-purple);
-      box-shadow: 0 4px 16px rgba(180, 80, 255, 0.12);
-      transform: translateY(-1px);
-    }
-
-    .knowledge-gap-card {
-      background: rgba(14, 22, 38, 0.9);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 10px 12px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .query-expansion-chips {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      padding: 8px 10px;
-      background: rgba(180, 80, 255, 0.08);
-      border: 1px dashed rgba(180, 80, 255, 0.35);
-      border-radius: 6px;
-      margin-bottom: 8px;
-    }
-
-    .expansion-chip {
-      background: rgba(180, 80, 255, 0.18);
-      color: #d8b4fe;
-      border: 1px solid rgba(180, 80, 255, 0.35);
-      border-radius: 12px;
-      font-size: 10px;
-      font-weight: 600;
-      padding: 2px 8px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.15s;
-    }
-
-    .expansion-chip:hover {
-      background: var(--accent-purple);
-      color: #fff;
-      border-color: var(--accent-purple);
-    }
-
-    .semantic-expansion-bar {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 4px;
-      padding: 8px 12px;
-      border-bottom: 1px solid var(--border-subtle);
-      background: rgba(180, 80, 255, 0.04);
-    }
-
-    /* Layout Switcher */
-    .layout-switcher {
-      display: flex;
-      background: rgba(14, 22, 38, 0.9);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 2px;
-      gap: 2px;
-    }
-
-    .layout-btn {
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      font-size: 11px;
-      font-weight: 600;
-      padding: 5px 10px;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      transition: all 0.15s;
-    }
-
-    .layout-btn:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.06);
-    }
-
-    .layout-btn.active {
-      background: rgba(0, 240, 255, 0.2);
-      color: var(--accent-cyan);
-      border: 1px solid var(--border-glow);
-    }
-
-    /* Actions */
-    .header-actions {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .btn {
-      background: rgba(18, 27, 46, 0.9);
-      border: 1px solid var(--border-subtle);
-      color: var(--text-main);
-      padding: 6px 12px;
-      font-size: 11px;
-      font-weight: 600;
-      border-radius: 6px;
-      cursor: pointer;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      transition: all 0.2s;
-    }
-
-    .btn:hover {
-      background: var(--bg-hover);
-      border-color: var(--accent-cyan);
-      color: #fff;
-    }
-
-    .btn-primary {
-      background: linear-gradient(135deg, rgba(0, 240, 255, 0.3) 0%, rgba(58, 134, 255, 0.3) 100%);
-      border-color: var(--accent-cyan);
-      color: #fff;
-    }
-
-    .btn-primary:hover {
-      background: linear-gradient(135deg, rgba(0, 240, 255, 0.5) 0%, rgba(58, 134, 255, 0.5) 100%);
-      box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
-    }
-
-    /* Left Floating Dock */
-    #left-tools-dock {
-      position: absolute;
-      top: 82px;
-      left: 16px;
-      width: 250px;
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      z-index: 5;
-    }
-
-    .dock-card {
-      background: var(--bg-panel);
-      backdrop-filter: blur(16px);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      padding: 12px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
-    }
-
-    .card-title {
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.8px;
-      color: var(--accent-cyan);
-      text-transform: uppercase;
-      margin-bottom: 8px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .domain-chips-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-    }
-
-    .domain-chip {
-      font-size: 9.5px;
-      font-weight: 700;
-      padding: 3px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      border: 1px solid transparent;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      transition: all 0.15s;
-    }
-
-    .domain-chip.active {
-      border-color: currentColor;
-      box-shadow: 0 0 8px currentColor;
-    }
-
-    .domain-chip.dimmed {
-      opacity: 0.35;
-    }
-
-    /* Alteration Scrubber */
-    .scrubber-wrap {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .scrubber-slider {
-      width: 100%;
-      height: 6px;
-      border-radius: 3px;
-      background: #182844;
-      outline: none;
-      accent-color: var(--accent-green);
-      cursor: pointer;
-    }
-
-    .scrubber-desc {
-      font-size: 10px;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-
-    /* RIGHT MULTI-TAB ENTITY INTELLIGENCE DRAWER (EXPANDED 490PX) */
-    #intelligence-drawer {
-      position: absolute;
-      top: 64px;
-      right: 0;
-      bottom: 28px;
-      width: 490px;
-      background: var(--bg-panel);
-      backdrop-filter: blur(20px);
-      border-left: 1px solid var(--border-glow);
-      box-shadow: -10px 0 40px rgba(0, 0, 0, 0.85);
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-
-    #intelligence-drawer.collapsed {
-      transform: translateX(100%);
-    }
-
-    .drawer-header {
-      padding: 14px 16px;
-      border-bottom: 1px solid var(--border-subtle);
-      display: flex;
-      justify-content: space-between;
-      align-items: flex-start;
-      background: rgba(6, 10, 18, 0.6);
-    }
-
-    .drawer-title-block h2 {
-      font-size: 14px;
-      font-weight: 800;
-      color: #fff;
-      line-height: 1.3;
-    }
-
-    .drawer-title-block .meta-tag {
-      font-size: 9px;
-      font-family: var(--font-mono);
-      font-weight: 700;
-      color: var(--accent-cyan);
-      display: inline-block;
-      margin-bottom: 4px;
-    }
-
-    .close-drawer-btn {
-      background: transparent;
-      border: 1px solid var(--border-subtle);
-      border-radius: 4px;
-      color: var(--text-muted);
-      font-size: 14px;
-      width: 26px;
-      height: 26px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      transition: all 0.15s;
-    }
-
-    .close-drawer-btn:hover {
-      border-color: var(--accent-red);
-      color: var(--accent-red);
-      background: rgba(255, 51, 102, 0.15);
-    }
-
-    /* Engineering Answer Card */
-    .answer-card-container {
-      background: rgba(14, 23, 40, 0.95);
-      border-bottom: 1px solid var(--border-subtle);
-      padding: 12px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-    }
-
-    .answer-provenance-box {
-      background: rgba(0, 0, 0, 0.4);
-      border: 1px solid rgba(0, 240, 255, 0.25);
-      border-radius: 6px;
-      padding: 8px 10px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-    }
-
-    .answer-crop-thumb {
-      width: 60px;
-      height: 40px;
-      border-radius: 4px;
-      border: 1px solid var(--border-subtle);
-      object-fit: cover;
-      cursor: pointer;
-      transition: transform 0.2s, border-color 0.2s;
-    }
-
-    .answer-crop-thumb:hover {
-      transform: scale(1.08);
-      border-color: var(--accent-cyan);
-    }
-
-    .provenance-details {
-      flex: 1;
-      font-size: 10px;
-      line-height: 1.4;
-    }
-
-    .confidence-badge {
-      font-size: 8.5px;
-      padding: 2px 5px;
-      border-radius: 3px;
-      background: rgba(0, 255, 136, 0.15);
-      border: 1px solid var(--accent-green);
-      color: var(--accent-green);
-      font-weight: 700;
-      font-family: var(--font-mono);
-      display: inline-flex;
-      align-items: center;
-      gap: 3px;
-    }
-
-    /* Drawer Tab Bar */
-    .drawer-nav-tabs {
-      display: flex;
-      border-bottom: 1px solid var(--border-subtle);
-      background: rgba(10, 16, 28, 0.95);
-      overflow-x: auto;
-      scrollbar-width: none;
-      -ms-overflow-style: none;
-    }
-
-    .drawer-nav-tabs::-webkit-scrollbar {
-      display: none;
-    }
-
-    .drawer-tab {
-      flex: 1;
-      min-width: 85px;
-      padding: 10px 4px;
-      font-size: 10.5px;
-      font-weight: 700;
-      color: var(--text-muted);
-      background: transparent;
-      border: none;
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 3px;
-      transition: all 0.2s;
-    }
-
-    .drawer-tab:hover {
-      color: #fff;
-      background: rgba(255, 255, 255, 0.04);
-    }
-
-    .drawer-tab.active {
-      color: var(--accent-cyan);
-      border-bottom-color: var(--accent-cyan);
-      background: rgba(0, 240, 255, 0.08);
-    }
-
-    .drawer-tab-badge {
-      font-size: 8.5px;
-      padding: 1px 5px;
-      border-radius: 8px;
-      background: rgba(0, 240, 255, 0.2);
-      color: var(--accent-cyan);
-      font-family: var(--font-mono);
-    }
-
-    .drawer-content {
-      flex: 1;
-      overflow-y: auto;
-      padding: 14px 16px;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-    }
-
-    .tab-pane {
-      display: none;
-      flex-direction: column;
-      gap: 12px;
-    }
-
-    .tab-pane.active {
-      display: flex;
-    }
-
-    /* Tab 1: Notes Cards */
-    .notes-search-box {
-      position: relative;
-      width: 100%;
-    }
-
-    .notes-search-input {
-      width: 100%;
-      height: 32px;
-      background: rgba(18, 27, 46, 0.9);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 0 10px 0 28px;
-      color: #fff;
-      font-size: 11px;
-      outline: none;
-    }
-
-    .notes-search-input:focus {
-      border-color: var(--accent-yellow);
-    }
-
-    .notes-list {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      max-height: 480px;
-      overflow-y: auto;
-    }
-
-    .note-card {
-      background: rgba(18, 27, 46, 0.7);
-      border: 1px solid var(--border-subtle);
-      border-left: 3px solid var(--accent-yellow);
-      border-radius: 4px;
-      padding: 9px 11px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-      font-size: 11px;
-      line-height: 1.45;
-    }
-
-    .note-card-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .note-badge {
-      font-size: 9px;
-      font-family: var(--font-mono);
-      font-weight: 800;
-      color: var(--accent-yellow);
-    }
-
-    .note-dwg-ref {
-      font-size: 8.5px;
-      color: var(--text-dim);
-      font-family: var(--font-mono);
-    }
-
-    .note-body {
-      color: var(--text-main);
-    }
-
-    /* Tab 2: Tables View */
-    .table-subnav {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-      margin-bottom: 8px;
-    }
-
-    .table-subnav-btn {
-      background: rgba(18, 27, 46, 0.8);
-      border: 1px solid var(--border-subtle);
-      border-radius: 4px;
-      padding: 4px 8px;
-      font-size: 9.5px;
-      font-weight: 700;
-      color: var(--text-muted);
-      cursor: pointer;
-    }
-
-    .table-subnav-btn.active {
-      border-color: var(--accent-green);
-      background: rgba(0, 255, 136, 0.15);
-      color: var(--accent-green);
-    }
-
-    .data-table-wrap {
-      max-height: 440px;
-      overflow-y: auto;
-      border: 1px solid var(--border-subtle);
-      border-radius: 4px;
-    }
-
-    .rdso-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 10.5px;
-    }
-
-    .rdso-table th {
-      position: sticky;
-      top: 0;
-      background: #0f1828;
-      color: var(--accent-cyan);
-      font-weight: 700;
-      text-align: left;
-      padding: 7px 9px;
-      border-bottom: 1px solid var(--border-subtle);
-      font-size: 9.5px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-    }
-
-    .rdso-table td {
-      padding: 6px 9px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      color: var(--text-main);
-    }
-
-    .rdso-table tr:hover {
-      background: rgba(0, 240, 255, 0.08);
-    }
-
-    /* Tab 3: Blueprint Viewer */
-    .blueprint-controls {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 6px;
-    }
-
-    .blueprint-crop-select {
-      background: rgba(18, 27, 46, 0.9);
-      border: 1px solid var(--border-subtle);
-      border-radius: 4px;
-      padding: 4px 8px;
-      color: #fff;
-      font-size: 10px;
-      outline: none;
-    }
-
-    .blueprint-preview-box {
-      border: 1px solid var(--border-glow);
-      border-radius: 6px;
-      overflow: hidden;
-      background: #000;
-      position: relative;
-      cursor: zoom-in;
-    }
-
-    .blueprint-img {
-      width: 100%;
-      height: 240px;
-      object-fit: contain;
-      display: block;
-      background: #050810;
-    }
-
-    .blueprint-overlay-hint {
-      position: absolute;
-      bottom: 8px;
-      right: 8px;
-      background: rgba(0, 0, 0, 0.8);
-      border: 1px solid var(--border-glow);
-      border-radius: 4px;
-      padding: 3px 8px;
-      font-size: 9px;
-      color: var(--accent-cyan);
-    }
-
-    /* Tab 4: 3D Twin */
-    .digital-twin-box {
-      background: rgba(6, 10, 18, 0.85);
-      border: 1px solid var(--border-subtle);
-      border-radius: 6px;
-      padding: 8px;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-
-    .twin-badge {
-      font-size: 9px;
-      font-family: var(--font-mono);
-      color: var(--accent-cyan);
-      display: flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .twin-canvas-wrap {
-      width: 100%;
-      height: 200px;
-      border-radius: 4px;
-      overflow: hidden;
-      background: #03060d;
-      border: 1px solid rgba(0, 240, 255, 0.2);
-    }
-
-    .twin-controls-hint {
-      font-size: 9px;
-      color: var(--text-dim);
-      text-align: center;
-    }
-
-    .specs-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 10.5px;
-    }
-
-    .specs-table td {
-      padding: 5px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .specs-table td:first-child {
-      color: var(--text-muted);
-      width: 45%;
-    }
-
-    .specs-table td:last-child {
-      font-weight: 700;
-      color: #fff;
-    }
-
-    /* Lineage Tags */
-    .lineage-tags-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 5px;
-    }
-
-    .lineage-tag {
-      background: rgba(0, 240, 255, 0.1);
-      border: 1px solid rgba(0, 240, 255, 0.3);
-      border-radius: 4px;
-      padding: 3px 7px;
-      font-size: 9.5px;
-      color: #fff;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-    }
-
-    .lineage-tag:hover {
-      background: rgba(0, 240, 255, 0.25);
-      border-color: var(--accent-cyan);
-    }
-
-    /* Tab 5: Risks & Failure */
-    .failure-risk-box {
-      background: rgba(255, 51, 102, 0.12);
-      border: 1px solid var(--border-crimson);
-      border-radius: 6px;
-      padding: 10px;
-    }
-
-    .failure-risk-header {
-      font-size: 11px;
-      font-weight: 800;
-      color: var(--accent-red);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      margin-bottom: 4px;
-    }
-
-    .failure-risk-desc {
-      font-size: 10.5px;
-      color: var(--text-main);
-      line-height: 1.4;
-    }
-
-    /* Bottom Telemetry Bar */
-    #telemetry-bar {
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 28px;
-      background: rgba(6, 10, 18, 0.95);
-      border-top: 1px solid var(--border-subtle);
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0 16px;
-      font-size: 10px;
-      color: var(--text-muted);
-      font-family: var(--font-mono);
-    }
-
-    .telemetry-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .status-dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: var(--accent-green);
-      box-shadow: 0 0 8px var(--accent-green);
-    }
-
-    /* Fullscreen Modal */
-    #blueprint-modal {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: rgba(0, 0, 0, 0.92);
-      backdrop-filter: blur(12px);
-      z-index: 1000;
-      display: none;
-      flex-direction: column;
-      padding: 24px;
-    }
-
-    .blueprint-modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 12px;
-    }
-
-    .blueprint-modal-body {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: auto;
-    }
-
-    .blueprint-modal-img {
-      max-width: 95%;
-      max-height: 90vh;
-      object-fit: contain;
-      box-shadow: 0 0 35px rgba(0, 240, 255, 0.25);
-      border-radius: 6px;
-    }
-
-    /* Manuals Chapter Tree & TOC Navigator */
-    .manuals-tree-container {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      padding: 10px 4px;
-      overflow-y: auto;
-      max-height: calc(100vh - 350px);
-    }
-
-    .manual-tree-card {
-      background: rgba(18, 27, 46, 0.75);
-      border: 1px solid var(--border-subtle);
-      border-radius: 8px;
-      overflow: hidden;
-      transition: border-color 0.2s;
-    }
-
-    .manual-tree-card:hover {
-      border-color: var(--accent-cyan);
-    }
-
-    .manual-tree-header {
-      padding: 10px 12px;
-      background: rgba(28, 42, 70, 0.5);
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 12px;
-      font-weight: 600;
-      color: var(--text-main);
-    }
-
-    .manual-tree-header:hover {
-      background: rgba(38, 58, 96, 0.7);
-    }
-
-    .manual-tree-badge {
-      font-size: 10px;
-      padding: 2px 7px;
-      border-radius: 10px;
-      background: rgba(0, 240, 255, 0.12);
-      border: 1px solid rgba(0, 240, 255, 0.35);
-      color: var(--accent-cyan);
-      font-family: var(--font-mono);
-    }
-
-    .manual-tree-body {
-      display: none;
-      padding: 8px;
-      flex-direction: column;
-      gap: 6px;
-      background: rgba(10, 16, 28, 0.6);
-    }
-
-    .manual-tree-body.open {
-      display: flex;
-    }
-
-    .chapter-tree-card {
-      background: rgba(22, 33, 56, 0.6);
-      border: 1px solid rgba(56, 96, 160, 0.25);
-      border-radius: 6px;
-      overflow: hidden;
-    }
-
-    .chapter-tree-header {
-      padding: 8px 10px;
-      cursor: pointer;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 11.5px;
-      color: var(--text-main);
-    }
-
-    .chapter-tree-header:hover {
-      background: rgba(40, 60, 100, 0.5);
-      color: var(--accent-cyan);
-    }
-
-    .chapter-tree-body {
-      display: none;
-      padding: 6px;
-      flex-direction: column;
-      gap: 4px;
-      background: rgba(6, 10, 18, 0.5);
-      border-top: 1px solid rgba(56, 96, 160, 0.2);
-    }
-
-    .chapter-tree-body.open {
-      display: flex;
-    }
-
-    .clause-tree-item {
-      padding: 6px 8px;
-      border-radius: 4px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 11px;
-      color: var(--text-muted);
-      transition: all 0.15s;
-    }
-
-    .clause-tree-item:hover {
-      background: rgba(0, 240, 255, 0.1);
-      color: var(--text-main);
-      transform: translateX(3px);
-    }
-
-    .clause-para-badge {
-      font-size: 9.5px;
-      font-family: var(--font-mono);
-      padding: 1px 5px;
-      border-radius: 3px;
-      background: rgba(247, 37, 133, 0.2);
-      border: 1px solid rgba(247, 37, 133, 0.4);
-      color: var(--accent-pink);
-      flex-shrink: 0;
-    }
-
-    .clause-title-text {
-      flex: 1;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-
-    .clause-page-badge {
-      font-size: 9px;
-      color: var(--text-dim);
-      font-family: var(--font-mono);
-      flex-shrink: 0;
-    }
-  </style>
-  <script src="./lib/three.min.js"></script>
-  <script src="./lib/OrbitControls.js"></script>
-  <script src="./data/rdso_kg_data.js"></script>
-  <style>
-    #kg-hover-hud {
-      position: absolute;
-      pointer-events: none;
-      background: rgba(8, 14, 26, 0.94);
-      border: 1px solid var(--border-glow);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 0 0 14px rgba(0, 240, 255, 0.3);
-      backdrop-filter: blur(12px);
-      border-radius: 8px;
-      padding: 8px 14px;
-      color: #fff;
-      font-size: 12px;
-      z-index: 1000;
-      display: none;
-      transition: opacity 0.15s ease;
-      max-width: 320px;
-    }
-    #kg-hover-hud .hud-tag {
-      font-size: 10px;
-      font-weight: 700;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      margin-bottom: 4px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    #kg-hover-hud .hud-title {
-      font-weight: 700;
-      font-size: 13px;
-      color: #ffffff;
-      margin-bottom: 3px;
-    }
-    #kg-hover-hud .hud-metric {
-      font-size: 11px;
-      color: var(--accent-cyan);
-      font-family: var(--font-mono);
-    }
-  </style>
-</head>
-<body>
-
-  <!-- Fullscreen 3D Knowledge Graph Viewport -->
-  <div id="kg-canvas-container"></div>
-  <div id="kg-hover-hud">
-    <div class="hud-tag" id="hud-tag">DOMAIN</div>
-    <div class="hud-title" id="hud-title">Entity Title</div>
-    <div class="hud-metric" id="hud-metric">Quick Parameter</div>
-  </div>
-
-  <!-- Command Header -->
-  <header>
-    <div class="brand-section">
-      <div class="brand-icon">🌐</div>
-      <div class="brand-titles">
-        <h1>RDSO Railway Engineering Knowledge Operating System (REKG) <span class="badge-ver">v3.5 CANONICAL</span></h1>
-        <p>Document Layer · Engineering Domain Graph · Evidence & Provenance</p>
-      </div>
-    </div>
-
-    <!-- Segregated Knowledge Universes Switcher (Blueprint §2.1 & §8.3) -->
-    <div class="universe-switcher-bar" id="universe-switcher-bar">
-      <button class="universe-btn active" id="btn-univ-drawings" data-universe="drawings" onclick="switchKnowledgeUniverse('drawings')">
-        <span>📐</span> Drawings Universe
-      </button>
-      <button class="universe-btn" id="btn-univ-manuals" data-universe="manuals" onclick="switchKnowledgeUniverse('manuals')">
-        <span>📖</span> Manuals Universe
-      </button>
-      <button class="universe-btn" id="btn-univ-combined" data-universe="combined" onclick="switchKnowledgeUniverse('combined')">
-        <span>🌐</span> Combined Cosmos
-      </button>
-    </div>
-
-    <!-- Hierarchy Expansion & Level Controls -->
-    <div class="hierarchy-controls-bar" id="hierarchy-controls-bar">
-      <button class="hierarchy-btn" id="btn-hierarchy-expand-level" onclick="expandHierarchyOneLevel()" title="Expand Next Hierarchy Depth">
-        <span>➕</span> Level +1
-      </button>
-      <button class="hierarchy-btn" id="btn-hierarchy-collapse-roots" onclick="collapseAllToRoots()" title="Collapse back to Top Roots">
-        <span>⊟</span> Roots Only
-      </button>
-      <button class="hierarchy-btn" id="btn-hierarchy-expand-all" onclick="expandAllHierarchy()" title="Expand All Nodes">
-        <span>⊞</span> Expand All
-      </button>
-      <div class="hierarchy-status-badge" id="hierarchy-status-badge">
-        <span style="display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--accent-green); box-shadow:0 0 6px var(--accent-green);"></span>
-        <span id="hierarchy-visible-count">Visible: 24 / 2,157</span>
-      </div>
-    </div>
-
-    <!-- Semantic Graph Modes Switcher -->
-    <div class="semantic-modes-bar">
-      <button class="semantic-mode-btn active" data-mode="explore" onclick="switchSemanticMode('explore')">
-        <span>🌌</span> Explore
-      </button>
-      <button class="semantic-mode-btn" data-mode="trace" onclick="switchSemanticMode('trace')">
-        <span>🔗</span> Dependency Trace
-      </button>
-      <button class="semantic-mode-btn" data-mode="revision" onclick="switchSemanticMode('revision')">
-        <span>⏳</span> Revision Impact
-      </button>
-      <button class="semantic-mode-btn" data-mode="failure" onclick="switchSemanticMode('failure')">
-        <span>⚠️</span> Failure Analysis
-      </button>
-      <button class="semantic-mode-btn" data-mode="bom" onclick="switchSemanticMode('bom')">
-        <span>📦</span> Procurement & BOM
-      </button>
-      <button class="semantic-mode-btn" data-mode="manuals" onclick="switchSemanticMode('manuals')">
-        <span>📖</span> Codes & Manuals
-      </button>
-    </div>
-
-    <!-- Global Search -->
-    <div class="search-wrapper">
-      <span class="search-icon">🔍</span>
-      <input type="text" id="global-search" class="search-input" placeholder="Search notes, BOM, sleepers, specs...">
-      <span class="search-shortcut">/</span>
-      <div id="search-dropdown" class="search-dropdown"></div>
-    </div>
-
-    <!-- Layout Switcher -->
-    <div class="layout-switcher">
-      <button class="layout-btn active" data-layout="cosmic" onclick="switchGraphLayout('cosmic')">
-        <span>🌌</span> 3D Cosmic
-      </button>
-      <button class="layout-btn" data-layout="planar" onclick="switchGraphLayout('planar')">
-        <span>📐</span> 2D Planar
-      </button>
-      <button class="layout-btn" data-layout="dag" onclick="switchGraphLayout('dag')">
-        <span>🌲</span> Hierarchical
-      </button>
-      <button class="layout-btn" data-layout="concentric" onclick="switchGraphLayout('concentric')">
-        <span>🎯</span> Concentric
-      </button>
-    </div>
-
-    <!-- Header Actions -->
-    <div class="header-actions">
-      <button class="btn" onclick="exportGraph('cypher')">
-        <span>💾</span> Cypher
-      </button>
-      <button class="btn btn-primary" onclick="openIngestModal()">
-        <span>➕</span> Ingest Node
-      </button>
-    </div>
-  </header>
-
-  <!-- Left Floating Dock -->
-  <div id="left-tools-dock">
-    <!-- Domain Filters -->
-    <div class="dock-card">
-      <div class="card-title">
-        <span>Ontology Domains</span>
-        <span style="font-size: 9px; color: var(--text-dim);" id="domain-active-label">ALL</span>
-      </div>
-      <div class="domain-chips-list" id="domain-chips-list">
-        <!-- Rendered dynamically -->
-      </div>
-    </div>
-
-    <!-- Alteration Scrubber -->
-    <div class="dock-card">
-      <div class="card-title">
-        <span>Alteration Time-Travel</span>
-        <span style="font-size: 9px; color: var(--accent-green); font-family: var(--font-mono);" id="alt-tag-display">ALT 13 (LATEST)</span>
-      </div>
-      <div class="scrubber-wrap">
-        <input type="range" min="1" max="13" value="13" class="scrubber-slider" id="alt-slider" oninput="onAlterationScrub(this.value)">
-        <div class="scrubber-desc" id="alt-desc-display">
-          Showing complete active track architecture including Note 25/26 dowels, LIST-A spares, and Thick-Web ZU-1-60 profiles.
-        </div>
-      </div>
-    </div>
-
-    <!-- Mode Details Card -->
-    <div class="dock-card">
-      <div class="card-title">
-        <span>Active Semantic Mode</span>
-        <span style="font-size: 9px; color: var(--accent-cyan);" id="mode-active-indicator">EXPLORE</span>
-      </div>
-      <div style="font-size: 10.5px; color: var(--text-muted); line-height: 1.4;" id="mode-active-desc">
-        Holistic exploration mode. Left drag to orbit, right drag to pan, scroll to zoom. Click any node to open its Engineering Answer Card.
-      </div>
-    </div>
-
-    <!-- Predicate Family Filters (Blueprint §13.2) -->
-    <div class="dock-card">
-      <div class="card-title">
-        <span>Predicate Families</span>
-        <span style="font-size: 9px; color: var(--accent-cyan); font-family: var(--font-mono);" id="pred-active-count">4/4 ACTIVE</span>
-      </div>
-      <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 6px;">
-        <label class="pred-family-toggle" style="display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--text-main); cursor: pointer;">
-          <span style="display: flex; align-items: center; gap: 4px;">🧱 <strong style="color: #00f0ff;">Structural</strong> (CONTAINS, FASTENED)</span>
-          <input type="checkbox" id="pred-filter-structural" checked onchange="togglePredicateFamily('structural', this.checked)">
-        </label>
-        <label class="pred-family-toggle" style="display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--text-main); cursor: pointer;">
-          <span style="display: flex; align-items: center; gap: 4px;">⚖️ <strong style="color: #9d4edd;">Governance</strong> (GOVERNS, REQUIRES)</span>
-          <input type="checkbox" id="pred-filter-governance" checked onchange="togglePredicateFamily('governance', this.checked)">
-        </label>
-        <label class="pred-family-toggle" style="display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--text-main); cursor: pointer;">
-          <span style="display: flex; align-items: center; gap: 4px;">⏳ <strong style="color: #a2d2ff;">Lifecycle</strong> (REVISION, SUPERSEDES)</span>
-          <input type="checkbox" id="pred-filter-lifecycle" checked onchange="togglePredicateFamily('lifecycle', this.checked)">
-        </label>
-        <label class="pred-family-toggle" style="display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--text-main); cursor: pointer;">
-          <span style="display: flex; align-items: center; gap: 4px;">⚠️ <strong style="color: #ff3366;">Safety & Maint</strong> (CAN_CAUSE, SPARE)</span>
-          <input type="checkbox" id="pred-filter-maintenance" checked onchange="togglePredicateFamily('maintenance', this.checked)">
-        </label>
-      </div>
-    </div>
-  </div>
-
-  <!-- RIGHT MULTI-TAB ENTITY INTELLIGENCE DRAWER -->
-  <div id="intelligence-drawer" class="collapsed">
-    <!-- Context Breadcrumb Bar (Blueprint Section 10.4 & 21.4) -->
-    <div id="drawer-breadcrumbs" class="drawer-breadcrumbs">
-      <div class="breadcrumb-trail" id="breadcrumb-trail">
-        <span class="breadcrumb-item" onclick="reopenSearchDropdown()">Studio Search</span>
-        <span class="breadcrumb-sep">➔</span>
-        <span class="breadcrumb-active" id="breadcrumb-current-node">RDSO/T-6155</span>
-      </div>
-      <button class="breadcrumb-back-btn" id="breadcrumb-back-btn" onclick="reopenSearchDropdown()" style="display: none;">
-        <span>🔍</span> Back to Search
-      </button>
-    </div>
-
-    <div class="drawer-header">
-      <div class="drawer-title-block">
-        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px;">
-          <div class="meta-tag" id="drawer-domain" style="margin-bottom: 0;">COMPONENT ENTITY</div>
-          <span class="node-id-pill" id="drawer-id-badge" style="font-size: 9px; font-family: var(--font-mono); color: var(--text-dim); background: rgba(0,0,0,0.5); padding: 1px 5px; border-radius: 3px; border: 1px solid var(--border-subtle); display: none;"></span>
-        </div>
-        <h2 id="drawer-title">Select Any 3D Node</h2>
-      </div>
-      <button class="close-drawer-btn" onclick="toggleIntelligenceDrawer(false)">✕</button>
-    </div>
-
-    <!-- Engineering Answer Card (Executive Summary & Evidence Provenance) -->
-    <div class="answer-card-container" id="drawer-answer-card">
-      <div style="font-size: 11px; color: var(--text-main); line-height: 1.4;" id="answer-card-desc">
-        Click any entity in the 3D canvas or search above to view its canonical facts, governing directives, and source evidence.
-      </div>
-      <div class="answer-provenance-box" id="answer-provenance-box" style="display: none;">
-        <img id="answer-crop-thumb" class="answer-crop-thumb" src="" alt="Evidence Crop" onclick="openFullscreenActiveBlueprint()">
-        <div class="provenance-details">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
-            <span style="font-weight: 700; color: #fff;" id="prov-dwg-title">RDSO/T-6155</span>
-            <span class="confidence-badge">✓ 100% VERIFIED</span>
-          </div>
-          <div style="color: var(--text-muted); font-size: 9.5px;" id="prov-meta-line">Rev: ALT 13 | Region: General Notes</div>
-          <div style="color: var(--accent-cyan); font-size: 9px; cursor: pointer; margin-top: 2px;" onclick="openFullscreenActiveBlueprint()">🔍 Inspect Source Crop</div>
-        </div>
-      </div>
-      <!-- Standardized Action Toolbar (Blueprint Section 15) -->
-      <div class="answer-toolbar" id="answer-card-toolbar" style="display: none;">
-        <!-- Populated dynamically by inspectNode() -->
-      </div>
-    </div>
-
-    <!-- Multi-Tab Navigation Bar -->
-    <div class="drawer-nav-tabs">
-      <button class="drawer-tab active" data-tab="overview" id="drawer-tab-overview-btn" onclick="switchDrawerTab('overview')">
-        <span>📋</span> <span id="overview-tab-label">Overview</span>
-      </button>
-      <button class="drawer-tab" data-tab="notes" onclick="switchDrawerTab('notes')">
-        <span>📑</span> Notes <span class="drawer-tab-badge" id="notes-tab-count">28</span>
-      </button>
-      <button class="drawer-tab" data-tab="tables" onclick="switchDrawerTab('tables')">
-        <span>📊</span> Tables & BOM
-      </button>
-      <button class="drawer-tab" data-tab="blueprint" onclick="switchDrawerTab('blueprint')">
-        <span>🔍</span> Blueprint View
-      </button>
-      <button class="drawer-tab" data-tab="twin" onclick="switchDrawerTab('twin')">
-        <span>📦</span> 3D Asset Twin
-      </button>
-      <button class="drawer-tab" data-tab="risks" onclick="switchDrawerTab('risks')">
-        <span>⚠️</span> Risks & SOPs
-      </button>
-      <button class="drawer-tab" data-tab="manuals" onclick="switchDrawerTab('manuals')">
-        <span>📖</span> Manuals TOC <span class="drawer-tab-badge" id="manuals-tab-count">83</span>
-      </button>
-      <button class="drawer-tab" data-tab="revisions" onclick="switchDrawerTab('revisions')">
-        <span>⏳</span> Revisions & Diff
-      </button>
-      <button class="drawer-tab" data-tab="conflicts" onclick="switchDrawerTab('conflicts')">
-        <span>⚖️</span> Conflicts
-      </button>
-      <button class="drawer-tab" data-tab="paths" onclick="switchDrawerTab('paths')">
-        <span>🛤️</span> Path Finder
-      </button>
-      <button class="drawer-tab" data-tab="inspection" onclick="switchDrawerTab('inspection')">
-        <span>📋</span> Field Inspection
-      </button>
-      <button class="drawer-tab" data-tab="procurement" onclick="switchDrawerTab('procurement')">
-        <span>📦</span> Spares & BOM
-      </button>
-      <button class="drawer-tab" data-tab="qa" id="drawer-tab-qa" onclick="switchDrawerTab('qa')">
-        <span>❓</span> Ask Q&A
-      </button>
-      <button class="drawer-tab" data-tab="learning" id="drawer-tab-learning" onclick="switchDrawerTab('learning')">
-        <span>🎓</span> Academy
-      </button>
-      <button class="drawer-tab" data-tab="semantic" id="drawer-tab-semantic" onclick="switchDrawerTab('semantic')">
-        <span>🧠</span> Semantic
-      </button>
-    </div>
-
-    <div class="drawer-content">
-      <!-- 0. TAB: CANONICAL 9-SECTION DRAWING OVERVIEW -->
-      <div class="tab-pane active" id="tab-pane-overview">
-        <div id="drawing-overview-container" style="display: flex; flex-direction: column; gap: 12px; padding: 4px;">
-          <!-- Populated dynamically by renderDrawingOverview(data, dossier) -->
-        </div>
-      </div>
-
-      <!-- 1. TAB: GENERAL NOTES & DIRECTIVES -->
-      <div class="tab-pane" id="tab-pane-notes">
-        <div class="notes-search-box">
-          <input type="text" id="notes-filter-input" class="notes-search-input" placeholder="Search verbatim notes (e.g. dowel, epoxy, 10%, versine)..." oninput="filterCurrentNotes(this.value)">
-        </div>
-        <div class="notes-list" id="drawer-notes-list">
-          <!-- Populated dynamically -->
-        </div>
-      </div>
-
-      <!-- 2. TAB: ENGINEERING TABLES & SCHEDULES -->
-      <div class="tab-pane" id="tab-pane-tables">
-        <div class="table-subnav" id="drawer-table-subnav">
-          <!-- Dynamically populated table buttons -->
-        </div>
-        <div class="data-table-wrap" id="drawer-table-content">
-          <!-- Active Table Rendered Here -->
-        </div>
-      </div>
-
-      <!-- 3. TAB: BLUEPRINT SOURCE CROP VIEWER -->
-      <div class="tab-pane" id="tab-pane-blueprint">
-        <div class="blueprint-controls">
-          <label style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">Source Drawing Region:</label>
-          <select class="blueprint-crop-select" id="blueprint-crop-select" onchange="changeActiveBlueprintCrop(this.value)">
-            <!-- Options populated dynamically -->
-          </select>
-        </div>
-        <div class="blueprint-preview-box" onclick="openFullscreenActiveBlueprint()">
-          <img id="blueprint-crop-img" class="blueprint-img" src="" alt="RDSO Blueprint Crop">
-          <div class="blueprint-overlay-hint">🔍 Click to Expand High-Res</div>
-        </div>
-      </div>
-
-      <!-- 4. TAB: EMBEDDED 3D PHYSICAL DIGITAL TWIN -->
-      <div class="tab-pane" id="tab-pane-twin">
-        <div class="digital-twin-box" id="twin-box">
-          <div class="twin-badge">
-            <span>📦</span> <span id="twin-badge-text">PHYSICAL 3D ASSET TWIN</span>
-          </div>
-          <div class="twin-canvas-wrap">
-            <canvas id="component-twin-canvas"></canvas>
-          </div>
-          <div class="twin-controls-hint">🖱️ Left Drag: Rotate | Right Drag: Pan | Scroll: Zoom</div>
-        </div>
-
-        <div>
-          <div class="card-title">Engineering Parameters & Specifications</div>
-          <table class="specs-table" id="drawer-specs-table"></table>
-        </div>
-
-        <div>
-          <div class="card-title">Typed Connected Hops</div>
-          <div class="lineage-tags-list" id="drawer-lineage-list"></div>
-        </div>
-      </div>
-
-      <!-- 5. TAB: RISKS & FIELD SOPS -->
-      <div class="tab-pane" id="tab-pane-risks">
-        <div class="failure-risk-box" id="drawer-risk-box">
-          <div class="failure-risk-header">
-            <span>⚠️</span> <span id="drawer-risk-title">High Derailment Risk Mode</span>
-          </div>
-          <div class="failure-risk-desc" id="drawer-risk-desc">
-            Select an entity to review tethered failure mechanisms and preventative maintenance actions.
-          </div>
-        </div>
-        <div>
-          <div class="card-title">Governing Standard Specifications</div>
-          <div style="font-size: 11.5px; color: var(--text-muted); line-height: 1.5;" id="drawer-sop-text">
-            Mandatory compliance with IRS: T 10 (Curved Switches) and IRS: T 29 (Cast Manganese Steel Crossings).
-          </div>
-        </div>
-      </div>
-
-      <!-- 6. TAB: MANUALS CHAPTER TREE & TOC NAVIGATOR -->
-      <div class="tab-pane" id="tab-pane-manuals">
-        <div class="notes-search-box">
-          <input type="text" id="manuals-tree-filter" class="notes-search-input" placeholder="Search 83 chapters & 2,731 clauses (e.g. 429, USFD, weld, tamping)..." oninput="filterManualsTree(this.value)">
-        </div>
-        <div id="manuals-tree-container" class="manuals-tree-container"></div>
-      </div>
-
-      <!-- 7. TAB: REVISION INTELLIGENCE & DIFF ENGINE -->
-      <div class="tab-pane" id="tab-pane-revisions">
-        <div id="revisions-container" style="display: flex; flex-direction: column; gap: 10px; padding: 4px;">
-          <!-- Populated dynamically by renderRevisionDiffView() -->
-        </div>
-      </div>
-
-      <!-- 8. TAB: STANDARDS CONFLICT DASHBOARD -->
-      <div class="tab-pane" id="tab-pane-conflicts">
-        <div id="conflicts-container" style="display: flex; flex-direction: column; gap: 10px; padding: 4px;">
-          <!-- Populated dynamically by renderConflictDashboard() -->
-        </div>
-      </div>
-
-      <!-- 9. TAB: MULTI-HOP ENGINEERING PATH FINDER -->
-      <div class="tab-pane" id="tab-pane-paths">
-        <div id="pathfinder-container" style="display: flex; flex-direction: column; gap: 10px; padding: 4px;">
-          <!-- Populated dynamically by renderPathFinderUI() -->
-        </div>
-      </div>
-
-      <!-- 10. TAB: FIELD INSPECTION CHECKLIST WORKFLOW (§18) -->
-      <div class="tab-pane" id="tab-pane-inspection">
-        <div id="inspection-container" style="display: flex; flex-direction: column; gap: 10px; padding: 4px;">
-          <!-- Populated dynamically by renderFieldInspectionWorkflow() -->
-        </div>
-      </div>
-
-      <!-- 11. TAB: TURNOUT SPARES & BOM CALCULATOR (§19) -->
-      <div class="tab-pane" id="tab-pane-procurement">
-        <div id="procurement-container" style="display: flex; flex-direction: column; gap: 10px; padding: 4px;">
-          <!-- Populated dynamically by renderProcurementCalculator() -->
-        </div>
-      </div>
-
-      <!-- 12. TAB: QUESTION INTERFACE & NATURAL LANGUAGE RETRIEVAL (§15, §16) -->
-      <div class="tab-pane" id="tab-pane-qa">
-        <div id="qa-container" class="qa-container">
-          <!-- Populated dynamically by renderQuestionInterface() -->
-        </div>
-      </div>
-
-      <!-- 13. TAB: LEARNING SYSTEM & TRAINING ACADEMY (§17, §21, §36) -->
-      <div class="tab-pane" id="tab-pane-learning">
-        <div id="learning-container" class="learning-container">
-          <!-- Populated dynamically by renderLearningModule() -->
-        </div>
-      </div>
-
-      <!-- 14. TAB: SEMANTIC INTELLIGENCE & CONCEPT RETRIEVAL (§24, §36) -->
-      <div class="tab-pane" id="tab-pane-semantic">
-        <div id="semantic-container" class="semantic-container">
-          <!-- Populated dynamically by renderSemanticModule() -->
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Bottom Telemetry Bar -->
-  <div id="telemetry-bar">
-    <div class="telemetry-item">
-      <div class="status-dot"></div>
-      <span>ONTOLOGY CORE: ONLINE</span>
-    </div>
-    <div class="telemetry-item">
-      <span>ENTITIES: <strong id="telem-nodes" style="color: #fff;">0</strong></span>
-      <span style="color: var(--border-subtle);">|</span>
-      <span>TYPED EDGES: <strong id="telem-edges" style="color: #fff;">0</strong></span>
-      <span style="color: var(--border-subtle);">|</span>
-      <span>FACTS: <strong id="telem-facts" style="color: var(--accent-green);">0</strong></span>
-    </div>
-    <div class="telemetry-item">
-      <span>SIM: <span id="telem-sim" style="color: var(--accent-green);">LIVE 60 FPS</span></span>
-    </div>
-  </div>
-
-  <!-- Fullscreen Blueprint Modal -->
-  <div id="blueprint-modal">
-    <div class="blueprint-modal-header">
-      <h3 style="font-size: 14px; color: #fff;" id="blueprint-modal-title">RDSO High-Resolution Blueprint Source Crop</h3>
-      <button class="close-drawer-btn" onclick="closeFullscreenBlueprint()">✕</button>
-    </div>
-    <div class="blueprint-modal-body">
-      <img id="blueprint-modal-img" class="blueprint-modal-img" src="" alt="RDSO Blueprint Full Resolution">
-    </div>
-  </div>
-
-  <!-- Detailed Evidence Provenance Modal (Blueprint Section 6) -->
-  <div id="evidence-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 1050; align-items: center; justify-content: center;">
-    <div style="background: var(--bg-panel); border: 1px solid var(--border-glow); border-radius: 8px; padding: 20px; width: 560px; max-width: 90vw; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 10px 30px rgba(0,240,255,0.2);">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 16px;">🔍</span>
-          <h3 style="font-size: 13.5px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;" id="evidence-modal-title">Source Evidence & Provenance</h3>
-        </div>
-        <button class="close-drawer-btn" onclick="closeEvidenceModal()">✕</button>
-      </div>
-      <div id="evidence-modal-content" style="display: flex; flex-direction: column; gap: 10px; font-size: 11px; line-height: 1.45;">
-        <!-- Dynamically populated -->
-      </div>
-    </div>
-  </div>
-
-  <!-- Why Connected? Modal (Blueprint Section 13.3) -->
-  <div id="why-connected-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.85); z-index: 1055; align-items: center; justify-content: center;">
-    <div style="background: var(--bg-panel); border: 1px solid var(--border-glow); border-radius: 8px; padding: 20px; width: 580px; max-width: 92vw; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 10px 30px rgba(0,240,255,0.25);">
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 8px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 16px;">🔗</span>
-          <h3 style="font-size: 13.5px; color: #fff; text-transform: uppercase; letter-spacing: 0.5px;" id="why-connected-modal-title">Why Are These Connected?</h3>
-        </div>
-        <button class="close-drawer-btn" onclick="closeWhyConnectedModal()">✕</button>
-      </div>
-      <div id="why-connected-modal-content" style="display: flex; flex-direction: column; gap: 10px; font-size: 11px; line-height: 1.45;">
-        <!-- Dynamically populated -->
-      </div>
-    </div>
-  </div>
-
-  <!-- Ingest Node Modal -->
-  <div id="ingest-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center;">
-    <div style="background: var(--bg-panel); border: 1px solid var(--border-glow); border-radius: 8px; padding: 20px; width: 440px; display: flex; flex-direction: column; gap: 12px;">
-      <h3 style="font-size: 14px; color: #fff;">➕ Ingest New Knowledge Entity</h3>
-      <div>
-        <label style="font-size: 10px; color: var(--text-muted);">Entity Label</label>
-        <input type="text" id="in-node-title" style="width: 100%; height: 32px; background: #0c1424; border: 1px solid var(--border-subtle); color: #fff; padding: 0 8px; border-radius: 4px;">
-      </div>
-      <div>
-        <label style="font-size: 10px; color: var(--text-muted);">Ontology Domain</label>
-        <select id="in-node-domain" style="width: 100%; height: 32px; background: #0c1424; border: 1px solid var(--border-subtle); color: #fff; padding: 0 8px; border-radius: 4px;">
-          <option value="component">COMPONENT</option>
-          <option value="specification">SPECIFICATION</option>
-          <option value="defect">DEFECT</option>
-          <option value="sop">SOP</option>
-        </select>
-      </div>
-      <div>
-        <label style="font-size: 10px; color: var(--text-muted);">Parent Entity</label>
-        <select id="in-node-parent" style="width: 100%; height: 32px; background: #0c1424; border: 1px solid var(--border-subtle); color: #fff; padding: 0 8px; border-radius: 4px;"></select>
-      </div>
-      <div>
-        <label style="font-size: 10px; color: var(--text-muted);">Description</label>
-        <textarea id="in-node-desc" rows="3" style="width: 100%; background: #0c1424; border: 1px solid var(--border-subtle); color: #fff; padding: 8px; border-radius: 4px;"></textarea>
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 8px;">
-        <button class="btn" onclick="closeIngestModal()">Cancel</button>
-        <button class="btn btn-primary" onclick="submitIngestNode()">Submit Entity</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- APPLICATION LOGIC & CANONICAL KNOWLEDGE GRAPH -->
-  <script>
+// Application logic for expert.html (moved out of the page 2026-10-05). Loaded as a classic script, so its
+// top-level names stay global exactly as when it was inline.
     // Injected Canonical Knowledge Core, Extracted Dossiers, and Railway Manuals
     // =========================================================================
     // RAILWAY ENGINEERING KNOWLEDGE OPERATING SYSTEM (REKG) - CORE ENGINE
     // Decoupled Data Loader, Level-of-Detail (LOD) & 60 FPS High Performance Graph
     // =========================================================================
-    const RDSO_EXTRACTED_KNOWLEDGE = window.RDSO_EXTRACTED_KNOWLEDGE || __EXTRACTED_KNOWLEDGE_JSON__ || {};
-    const CANONICAL_DATA = window.RDSO_CANONICAL_KG || __CANONICAL_KG_JSON__ || { entities: [], edges: [], facts: [] };
-    const RDSO_MANUALS_KNOWLEDGE = window.RDSO_MANUALS_KNOWLEDGE || __MANUALS_KNOWLEDGE_JSON__ || {};
-    window.RDSO_MANUALS_KNOWLEDGE = RDSO_MANUALS_KNOWLEDGE;
-    const RDSO_MANUALS_TREE = window.RDSO_COMPACTED_TREE || __MANUALS_TREE_JSON__ || [];
+    const RDSO_EXTRACTED_KNOWLEDGE = window.RDSO_EXTRACTED_KNOWLEDGE || {} || {};
+    const CANONICAL_DATA = window.RDSO_CANONICAL_KG || {} || { entities: [], edges: [], facts: [] };
+    const RDSO_MANUALS_TREE = window.RDSO_COMPACTED_TREE || [] || [];
     window.RDSO_MANUALS_TREE = RDSO_MANUALS_TREE;
 
     const rawKGNodes = CANONICAL_DATA.entities || [];
@@ -3333,37 +138,278 @@ html_template = r'''<!DOCTYPE html>
     const expandedNodeIds = new Set();
     const nodeHierarchyMap = new Map(); // id -> { id, universe, parentId, childrenIds: [], depth: 1, isRoot: bool }
 
+    // Manual readiness is a QA signal only. It never participates in hierarchy construction.
+    let manualReadinessAudit = null;
+    let manualReadinessLoadPromise = null;
+
+    function getManualReadinessEntry(data) {
+      if (!data || getNodeUniverse(data) !== 'manuals') return null;
+      const direct = data.readiness_status || data.readinessStatus || data.manual_readiness;
+      if (direct && typeof direct === 'object') return direct;
+      if (manualReadinessAudit?.chapters) {
+        const byId = manualReadinessAudit.chapters.find(c => c.chapter_id === data.id || c.id === data.id);
+        if (byId) return byId;
+      }
+      return null;
+    }
+
+    async function loadManualReadinessAudit() {
+      if (manualReadinessLoadPromise) return manualReadinessLoadPromise;
+      manualReadinessLoadPromise = fetch('./data/knowledge-graph/reports/manual_hierarchy_audit.json', { cache: 'no-store' })
+        .then(response => response.ok ? response.json() : null)
+        .then(payload => {
+          manualReadinessAudit = payload && payload.schema === 'manual_hierarchy_audit_v1' ? payload : null;
+          return manualReadinessAudit;
+        })
+        .catch(() => null);
+      return manualReadinessLoadPromise;
+    }
+
+    function renderManualReadiness(data) {
+      let container = document.getElementById('manual-readiness-card');
+      const overview = document.getElementById('drawing-overview-container');
+      if (!container && overview) {
+        container = document.createElement('div');
+        container.id = 'manual-readiness-card';
+        overview.insertBefore(container, overview.firstChild);
+      }
+      if (!container) return;
+      if (getNodeUniverse(data) !== 'manuals' || !['CHAPTER', 'DOCUMENT'].includes(String(data.type || '').toUpperCase())) {
+        container.style.display = 'none';
+        container.innerHTML = '';
+        return;
+      }
+
+      const entry = getManualReadinessEntry(data);
+      const status = entry?.readiness_status || entry?.status || 'UNAVAILABLE';
+      const reasons = Array.isArray(entry?.readiness_reasons) ? entry.readiness_reasons : [];
+      const ownership = entry?.ownership_status || 'UNAVAILABLE';
+      const coverage = entry?.coverage_class || 'UNAVAILABLE';
+      const missing = Array.isArray(entry?.missing_pages) ? entry.missing_pages.length : null;
+      const empty = Array.isArray(entry?.content_empty_pages) ? entry.content_empty_pages.length : null;
+      const issuePages = Array.isArray(entry?.ownership_issue_pages) ? entry.ownership_issue_pages.length : null;
+      const tone = status === 'HEALTHY' ? 'var(--accent-green)' : status === 'BLOCKED' ? 'var(--accent-red)' : status === 'ATTENTION' ? 'var(--accent-yellow)' : 'var(--text-muted)';
+      const reasonText = reasons.length ? reasons.join(', ') : (status === 'UNAVAILABLE' ? 'Audit report not available in this build' : 'No additional readiness reasons');
+
+      container.style.display = 'block';
+      container.innerHTML =
+        '<div class="card-title">Manual Structural Readiness</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;">' +
+        '<div class="drawing-meta-item"><div class="drawing-meta-label">Readiness</div><div class="drawing-meta-value" style="color:' + tone + ';">' + status + '</div></div>' +
+        '<div class="drawing-meta-item"><div class="drawing-meta-label">Ownership</div><div class="drawing-meta-value">' + ownership + '</div></div>' +
+        '<div class="drawing-meta-item"><div class="drawing-meta-label">Coverage</div><div class="drawing-meta-value">' + coverage + '</div></div>' +
+        '<div class="drawing-meta-item"><div class="drawing-meta-label">Page Gaps</div><div class="drawing-meta-value">' + (missing === null ? '—' : missing + ' missing / ' + (empty ?? 0) + ' empty') + '</div></div>' +
+        '</div>' +
+        '<div style="font-size:10px;color:var(--text-muted);line-height:1.45;">Reasons: ' + reasonText + (issuePages !== null ? ' · Ownership issue pages: ' + issuePages : '') + '</div>';
+    }
+    window.loadManualReadinessAudit = loadManualReadinessAudit;
+
     function getNodeUniverse(data) {
       if (!data) return 'drawings';
-      const id = data.id || '';
-      const type = data.type || '';
-      const domain = data.domain || '';
-      if (type === 'DOCUMENT' || type === 'CHAPTER' || type === 'CLAUSE' || 
-          type === 'TOLERANCE' || type === 'EQUIPMENT' ||
-          domain === 'manuals' || domain === 'manual' || domain === 'track_standards' || 
-          domain === 'tolerance' || domain === 'equipment' ||
-          id.startsWith('doc_') || id.startsWith('DOC:') || 
-          id.startsWith('ch_') || id.startsWith('CHAPTER:') || 
-          id.startsWith('cl_') || id.startsWith('CLAUSE:') || 
-          id.startsWith('tol_') || id.startsWith('TOL:') || 
-          id.startsWith('equip_') || id.startsWith('REQ:') || 
-          id.startsWith('PROC:') || id.startsWith('FAIL:')) {
+
+      // Explicit universe is authoritative. Never infer a universe from a generic
+      // semantic type when canonical data already declares its ownership.
+      if (data.universe === 'manuals' || data.universe === 'drawings') {
+        return data.universe;
+      }
+
+      const id = String(data.id || '');
+      const type = String(data.type || '').toUpperCase();
+      const domain = String(data.domain || '').toLowerCase();
+
+      // Legacy/manual-only identifiers are the fallback for older datasets.
+      // Keep this deliberately narrow: generic EQUIPMENT/TOLERANCE/etc. nodes can
+      // exist in the Drawing universe and must not leak into Manuals.
+      if (
+        type === 'DOCUMENT' ||
+        type === 'CHAPTER' ||
+        type === 'CLAUSE' ||
+        domain === 'manual' ||
+        domain === 'manuals' ||
+        id.startsWith('DOC:') ||
+        id.startsWith('CHAPTER:') ||
+        id.startsWith('CLAUSE:') ||
+        id.startsWith('doc_') ||
+        id.startsWith('ch_') ||
+        id.startsWith('cl_')
+      ) {
         return 'manuals';
       }
+
       return 'drawings';
     }
 
     function buildHierarchyStructure() {
+      // Manuals are structurally authoritative: Manual -> Chapter -> content.
+      const rawNodes = CANONICAL_DATA.entities || [];
+      const rawEdges = CANONICAL_DATA.edges || [];
+      const manualStructure = window.RDSO_MANUAL_STRUCTURE || { manuals: [] };
+      const manualChapterById = new Map();
+
+      // Remove legacy manual roots so the authoritative registry is the only manual root set.
+      const authoritativeManualIds = new Set(manualStructure.manuals.map(m => m.id));
+      const legacyManualIds = new Set([
+        'doc_irpwm_2024', 'doc_usfd_2026', 'doc_atweld_2022',
+        'doc_fbw_2022', 'doc_tmm_2020', 'doc_stmm_2024'
+      ]);
+      for (let i = rawNodes.length - 1; i >= 0; i--) {
+        if (legacyManualIds.has(rawNodes[i].id) && !authoritativeManualIds.has(rawNodes[i].id)) rawNodes.splice(i, 1);
+      }
+      for (let i = rawEdges.length - 1; i >= 0; i--) {
+        if (legacyManualIds.has(rawEdges[i].from) || legacyManualIds.has(rawEdges[i].to)) rawEdges.splice(i, 1);
+      }
+
+      manualStructure.manuals.forEach(m => {
+        let manualNode = rawNodes.find(n => n.id === m.id);
+        if (!manualNode) {
+          manualNode = {
+            id: m.id, label: m.title, type: 'DOCUMENT', domain: 'manual', universe: 'manuals',
+            color: '#ff007f', desc: m.title, specs: { ChapterCount: m.chapters.length, Structure: 'AUTHORITATIVE' },
+            x: 0, y: 24, z: 10, alt: 13
+          };
+          rawNodes.push(manualNode);
+        } else {
+          manualNode.universe = 'manuals';
+          manualNode.domain = 'manual';
+          manualNode.specs = { ...(manualNode.specs || {}), ChapterCount: m.chapters.length, Structure: 'AUTHORITATIVE' };
+        }
+        m.chapters.forEach((ch, idx) => {
+          const chapterId = 'CHAPTER:' + m.alias + ':CH_' + String(idx + 1).padStart(2, '0');
+          manualChapterById.set(m.alias + '|' + ch[0], chapterId);
+          if (!rawNodes.some(n => n.id === chapterId)) {
+            rawNodes.push({
+              id: chapterId, label: 'Chapter ' + (idx + 1) + ' — ' + ch[0], type: 'CHAPTER', domain: 'manual', universe: 'manuals',
+              parent_id: m.id, order: idx + 1, color: '#ff4fa3',
+              desc: 'Pages ' + ch[1] + '–' + ch[2],
+              specs: { ChapterNumber: idx + 1, PageRange: ch[1] + '–' + ch[2], Manual: m.alias },
+              x: 0, y: 18 - idx * 0.6, z: 0, alt: 13
+            });
+          }
+          const edgeKey = m.id + '|HAS_CHAPTER|' + chapterId;
+          if (!rawEdges.some(e => e.from + '|' + e.rel + '|' + e.to === edgeKey)) {
+            rawEdges.push({ from: m.id, to: chapterId, rel: 'HAS_CHAPTER', rationale: 'Authoritative manual chapter registry' });
+          }
+        });
+      });
+
+      // Prefer deterministic source-heading hierarchy materialized in the canonical KG.
+      // Page-level heading extraction is only a fallback when no authoritative heading
+      // nodes exist for the chapter. This prevents the UI from inventing flat/random
+      // SECTION nodes from page snippets.
+      const authoritativeHeadingByChapter = new Map();
+      rawNodes.forEach(n => {
+        if (n.universe !== 'manuals' || !['SECTION', 'SUBSECTION'].includes(n.type)) return;
+        if (n.heading_kind || n.heading_depth || n.source_heading_reference || n.specs?.['Structure Status'] === 'AUTHORITATIVE_SOURCE_HEADING') {
+          if (n.parent_chapter_id) {
+            if (!authoritativeHeadingByChapter.has(n.parent_chapter_id)) authoritativeHeadingByChapter.set(n.parent_chapter_id, []);
+            authoritativeHeadingByChapter.get(n.parent_chapter_id).push(n);
+          }
+        }
+      });
+
+      // Attach source-derived chapter content blocks (tables, figures, page evidence).
+      // Numbered headings are used only as a deterministic fallback.
+      const manualContentIndex = window.RDSO_MANUAL_CONTENT_INDEX || { manuals: {} };
+      const manualAliasById = new Map(manualStructure.manuals.map(m => [m.id, m.alias]));
+      const chapterContentOrder = { SECTION: 10, CLAUSE: 20, TABLE: 30, FIGURE: 40, EVIDENCE: 50 };
+
+      Object.entries(manualContentIndex.manuals || {}).forEach(([manualId, contentManual]) => {
+        const alias = manualAliasById.get(manualId);
+        if (!alias) return;
+        Object.values(contentManual.pages || {}).forEach(page => {
+          const chapterId = 'CHAPTER:' + alias + ':' + page.chapter;
+          if (!rawNodes.some(n => n.id === chapterId)) return;
+
+          const addContentNode = (type, ordinal, label, extra = {}) => {
+            const safeOrdinal = String(ordinal + 1).padStart(2, '0');
+            const prefix = type === 'SECTION' ? 'SECTION' : type === 'TABLE' ? 'TABLE' : type === 'FIGURE' ? 'FIGURE' : 'EVIDENCE';
+            const nodeId = prefix + ':' + alias + ':' + page.chapter + ':P' + page.page + ':' + safeOrdinal;
+            if (!rawNodes.some(n => n.id === nodeId)) {
+              rawNodes.push({
+                id: nodeId,
+                label,
+                type,
+                domain: 'manual',
+                universe: 'manuals',
+                parent_id: chapterId,
+                order: Number(page.page) * 100 + ordinal,
+                page: Number(page.page),
+                structure_status: extra.structure_status || 'SOURCE_EXTRACTED',
+                source_page: Number(page.page),
+                source_document_id: manualId,
+                color: type === 'SECTION' ? '#b388ff' : type === 'TABLE' ? '#ffd166' : type === 'FIGURE' ? '#4cc9f0' : '#8be28b',
+                desc: extra.desc || ('Source-derived ' + type.toLowerCase() + ' on page ' + page.page),
+                specs: { Chapter: page.chapter, Page: Number(page.page), Source: 'extracted_pages.jsonl' }
+              });
+            }
+            const edgeKey = chapterId + '|HAS_' + type + '|' + nodeId;
+            if (!rawEdges.some(e => e.from + '|' + e.rel + '|' + e.to === edgeKey)) {
+              rawEdges.push({ from: chapterId, to: nodeId, rel: 'HAS_' + type, rationale: 'Source-derived manual content mapped by authoritative chapter page range' });
+            }
+          };
+
+          const chapterAuthoritativeHeadings = authoritativeHeadingByChapter.get(chapterId) || [];
+          if (chapterAuthoritativeHeadings.length === 0) {
+            page.headings.forEach((heading, idx) => addContentNode('SECTION', idx, heading, { structure_status: 'EXTRACTED_HEADING_UNVERIFIED' }));
+          }
+          page.tables.forEach((table, idx) => addContentNode('TABLE', idx, table));
+          page.figures.forEach((figure, idx) => addContentNode('FIGURE', idx, figure));
+          if (page.headings.length || page.tables.length || page.figures.length) {
+            addContentNode('EVIDENCE', 0, 'Page ' + page.page + ' source evidence', { desc: 'Primary page-level evidence for extracted manual content.' });
+          }
+        });
+      });
+
+      // Attach canonical clauses to their authoritative chapter; never directly to the manual.
+      // The canonical clause id carries its chapter (CLAUSE:<alias>:CH_nn:PARA_x), which the
+      // extractor derives from the paragraph numbering, so no second data source is consulted.
+      const manualByAlias = new Map(manualStructure.manuals.map(m => [m.alias, m]));
+      const knownChapterIds = new Set(rawNodes.filter(n => n.type === 'CHAPTER').map(n => n.id));
+      const existingClauseEdges = new Set(rawEdges.filter(e => e.rel === 'HAS_CLAUSE').map(e => e.from + '|' + e.to));
+      rawNodes.filter(n => n.universe === 'manuals' && n.type === 'CLAUSE').forEach(n => {
+        const m = String(n.id).match(/^CLAUSE:([^:]+):(CH_\d+):/);
+        if (!m) return;
+        const chapterId = 'CHAPTER:' + m[1] + ':' + m[2];
+        if (!knownChapterIds.has(chapterId) || existingClauseEdges.has(chapterId + '|' + n.id)) return;
+        rawEdges.push({
+          from: chapterId, to: n.id, rel: 'HAS_CLAUSE',
+          rationale: 'Clause owned by the chapter named in its canonical id'
+        });
+      });
+
+      // Materialize the authoritative source-heading parent chain in the UI.
+      // Chapter ownership is always retained; nested headings follow explicit
+      // parent_heading_ref metadata rather than semantic similarity.
+      authoritativeHeadingByChapter.forEach((nodes, chapterId) => {
+        const byRef = new Map();
+        nodes.forEach(n => {
+          const ref = n.source_heading_reference || n.specs?.Reference;
+          if (ref) byRef.set(String(ref), n);
+        });
+        nodes.forEach(n => {
+          const ref = n.source_heading_reference || n.specs?.Reference;
+          if (!ref) return;
+          const parentRef = n.parent_heading_ref || n.provenance?.parent_heading_ref;
+          const parent = parentRef ? byRef.get(String(parentRef)) : null;
+          const parentId = parent ? parent.id : chapterId;
+          if (!rawEdges.some(e => e.from === parentId && e.to === n.id && e.rel === 'HAS_SECTION')) {
+            rawEdges.push({
+              from: parentId,
+              to: n.id,
+              rel: 'HAS_SECTION',
+              rationale: 'Authoritative source-heading hierarchy'
+            });
+          }
+        });
+      });
+
       const HIERARCHY_RELS = new Set([
-        'HAS_SECTION', 'HAS_CLAUSE', 'SPECIFIES', 'REQUIRES',
+        'HAS_CHAPTER', 'HAS_SECTION', 'HAS_CLAUSE', 'HAS_TABLE', 'HAS_FIGURE', 'HAS_EVIDENCE', 'SPECIFIES', 'REQUIRES',
         'HAS_REVISION', 'SUPERSEDES', 'CONTAINS', 'HAS_NOTE',
         'CONTAINS_SLEEPER', 'HAS_BOM_ITEM', 'HAS_SPARE',
         'CAN_CAUSE', 'MITIGATED_BY', 'INSPECTED_BY', 'GOVERNS',
         'APPLIES_TO', 'FASTENED_BY', 'CONNECTED_TO', 'INTERFACES_WITH'
       ]);
-
-      const rawNodes = CANONICAL_DATA.entities || [];
-      const rawEdges = CANONICAL_DATA.edges || [];
 
       // Initialize hierarchy nodes
       rawNodes.forEach(n => {
@@ -3374,23 +420,44 @@ html_template = r'''<!DOCTYPE html>
           parentId: null,
           childrenIds: [],
           depth: 1,
+          order: Number.isFinite(Number(n.order)) ? Number(n.order) : 999999,
           isRoot: false
         });
       });
 
-      // Child -> parent links
+      // Child -> parent links. Manual hierarchy is intentionally structural:
+      // Manual -> Chapter -> Section/Table/Figure/Evidence/Clause. Semantic graph
+      // predicates (SPECIFIES, REQUIRES, GOVERNS, etc.) must never become visual
+      // parent/child expansion paths inside the Manuals universe.
+      const MANUAL_STRUCTURAL_RELS = new Set([
+        'HAS_CHAPTER', 'HAS_SECTION', 'HAS_CLAUSE', 'HAS_TABLE', 'HAS_FIGURE', 'HAS_EVIDENCE'
+      ]);
       rawEdges.forEach(e => {
         if (!HIERARCHY_RELS.has(e.rel)) return;
         const parentEntry = nodeHierarchyMap.get(e.from);
         const childEntry = nodeHierarchyMap.get(e.to);
         if (!parentEntry || !childEntry) return;
-
+        if (parentEntry.universe === 'manuals' && !MANUAL_STRUCTURAL_RELS.has(e.rel)) return;
+        if (childEntry.universe !== parentEntry.universe) return;
         if (!childEntry.parentId && childEntry.id !== parentEntry.id) {
           childEntry.parentId = parentEntry.id;
-          if (!parentEntry.childrenIds.includes(childEntry.id)) {
-            parentEntry.childrenIds.push(childEntry.id);
-          }
+          if (!parentEntry.childrenIds.includes(childEntry.id)) parentEntry.childrenIds.push(childEntry.id);
         }
+      });
+
+      // Deterministic manual child ordering: page/source order first, then semantic content type.
+      // (An id map: a linear rawNodes.find inside the comparator made start-up quadratic on the 17k-node graph.)
+      const rawNodeById = new Map(rawNodes.map(n => [n.id, n]));
+      nodeHierarchyMap.forEach(entry => {
+        if (entry.universe !== 'manuals') return;
+        entry.childrenIds.sort((a, b) => {
+          const na = rawNodeById.get(a) || {};
+          const nb = rawNodeById.get(b) || {};
+          const oa = Number.isFinite(Number(na.order)) ? Number(na.order) : 999999;
+          const ob = Number.isFinite(Number(nb.order)) ? Number(nb.order) : 999999;
+          if (oa !== ob) return oa - ob;
+          return (chapterContentOrder[na.type] || 99) - (chapterContentOrder[nb.type] || 99);
+        });
       });
 
       // Root designation: nodes with no parent or cross-universe parent
@@ -3424,13 +491,9 @@ html_template = r'''<!DOCTYPE html>
         }
       });
 
-      // Initial expansion: pre-expand drawings roots and level 2 components/revisions
+      // Drawings preserve existing expansion. Manuals remain collapsed until the user opens a manual.
       nodeHierarchyMap.forEach(entry => {
-        if (entry.universe === 'drawings') {
-          if (entry.isRoot || entry.depth <= 2) {
-            expandedNodeIds.add(entry.id);
-          }
-        }
+        if (entry.universe === 'drawings' && (entry.isRoot || entry.depth <= 2)) expandedNodeIds.add(entry.id);
       });
     }
 
@@ -3507,8 +570,14 @@ html_template = r'''<!DOCTYPE html>
           if (d6155) inspectNode(d6155);
         }
       } else if (universe === 'manuals') {
-        kgControls.target.set(0, 14, 0);
-        kgCamera.position.set(0, 22, 45);
+        kgControls.target.set(0, 16, 0);
+        kgCamera.position.set(0, 22, 65);
+        // Manuals are chapter-first: collapse manual descendants on universe entry.
+        Array.from(expandedNodeIds).forEach(id => {
+          const h = nodeHierarchyMap.get(id);
+          if (h && h.universe === 'manuals') expandedNodeIds.delete(id);
+        });
+
         const docNode = kgPhysicsNodes.find(n => n.data.id === 'DOC:IRPWM:2024:ACS14' || n.data.id === 'doc_irpwm_2024');
         if (docNode) inspectNode(docNode);
         switchDrawerTab('manuals');
@@ -3522,6 +591,51 @@ html_template = r'''<!DOCTYPE html>
       updateExpansionBillboards();
     }
     window.switchKnowledgeUniverse = switchKnowledgeUniverse;
+
+    function layoutManualChildren(manualId) {
+      const parent = nodeHierarchyMap.get(manualId);
+      if (!parent || parent.universe !== 'manuals' || parent.childrenIds.length === 0) return;
+      const children = parent.childrenIds
+        .map(id => kgPhysicsNodesMap.get(id))
+        .filter(Boolean)
+        .sort((a, b) => (nodeHierarchyMap.get(a.data.id)?.order || 9999) - (nodeHierarchyMap.get(b.data.id)?.order || 9999));
+
+      // Ordered two-column TOC layout: chapter number maps directly to position.
+      const columnGap = 15;
+      const rowGap = 3.0;
+      const rows = Math.ceil(children.length / 2);
+      const startY = 18 + ((rows - 1) * rowGap) / 2;
+      children.forEach((n, idx) => {
+        const row = Math.floor(idx / 2);
+        const col = idx % 2;
+        n.targetX = col === 0 ? -columnGap : columnGap;
+        n.targetY = startY - row * rowGap;
+        n.targetZ = 0;
+        n.targetVX = 0;
+        n.targetVY = 0;
+        n.targetVZ = 0;
+      });
+      isPhysicsSleeping = true;
+      isTransitioningLayout = true;
+    }
+
+    function layoutManualChapterChildren(chapterId) {
+      const parent = nodeHierarchyMap.get(chapterId);
+      if (!parent || parent.universe !== 'manuals' || parent.childrenIds.length === 0) return;
+      const children = parent.childrenIds.map(id => kgPhysicsNodesMap.get(id)).filter(Boolean);
+      const rowGap = 2.2;
+      const startY = -2 - ((children.length - 1) * rowGap) / 2;
+      children.forEach((n, idx) => {
+        n.targetX = 0;
+        n.targetY = startY - idx * rowGap;
+        n.targetZ = 5;
+        n.targetVX = 0;
+        n.targetVY = 0;
+        n.targetVZ = 0;
+      });
+      isPhysicsSleeping = true;
+      isTransitioningLayout = true;
+    }
 
     function toggleNodeExpansion(nodeId) {
       const entry = nodeHierarchyMap.get(nodeId);
@@ -3551,9 +665,14 @@ html_template = r'''<!DOCTYPE html>
       }
 
       updateGraphVisibility();
+      if (entry.universe === 'manuals' && entry.childrenIds.length > 0) {
+        if (entry.id.startsWith('DOC:')) layoutManualChildren(nodeId);
+        else if (entry.id.startsWith('CHAPTER:')) layoutManualChapterChildren(nodeId);
+      }
       updateExpansionBillboards();
       if (currentSelectedNode) {
         renderDrawingOverview(currentSelectedNode.data, currentActiveDossier);
+        renderManualReadiness(currentSelectedNode.data);
       }
     }
     window.toggleNodeExpansion = toggleNodeExpansion;
@@ -3676,7 +795,8 @@ html_template = r'''<!DOCTYPE html>
     }
 
     function initKnowledgeGraphApp() {
-      const container = document.getElementById('kg-canvas-container');
+      try {
+        const container = document.getElementById('kg-canvas-container');
       const w = window.innerWidth;
       const h = window.innerHeight;
 
@@ -3764,7 +884,11 @@ html_template = r'''<!DOCTYPE html>
       setupRaycasting();
 
       // 8. Resize Listener
-      window.addEventListener('resize', onWindowResize);
+        window.addEventListener('resize', onWindowResize);
+      } catch (error) {
+        window.__REKG_BOOT_ERRORS.push(error && error.stack ? error.stack : String(error));
+        renderRuntimeDiagnostic();
+      }
     }
 
     // High-Contrast Glassmorphic Billboard Badge with Hierarchy Status
@@ -3929,9 +1053,9 @@ html_template = r'''<!DOCTYPE html>
       const hEntry = nodeHierarchyMap.get(data.id);
       const childCount = hEntry ? hEntry.childrenIds.length : 0;
       const isExp = expandedNodeIds.has(data.id);
-      const sprite = createBillboardSprite(data.label, data.color, data.domain, isPrimary, childCount, isExp);
-      nodeGroup.add(sprite);
 
+      // Billboard textures are expensive. Only materialize labels for nodes
+      // visible at startup; descendants receive labels when expanded.
       let initX = data.x !== undefined ? data.x : (Math.random() - 0.5) * 24;
       const initY = data.y !== undefined ? data.y : (Math.random() - 0.5) * 16;
       const initZ = data.z !== undefined ? data.z : (Math.random() - 0.5) * 20;
@@ -3942,6 +1066,11 @@ html_template = r'''<!DOCTYPE html>
 
       nodeGroup.position.set(initX, initY, initZ);
       nodeGroup.visible = isNodeHierarchyVisible(data.id) && (currentKnowledgeUniverse === 'combined' || currentKnowledgeUniverse === u);
+
+      const sprite = nodeGroup.visible
+        ? createBillboardSprite(data.label, data.color, data.domain, isPrimary, childCount, isExp)
+        : null;
+      if (sprite) nodeGroup.add(sprite);
       kgScene.add(nodeGroup);
 
       const nodeObj = {
@@ -3951,7 +1080,7 @@ html_template = r'''<!DOCTYPE html>
         mesh: coreMesh,
         sprite: sprite,
         isPrimary: isPrimary,
-        hasBadge: childCount > 0,
+        hasBadge: Boolean(sprite) && childCount > 0,
         x: initX,
         y: initY,
         z: initZ,
@@ -3968,7 +1097,22 @@ html_template = r'''<!DOCTYPE html>
       return nodeObj;
     }
 
+    let entityIndex = null, entityIndexLen = -1;
+    function entityById(id) {
+      // id map rebuilt whenever the entity list changes length; a linear find per edge cost seconds at start-up
+      const list = CANONICAL_DATA.entities;
+      if (!entityIndex || entityIndexLen !== list.length) { entityIndex = new Map(list.map(n => [n.id, n])); entityIndexLen = list.length; }
+      return entityIndex.get(id);
+    }
+
     function addEdgeToGraph(edgeData) {
+      // Manual and Drawing universes remain hard-isolated until the future,
+      // evidence-backed relationship layer is introduced.
+      const sourceData = entityById(edgeData.from);
+      const targetData = entityById(edgeData.to);
+      if (sourceData && targetData && getNodeUniverse(sourceData) !== getNodeUniverse(targetData)) {
+        return;
+      }
       const predColor = PREDICATE_COLORS[edgeData.rel] || 0x00f0ff;
       const lineMat = new THREE.LineBasicMaterial({ color: predColor, transparent: true, opacity: 0.45, linewidth: 1.5 });
       const lineGeo = new THREE.BufferGeometry();
@@ -4046,10 +1190,38 @@ html_template = r'''<!DOCTYPE html>
       const count = visibleNodes.length;
       if (count === 0) return;
 
-      // 1. Domain Cluster Centering Gravity & Galaxy Offsets
+      // 1. Domain Cluster Centering Gravity & Galaxy Offsets with Manual Constellation Ring
+      const MANUAL_RING_OFFSETS = {
+        'DOC:IRPWM:2024:ACS14': { x: -28, y: 22, z: -5 },
+        'DOC:USFD:2026:ACS4':    { x: -14, y: 32, z: -15 },
+        'DOC:AT_WELD:2022':      { x:  14, y: 32, z: -15 },
+        'DOC:FBW:2022:CS5':      { x:  28, y: 22, z: -5 },
+        'DOC:TMM:2020:ACS10':    { x:  18, y:  8, z:  10 },
+        'DOC:STMM:2024':         { x: -18, y:  8, z:  10 }
+      };
+
       for (let i = 0; i < count; i++) {
         const n = visibleNodes[i];
-        const center = DOMAIN_CENTERS[n.data.domain] || { x: 0, y: 0, z: 0 };
+        let center = DOMAIN_CENTERS[n.data.domain] || { x: 0, y: 0, z: 0 };
+        
+        // If manual universe node, position around its governing manual constellation hub
+        if (n.universe === 'manuals') {
+          let manualId = null;
+          if (MANUAL_RING_OFFSETS[n.data.id]) {
+            manualId = n.data.id;
+          } else if (n.data.source_document_id && MANUAL_RING_OFFSETS[n.data.source_document_id]) {
+            manualId = n.data.source_document_id;
+          } else {
+            const h = nodeHierarchyMap.get(n.data.id);
+            if (h && h.parentId && MANUAL_RING_OFFSETS[h.parentId]) {
+              manualId = h.parentId;
+            }
+          }
+          if (manualId && MANUAL_RING_OFFSETS[manualId]) {
+            center = MANUAL_RING_OFFSETS[manualId];
+          }
+        }
+
         let galaxyX = 0;
         if (currentKnowledgeUniverse === 'combined') {
           galaxyX = (n.universe === 'drawings') ? -32 : +32;
@@ -4388,53 +1560,54 @@ html_template = r'''<!DOCTYPE html>
         highlightProcurementEcosystem();
       } else if (mode === "manuals") {
         indicator.innerText = "CODES & MANUALS";
-        desc.innerText = "Regulatory governance & standard SOP lineage. Connects official codes (IRPWM, USFD, AT Weld, FBW, TMM, STMM) to drawings and field tolerances.";
+        desc.innerText = "Manual-only exploration. Shows the authoritative manual hierarchy first: Manual → Chapters → Clauses/Evidence. Drawing relationships are intentionally isolated.";
         highlightManualsEcosystem();
       }
     }
 
     function highlightManualsEcosystem() {
+      // Manual semantic mode must respect the Manuals universe boundary.
+      if (currentKnowledgeUniverse !== 'manuals') switchKnowledgeUniverse('manuals');
       const manualIds = new Set();
       kgPhysicsNodes.forEach(n => {
-        if (n.data.domain === "manual" || n.data.domain === "manuals" || n.data.domain === "tolerance" || n.data.domain === "equipment" ||
-            n.data.type === "DOCUMENT" || n.data.type === "CHAPTER" || n.data.type === "CLAUSE" ||
-            n.data.type === "SPECIFICATION" || n.data.type === "SOP" ||
-            n.data.type === "TOLERANCE" || n.data.type === "EQUIPMENT") {
-          manualIds.add(n.data.id);
-        }
+        if (n.universe === 'manuals') manualIds.add(n.data.id);
       });
-      // Switch drawer tab to manuals tree and open
       switchDrawerTab('manuals');
       toggleIntelligenceDrawer(true);
 
-      // Expand to 1-hop connected drawings, components, notes
-      kgPhysicsEdges.forEach(e => {
-        if (manualIds.has(e.from)) manualIds.add(e.to);
-        if (manualIds.has(e.to)) manualIds.add(e.from);
-      });
-
       kgPhysicsNodes.forEach(n => {
         const isHit = manualIds.has(n.data.id);
-        n.mesh.material.opacity = isHit ? 1.0 : 0.15;
-        n.mesh.material.transparent = !isHit;
-        n.sprite.material.opacity = isHit ? 1.0 : 0.15;
+        if (n.mesh && n.mesh.material) {
+          n.mesh.material.opacity = isHit ? 1.0 : 0.08;
+          n.mesh.material.transparent = !isHit;
+        }
+        if (n.sprite && n.sprite.material) {
+          n.sprite.material.opacity = isHit ? 1.0 : 0.08;
+        }
       });
 
       kgPhysicsEdges.forEach(e => {
-        const isHit = manualIds.has(e.from) && manualIds.has(e.to);
-        e.line.material.opacity = isHit ? 0.95 : 0.08;
-        if (isHit) e.line.material.color.setHex(0x00f5d4);
+        if (!e.line || !e.line.material) return;
+        const sameUniverse = e.sourceNode && e.targetNode && e.sourceNode.universe === 'manuals' && e.targetNode.universe === 'manuals';
+        const isHit = sameUniverse && manualIds.has(e.from) && manualIds.has(e.to);
+        e.line.material.opacity = isHit ? 0.75 : 0.05;
+        if (isHit) e.line.material.color.setHex(0xf72585);
         else e.line.material.color.setHex(0x182844);
       });
     }
 
     function resetNodeOpacities() {
       kgPhysicsNodes.forEach(n => {
-        n.mesh.material.opacity = 1.0;
-        n.mesh.material.transparent = false;
-        n.sprite.material.opacity = 1.0;
+        if (n.mesh && n.mesh.material) {
+          n.mesh.material.opacity = 1.0;
+          n.mesh.material.transparent = false;
+        }
+        if (n.sprite && n.sprite.material) {
+          n.sprite.material.opacity = 1.0;
+        }
       });
       kgPhysicsEdges.forEach(e => {
+        if (!e.line || !e.line.material) return;
         e.line.material.color.setHex(e.color);
         e.line.material.opacity = 0.45;
       });
@@ -4450,12 +1623,17 @@ html_template = r'''<!DOCTYPE html>
 
       kgPhysicsNodes.forEach(n => {
         const isHit = activeIds.has(n.data.id);
-        n.mesh.material.opacity = isHit ? 1.0 : 0.15;
-        n.mesh.material.transparent = !isHit;
-        n.sprite.material.opacity = isHit ? 1.0 : 0.15;
+        if (n.mesh && n.mesh.material) {
+          n.mesh.material.opacity = isHit ? 1.0 : 0.15;
+          n.mesh.material.transparent = !isHit;
+        }
+        if (n.sprite && n.sprite.material) {
+          n.sprite.material.opacity = isHit ? 1.0 : 0.15;
+        }
       });
 
       kgPhysicsEdges.forEach(e => {
+        if (!e.line || !e.line.material) return;
         const isHit = activeIds.has(e.from) && activeIds.has(e.to);
         e.line.material.opacity = isHit ? 0.95 : 0.08;
         if (isHit) e.line.material.color.setHex(0x00ff88);
@@ -4467,12 +1645,17 @@ html_template = r'''<!DOCTYPE html>
       kgPhysicsNodes.forEach(n => {
         const isTargetAlt = (n.data.alt === altLevel);
         const isPreceding = (n.data.alt <= altLevel);
-        n.mesh.material.opacity = isTargetAlt ? 1.0 : (isPreceding ? 0.4 : 0.1);
-        n.mesh.material.transparent = true;
-        n.sprite.material.opacity = isTargetAlt ? 1.0 : (isPreceding ? 0.4 : 0.1);
+        if (n.mesh && n.mesh.material) {
+          n.mesh.material.opacity = isTargetAlt ? 1.0 : (isPreceding ? 0.4 : 0.1);
+          n.mesh.material.transparent = true;
+        }
+        if (n.sprite && n.sprite.material) {
+          n.sprite.material.opacity = isTargetAlt ? 1.0 : (isPreceding ? 0.4 : 0.1);
+        }
       });
 
       kgPhysicsEdges.forEach(e => {
+        if (!e.line || !e.line.material) return;
         const isRevRel = (e.rel === "SUPERSEDES" || e.rel === "HAS_REVISION" || e.rel === "INTRODUCED_IN");
         e.line.material.opacity = isRevRel ? 0.95 : 0.1;
         if (isRevRel) e.line.material.color.setHex(0x3a86ff);
@@ -4496,12 +1679,17 @@ html_template = r'''<!DOCTYPE html>
 
       kgPhysicsNodes.forEach(n => {
         const isHit = failureIds.has(n.data.id);
-        n.mesh.material.opacity = isHit ? 1.0 : 0.15;
-        n.mesh.material.transparent = !isHit;
-        n.sprite.material.opacity = isHit ? 1.0 : 0.15;
+        if (n.mesh && n.mesh.material) {
+          n.mesh.material.opacity = isHit ? 1.0 : 0.15;
+          n.mesh.material.transparent = !isHit;
+        }
+        if (n.sprite && n.sprite.material) {
+          n.sprite.material.opacity = isHit ? 1.0 : 0.15;
+        }
       });
 
       kgPhysicsEdges.forEach(e => {
+        if (!e.line || !e.line.material) return;
         const isHit = failureIds.has(e.from) && failureIds.has(e.to);
         e.line.material.opacity = isHit ? 0.95 : 0.08;
         if (isHit) e.line.material.color.setHex(0xff3366);
@@ -4524,12 +1712,17 @@ html_template = r'''<!DOCTYPE html>
 
       kgPhysicsNodes.forEach(n => {
         const isHit = bomIds.has(n.data.id);
-        n.mesh.material.opacity = isHit ? 1.0 : 0.15;
-        n.mesh.material.transparent = !isHit;
-        n.sprite.material.opacity = isHit ? 1.0 : 0.15;
+        if (n.mesh && n.mesh.material) {
+          n.mesh.material.opacity = isHit ? 1.0 : 0.15;
+          n.mesh.material.transparent = !isHit;
+        }
+        if (n.sprite && n.sprite.material) {
+          n.sprite.material.opacity = isHit ? 1.0 : 0.15;
+        }
       });
 
       kgPhysicsEdges.forEach(e => {
+        if (!e.line || !e.line.material) return;
         const isHit = bomIds.has(e.from) && bomIds.has(e.to);
         e.line.material.opacity = isHit ? 0.95 : 0.08;
         if (isHit) e.line.material.color.setHex(0xf72585);
@@ -4594,31 +1787,41 @@ html_template = r'''<!DOCTYPE html>
           const hit = visibleNodes.find(n => n.mesh === hitMesh);
           if (hit) {
             inspectNode(hit);
+            // Progressive drill-down: expand/collapse children on single click
+            const hEntry = nodeHierarchyMap.get(hit.data.id);
+            if (hEntry && hEntry.childrenIds.length > 0) {
+              toggleNodeExpansion(hit.data.id);
+            }
             if (currentLayout === "concentric") {
               applyConcentricLayout(hit.data.id);
             }
           }
         }
       });
-
-      // Double-click to expand or collapse hierarchical subtrees
-      kgRenderer.domElement.addEventListener('dblclick', (e) => {
-        if (e.target !== kgRenderer.domElement) return;
-        mouse.x = (e.clientX / window.innerWidth) * 2 - 1;
-        mouse.y = -(e.clientY / window.innerHeight) * 2 + 1;
-        raycaster.setFromCamera(mouse, kgCamera);
-        const visibleNodes = kgPhysicsNodes.filter(n => n.group.visible);
-        const meshes = visibleNodes.map(n => n.mesh);
-        const intersects = raycaster.intersectObjects(meshes);
-        if (intersects.length > 0) {
-          const hitMesh = intersects[0].object;
-          const hit = visibleNodes.find(n => n.mesh === hitMesh);
-          if (hit) {
-            toggleNodeExpansion(hit.data.id);
-          }
-        }
-      });
     }
+
+    function updateDrawerTabsVisibility(isDrawing, dossier, data) {
+      const hasDossier = dossier && dossier.drawing_number;
+      const hasNotes = isDrawing || (hasDossier && dossier.notes && dossier.notes.length > 0);
+      const hasTables = isDrawing || (hasDossier && dossier.tables && dossier.tables.length > 0);
+      const hasBlueprint = isDrawing || (hasDossier && dossier.crops && Object.keys(dossier.crops).length > 0);
+      const hasTwin = isDrawing || !!data.twinAsset;
+      const hasRevisions = isDrawing || (hasDossier && dossier.alteration_history && dossier.alteration_history.length > 0) || data.type === 'REVISION';
+      const hasProcurement = isDrawing || (hasDossier && dossier.drawing_number && dossier.drawing_number.includes('6155'));
+
+      const setTabVis = (tabId, show) => {
+        const btn = document.querySelector(`.drawer-tab[data-tab="${tabId}"]`);
+        if (btn) btn.style.display = show ? '' : 'none';
+      };
+
+      setTabVis('notes', hasNotes);
+      setTabVis('tables', hasTables);
+      setTabVis('blueprint', hasBlueprint);
+      setTabVis('twin', hasTwin);
+      setTabVis('revisions', hasRevisions);
+      setTabVis('procurement', hasProcurement);
+    }
+    window.updateDrawerTabsVisibility = updateDrawerTabsVisibility;
 
     function inspectNode(node) {
       currentSelectedNode = node;
@@ -4644,32 +1847,44 @@ html_template = r'''<!DOCTYPE html>
         tabLabel.innerText = isDrawingNode ? "Drawing Overview" : "Node Dossier";
       }
 
-      // Find governing drawing dossier
-      let dossierKey = "RDSO_T_6155";
-      if (data.id.includes("6154")) dossierKey = "RDSO_T_6154";
+      // Find governing drawing dossier — only match if node is actually related to a known drawing
+      let dossierKey = null;
+      if (data.id.includes("6155")) dossierKey = "RDSO_T_6155";
+      else if (data.id.includes("6154")) dossierKey = "RDSO_T_6154";
       else if (data.id.includes("6216")) dossierKey = "RDSO_T_6216";
       else if (data.id.includes("6280")) dossierKey = "RDSO_T_6280";
       else if (data.id.includes("6275")) dossierKey = "RDSO_T_6275";
-      currentActiveDossier = RDSO_EXTRACTED_KNOWLEDGE[dossierKey] || RDSO_EXTRACTED_KNOWLEDGE["RDSO_T_6155"];
+      else {
+        // Try to find governing drawing from graph edges
+        const govEdge = kgPhysicsEdges.find(e =>
+          (e.from === data.id || e.to === data.id) &&
+          (e.rel === "GOVERNS" || e.rel === "GOVERNED_BY" || e.rel === "CONTAINS" || e.rel === "PART_OF")
+        );
+        if (govEdge) {
+          const linkedId = govEdge.from === data.id ? govEdge.to : govEdge.from;
+          if (linkedId.includes("6155")) dossierKey = "RDSO_T_6155";
+          else if (linkedId.includes("6154")) dossierKey = "RDSO_T_6154";
+          else if (linkedId.includes("6216")) dossierKey = "RDSO_T_6216";
+          else if (linkedId.includes("6280")) dossierKey = "RDSO_T_6280";
+          else if (linkedId.includes("6275")) dossierKey = "RDSO_T_6275";
+        }
+      }
+      currentActiveDossier = (dossierKey && RDSO_EXTRACTED_KNOWLEDGE[dossierKey]) || {};
 
       // 1. POPULATE ENGINEERING ANSWER CARD
       const descEl = document.getElementById('answer-card-desc');
-      const manClause = (window.RDSO_MANUALS_KNOWLEDGE?.clauses && (Array.isArray(window.RDSO_MANUALS_KNOWLEDGE.clauses) ? window.RDSO_MANUALS_KNOWLEDGE.clauses.find(c => c.id === data.id) : window.RDSO_MANUALS_KNOWLEDGE.clauses[data.id]));
-      const manDoc = window.RDSO_MANUALS_KNOWLEDGE?.manuals?.[data.id];
-      const manTol = (window.RDSO_MANUALS_KNOWLEDGE?.tolerances && (Array.isArray(window.RDSO_MANUALS_KNOWLEDGE.tolerances) ? window.RDSO_MANUALS_KNOWLEDGE.tolerances.find(t => t.id === data.id) : window.RDSO_MANUALS_KNOWLEDGE.tolerances[data.id]));
-      const manEq = (window.RDSO_MANUALS_KNOWLEDGE?.equipment && (Array.isArray(window.RDSO_MANUALS_KNOWLEDGE.equipment) ? window.RDSO_MANUALS_KNOWLEDGE.equipment.find(e => e.id === data.id) : window.RDSO_MANUALS_KNOWLEDGE.equipment[data.id]));
-
-      if (data.type === "CLAUSE" || data.id.startsWith("CLAUSE:") || manClause) {
+      // Everything on the card comes from the canonical node itself (text, page, evidence, roles ...).
+      if (data.type === "CLAUSE" || data.id.startsWith("CLAUSE:")) {
         const specs = data.specs || {};
-        const title = data.label || specs.title || (manClause && manClause.title) || "Regulatory Clause";
-        const manualName = specs.Manual || (manClause && (manClause.manual || manClause.ref)) || "Official Code";
-        const pageNum = specs.Page || (manClause && manClause.page) || "";
-        const chapterName = specs.Chapter || (manClause && manClause.chapter) || "";
-        const verbatim = specs.Verbatim || (manClause && (manClause.verbatim || manClause.verbatim_text)) || data.desc;
-        const roles = specs.Roles || (manClause && manClause.roles) || [];
-        const tols = specs.Tolerances || (manClause && manClause.tolerances) || [];
-        const equips = specs.Equipment || (manClause && manClause.equipment) || [];
-        const fails = specs.FailureModes || (manClause && manClause.failure_modes) || [];
+        const title = data.label || specs.title || "Regulatory Clause";
+        const manualName = specs.Manual || "Official Code";
+        const pageNum = data.page || specs.Page || "";
+        const chapterName = specs.Chapter || "";
+        const verbatim = data.text || specs.Verbatim || data.provenance?.source_text || data.desc;
+        const roles = data.roles || specs.Roles || [];
+        const tols = data.tolerance_texts || specs.Tolerances || [];
+        const equips = data.equipment || specs.Equipment || [];
+        const fails = data.failure_modes || specs.FailureModes || [];
 
         descEl.innerHTML = `
           <div style="margin-bottom:8px;">
@@ -4677,7 +1892,8 @@ html_template = r'''<!DOCTYPE html>
             <span style="font-size:11px; color:var(--accent-pink); background:rgba(247,37,133,0.15); padding:2px 6px; border-radius:4px; border:1px solid rgba(247,37,133,0.3); margin-left:6px;">${manualName} ${pageNum ? '· Page ' + pageNum : ''}</span>
           </div>
           ${chapterName ? `<div style="font-size:11px; color:var(--accent-purple); font-weight:600; margin-bottom:6px;">📖 ${chapterName}</div>` : ''}
-          <blockquote style="border-left:3px solid var(--accent-cyan); padding-left:10px; margin:8px 0; font-style:italic; color:#e0e8f8; font-size:12px; line-height:1.5;">"${verbatim}"</blockquote>
+          <blockquote style="border-left:3px solid var(--accent-cyan); padding-left:10px; margin:8px 0; color:#e0e8f8; font-size:12px; line-height:1.5; max-height:280px; overflow:auto; white-space:pre-wrap;">${escHtml(verbatim)}</blockquote>
+          ${renderCrossRefs(data.id)}
           ${(tols.length > 0) ? `
             <div style="margin-top:8px;">
               <div style="font-size:10px; font-weight:600; color:var(--accent-yellow); text-transform:uppercase; margin-bottom:4px;">Statutory Tolerances & Bounds:</div>
@@ -4706,6 +1922,14 @@ html_template = r'''<!DOCTYPE html>
                 ${fails.map(f => `<span style="font-size:10px; background:rgba(255,51,102,0.1); border:1px solid rgba(255,51,102,0.3); border-radius:4px; padding:2px 6px; color:var(--accent-red); font-weight:600;">⚠️ ${f}</span>`).join('')}
               </div>
             </div>` : ''}
+          <div style="margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">
+            <button class="btn btn-primary" id="btn-open-clause-pdf" style="padding:5px 12px; font-size:11px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" onclick="openManualPdf('${manualName}', ${pageNum || 1}, '${title.replace(/'/g, "\\'")}', 'ev:clause:${data.id}')">
+              <span>📄</span> Open Source PDF (Page ${pageNum || 1}) ↗
+            </button>
+            <button class="btn" style="padding:5px 10px; font-size:11px;" onclick="switchDrawerTab('manuals'); filterManualsTree('${specs.ClauseNumber || (title.match(/(\\d+)/) || [])[1] || ''}')">
+              <span>🌲</span> Find in Chapter Tree
+            </button>
+          </div>
         `;
       } else if (data.type === "CHAPTER" || data.id.startsWith("CHAPTER:")) {
         const specs = data.specs || {};
@@ -4719,18 +1943,21 @@ html_template = r'''<!DOCTYPE html>
           <div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:10px;">
             ${(specs.KeyTopics || []).map(t => `<span style="font-size:10px; background:rgba(157,78,221,0.15); border:1px solid rgba(157,78,221,0.35); border-radius:4px; padding:2px 6px; color:var(--text-main);">${t}</span>`).join('')}
           </div>
-          <div style="font-size:11px; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center;">
+          <div style="font-size:11px; color:var(--text-muted); display:flex; justify-content:space-between; align-items:center; margin-top:8px; border-top:1px solid rgba(255,255,255,0.08); padding-top:10px;">
             <span>Indexed Clauses in Chapter: <strong style="color:var(--accent-cyan); font-size:13px;">${specs.ClauseCount || 0}</strong></span>
-            <button class="btn" style="padding:4px 8px; font-size:10px;" onclick="switchDrawerTab('manuals'); filterManualsTree('Ch ${specs.ChapterNumber || ''}')">View in TOC Tree ➔</button>
+            <div style="display:flex; gap:6px;">
+              <button class="btn btn-primary" id="btn-open-chapter-pdf" style="padding:4px 10px; font-size:10px; display:inline-flex; align-items:center; gap:4px;" onclick="openManualPdf('${specs.Manual || data.id}', ${parseInt((specs.PageRange || '1').split('-')[0]) || 1}, '${data.label.replace(/'/g, "\\'")}')"><span>📄</span> Open PDF (p.${parseInt((specs.PageRange || '1').split('-')[0]) || 1}) ↗</button>
+              <button class="btn" style="padding:4px 8px; font-size:10px;" onclick="switchDrawerTab('manuals'); filterManualsTree('Ch ${specs.ChapterNumber || ''}')">View in TOC Tree ➔</button>
+            </div>
           </div>
         `;
-      } else if (manDoc || data.type === "DOCUMENT") {
-        const docTitle = (manDoc && manDoc.title) || data.label || "Official Manual";
-        const docScope = (manDoc && manDoc.scope) || data.desc || "";
-        const docAuth = (manDoc && manDoc.issuing_authority) || (data.specs && data.specs.issuing_authority) || "Ministry of Railways / RDSO";
-        const docEd = (manDoc && manDoc.edition) || (data.specs && data.specs.edition) || "Latest Standard";
-        const docPages = (manDoc && manDoc.pages) || (data.specs && data.specs.TotalPages) || "530";
-        const docFile = (manDoc && manDoc.filename) || data.id;
+      } else if (data.type === "DOCUMENT") {
+        const docTitle = data.label || "Official Manual";
+        const docScope = data.desc || "";
+        const docAuth = (data.specs && data.specs.issuing_authority) || "Ministry of Railways / RDSO";
+        const docEd = (data.specs && data.specs.edition) || "Latest Standard";
+        const docPages = (data.specs && data.specs.TotalPages) || "";
+        const docFile = data.id;
 
         descEl.innerHTML = `
           <div style="margin-bottom:8px;"><strong style="color:var(--accent-pink); font-size:13px;">${docTitle}</strong></div>
@@ -4740,15 +1967,20 @@ html_template = r'''<!DOCTYPE html>
             <div style="margin-top:4px;"><strong>Edition:</strong> ${docEd}</div>
             <div style="margin-top:4px;"><strong>Volume:</strong> ${docPages} Pages</div>
             <div style="margin-top:4px;"><strong>Local Archive:</strong> <code style="color:var(--accent-cyan);">${docFile}</code></div>
+            <div style="margin-top:10px;">
+              <button class="btn btn-primary" id="btn-open-doc-pdf" style="padding:5px 12px; font-size:11px; display:inline-flex; align-items:center; gap:6px; cursor:pointer;" onclick="openManualPdf('${data.id}', 1, '${docTitle.replace(/'/g, "\\'")}')">
+                <span>📄</span> Open Full Volume PDF ↗
+              </button>
+            </div>
           </div>
         `;
-      } else if (manTol || data.type === "TOLERANCE") {
-        const tolVal = (manTol && manTol.value) || (data.specs && (data.specs.text || data.specs.value)) || data.label;
-        const tolClause = (manTol && manTol.clause) || (data.specs && data.specs.unit) || "Standard";
-        const tolPurpose = (manTol && manTol.purpose) || data.desc || "Statutory track parameter limit";
-        const tolMin = (manTol && manTol.min_val) || (data.specs && data.specs.min) || "";
-        const tolMax = (manTol && manTol.max_val) || (data.specs && data.specs.max) || "";
-        const tolUnit = (manTol && manTol.unit) || (data.specs && data.specs.unit) || "";
+      } else if (data.type === "TOLERANCE" || data.type === "DIMENSION" || (data.specs && (data.specs["Min Permissible"] || data.specs.Min))) {
+        const tolVal = (data.specs && (data.specs.Nominal || data.specs.text || data.specs.value)) || data.label;
+        const tolClause = (data.specs && (data.specs["Clause"] || data.specs.unit)) || "Design Parameter";
+        const tolPurpose = data.desc || "Statutory track parameter limit";
+        const tolMin = (data.specs && (data.specs.min || data.specs["Min Permissible"])) || "";
+        const tolMax = (data.specs && (data.specs.max || data.specs["Max Permissible"])) || "";
+        const tolUnit = (data.specs && data.specs.unit) || "";
 
         descEl.innerHTML = `
           <div style="display:flex; align-items:center; gap:10px; margin-bottom:8px;">
@@ -4756,12 +1988,12 @@ html_template = r'''<!DOCTYPE html>
             <span style="font-size:10px; color:var(--accent-cyan); background:rgba(0,240,255,0.1); padding:2px 6px; border-radius:4px; border:1px solid rgba(0,240,255,0.3);">${tolClause}</span>
           </div>
           <p style="font-size:12px; line-height:1.5; color:#e0e8f8;"><strong>Safety & Engineering Purpose:</strong> ${tolPurpose}</p>
-          ${(tolMin !== "" && tolMax !== "") ? `<div style="margin-top:8px; font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">Design Limits: [${tolMin} ${tolUnit} — ${tolMax} ${tolUnit}]</div>` : ''}
+          ${(tolMin !== "" && tolMax !== "") ? `<div style="margin-top:8px; font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">Design Limits: [${tolMin}${tolUnit ? ' ' + tolUnit : ''} — ${tolMax}${tolUnit ? ' ' + tolUnit : ''}]</div>` : ''}
         `;
-      } else if (manEq || data.type === "EQUIPMENT") {
-        const eqLabel = (manEq && manEq.label) || data.label;
-        const eqDesc = (manEq && manEq.desc) || data.desc || "Track maintenance equipment";
-        const eqSource = (manEq && manEq.source_doc) || "IR Codes & Manuals";
+      } else if (data.type === "EQUIPMENT") {
+        const eqLabel = data.label;
+        const eqDesc = data.desc || "Track maintenance equipment";
+        const eqSource = "IR Codes & Manuals";
 
         descEl.innerHTML = `
           <div style="margin-bottom:8px;"><strong style="color:var(--accent-cyan); font-size:13px;">${eqLabel}</strong></div>
@@ -4770,7 +2002,7 @@ html_template = r'''<!DOCTYPE html>
         `;
       } else if (data.type === "REVISION" || data.domain === "revision" || data.id.startsWith("rev_")) {
         const altNum = data.alt || parseInt((data.id.match(/alt(\d+)/i) || [])[1] || 11);
-        const parentDwg = data.id.includes("6154") ? "RDSO/T-6154" : (currentActiveDossier.drawing_number || "RDSO/T-6155");
+        const parentDwg = data.id.includes("6154") ? "RDSO/T-6154" : (currentActiveDossier.drawing_number || data.label || "Revision Record");
         const specs = data.specs || {};
         const effDate = specs["Effective Date"] || "";
         const upgrade = specs["Key Upgrade"] || "";
@@ -4932,91 +2164,246 @@ html_template = r'''<!DOCTYPE html>
         const specs = data.specs || {};
         const specEntries = Object.entries(specs);
         const connectedEdges = kgPhysicsEdges.filter(e => e.from === data.id || e.to === data.id);
-        const relatedNames = connectedEdges.slice(0, 4).map(e => {
+        const relatedNames = connectedEdges.slice(0, 5).map(e => {
           const targetId = e.from === data.id ? e.to : e.from;
           const targetNode = kgPhysicsNodes.find(n => n.data.id === targetId);
           return targetNode ? targetNode.data.label : targetId;
         });
 
-        descEl.innerHTML = `
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-            <div style="font-size: 11.5px; line-height: 1.45; color: #e0e8f8;">
-              ${data.desc || "Canonical railway track infrastructure asset governed by official RDSO technical specifications."}
-            </div>
+        // 1. Build Query Context Banner if a search query is active
+        let queryBannerHtml = '';
+        if (window.lastSearchQuery && window.lastSearchQuery.trim()) {
+          const qStr = window.lastSearchQuery.trim();
+          const ansMatch = window.answerEngineeringQuestion ? window.answerEngineeringQuestion(qStr) : null;
+          const inPath = ansMatch?.traversal?.some(t => t.id === data.id);
+          const qTokens = qStr.toLowerCase().split(/[\s,?.!]+/).filter(t => t.length > 2);
+          const entitySearchText = `${data.label} ${data.desc || ''} ${JSON.stringify(specs)}`.toLowerCase();
+          const matchesTerm = qTokens.some(t => entitySearchText.includes(t));
 
-            <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 10px;">
-              <span style="background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); color: var(--accent-cyan); padding: 2px 6px; border-radius: 4px; font-weight: 600;">
-                📜 ${currentActiveDossier.drawing_number} (ALT ${currentActiveDossier.alteration_number || 13})
-              </span>
-              <span style="background: rgba(157, 78, 221, 0.15); border: 1px solid rgba(157, 78, 221, 0.35); color: var(--text-main); padding: 2px 6px; border-radius: 4px;">
-                📏 BG 1676 mm
-              </span>
-              <span style="background: rgba(76, 201, 240, 0.1); border: 1px solid rgba(76, 201, 240, 0.3); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px;">
-                IRS: T 10 / T 29
-              </span>
-            </div>
+          let qRelevanceText = '';
+          if (inPath) {
+            const stepNum = ansMatch.traversal.findIndex(t => t.id === data.id) + 1;
+            qRelevanceText = `Key Step ${stepNum} of ${ansMatch.traversal.length} in the resolution path for: "<strong>${qStr}</strong>".`;
+          } else if (matchesTerm) {
+            qRelevanceText = `Selected entity directly addresses query term: "<strong>${qStr}</strong>".`;
+          } else {
+            // Check if connected to any entity in traversal
+            const connectedToPath = ansMatch?.traversal?.find(t => connectedEdges.some(e => e.from === t.id || e.to === t.id));
+            if (connectedToPath) {
+              qRelevanceText = `Directly connected in graph to query entity <strong>${connectedToPath.label}</strong>.`;
+            }
+          }
 
-            ${specEntries.length > 0 ? `
-              <div style="background: rgba(14, 22, 38, 0.6); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 6px 8px;">
-                <div style="font-size: 9.5px; font-weight: 700; color: var(--accent-yellow); text-transform: uppercase; margin-bottom: 4px;">Critical Parameters & Bounds:</div>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 10.5px;">
-                  ${specEntries.slice(0, 4).map(([k, v]) => `
-                    <div style="color: var(--text-dim);"><strong style="color: var(--text-main);">${k}:</strong> ${v}</div>
-                  `).join('')}
+          if (qRelevanceText) {
+            queryBannerHtml = `
+              <div class="query-context-card" style="margin-bottom: 8px; padding: 7px 9px; background: linear-gradient(135deg, rgba(0, 240, 255, 0.14), rgba(157, 78, 221, 0.12)); border: 1px solid rgba(0, 240, 255, 0.4); border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.35);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 3px;">
+                  <span style="font-size: 9.5px; font-weight: 700; color: var(--accent-yellow); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 4px;">
+                    <span>🎯</span> QUERY RELEVANCE CONTEXT
+                  </span>
+                  ${inPath ? `<span style="font-size: 8.5px; font-weight: 700; color: var(--accent-green); background: rgba(0,255,136,0.18); border: 1px solid rgba(0,255,136,0.35); padding: 1px 5px; border-radius: 3px;">★ PATH ENTITY</span>` : ''}
+                </div>
+                <div style="font-size: 11px; color: #fff; line-height: 1.4;">${qRelevanceText}</div>
+                <div style="margin-top: 6px; display: flex; gap: 5px; flex-wrap: wrap;">
+                  ${ansMatch ? `
+                    <button class="btn" style="padding: 2px 7px; font-size: 9px; background: rgba(0,240,255,0.22); border-color: var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;" onclick="switchDrawerTab('qa'); renderQuestionAnswerCard(window.answerEngineeringQuestion('${qStr.replace(/'/g, "\\\'")}'), document.getElementById('qa-answer-mount'));">
+                      <span>❓</span> View Query QA Answer
+                    </button>
+                    ${ansMatch.traversal && ansMatch.traversal.length > 0 ? `
+                      <button class="btn" style="padding: 2px 7px; font-size: 9px;" onclick="highlightGraphPath([${ansMatch.traversal.map(t => `'${t.id}'`).join(',')}]);">
+                        <span>🛤️</span> Trace Query Path (${ansMatch.traversal.length})
+                      </button>
+                    ` : ''}
+                  ` : ''}
                 </div>
               </div>
-            ` : ''}
-
-            ${relatedNames.length > 0 ? `
-              <div style="font-size: 10px; color: var(--text-muted);">
-                <strong style="color: var(--accent-cyan);">Kinematic Context:</strong> Interconnected with ${relatedNames.join(', ')}.
-              </div>
-            ` : ''}
-
-            <div style="font-size: 10px; color: var(--accent-orange); background: rgba(247, 37, 133, 0.08); border-left: 2px solid var(--accent-pink); padding: 4px 8px; border-radius: 0 4px 4px 0;">
-              ⚠️ <strong>Safeguard:</strong> Strict compliance with IRPWM Chapter 4 & Note 28 maintenance directives.
-            </div>
-          </div>
-        `;
-
-        const provBox = document.getElementById('answer-provenance-box');
-        const linkedFact = rawKGFacts.find(f => f.subject_id === data.id || f.object_id === data.id);
-        if (linkedFact && linkedFact.source) {
-          provBox.style.display = "flex";
-          document.getElementById('prov-dwg-title').innerText = `${linkedFact.source.drawing_id} (${linkedFact.source.revision})`;
-          document.getElementById('prov-meta-line').innerText = `Region: ${linkedFact.source.region} | Method: ${linkedFact.extraction_method}`;
-          const cropImg = (linkedFact.source.crop && linkedFact.source.crop.endsWith('.png')) ? linkedFact.source.crop : "crops/t6155_notes_full.png";
-          document.getElementById('answer-crop-thumb').src = cropImg;
-          currentActiveCrop = cropImg;
-        } else {
-          provBox.style.display = "flex";
-          document.getElementById('prov-dwg-title').innerText = `${currentActiveDossier.drawing_number} (ALT ${currentActiveDossier.alteration_number || 13})`;
-          document.getElementById('prov-meta-line').innerText = `Region: Master Blueprint | Method: Coordinate Crop`;
-          const firstCrop = Object.values(currentActiveDossier.crops || {})[0] || "crops/t6155_notes_full.png";
-          document.getElementById('answer-crop-thumb').src = firstCrop;
-          currentActiveCrop = firstCrop;
+            `;
+          }
         }
 
-        const toolbar = document.getElementById('answer-card-toolbar');
-        if (toolbar) {
-          toolbar.style.display = "flex";
-          toolbar.innerHTML = `
-            <button class="answer-tool-btn" id="btn-answer-blueprint" onclick="openFullscreenActiveBlueprint()">
-              <span>🔍</span> Blueprint Crop
-            </button>
-            <button class="answer-tool-btn" id="btn-answer-twin" onclick="switchDrawerTab('twin')">
-              <span>📦</span> 3D Twin
-            </button>
-            <button class="answer-tool-btn" id="btn-answer-paths" onclick="renderPathFinderUI('${data.id}', 'std_irs_t10'); switchDrawerTab('paths');">
-              <span>🛤️</span> Trace Paths
-            </button>
-            <button class="answer-tool-btn" id="btn-answer-inspection" onclick="switchDrawerTab('inspection')">
-              <span>📋</span> Field Inspection
-            </button>
-            <button class="answer-tool-btn" id="btn-answer-procurement" onclick="switchDrawerTab('procurement')">
-              <span>📦</span> Spares & BOM
-            </button>
+        const hasGoverningDrawing = !!(currentActiveDossier && currentActiveDossier.drawing_number);
+
+        if (hasGoverningDrawing) {
+          // Drawing-specific component (e.g. comp_detailb on RDSO/T-6155)
+          descEl.innerHTML = `
+            ${queryBannerHtml}
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="font-size: 11.5px; line-height: 1.45; color: #e0e8f8;">
+                ${data.desc || "Canonical railway track infrastructure asset governed by official RDSO technical specifications."}
+              </div>
+
+              <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 10px;">
+                <span style="background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); color: var(--accent-cyan); padding: 2px 6px; border-radius: 4px; font-weight: 600;">
+                  📜 ${currentActiveDossier.drawing_number} (ALT ${currentActiveDossier.alteration_number || 13})
+                </span>
+                <span style="background: rgba(157, 78, 221, 0.15); border: 1px solid rgba(157, 78, 221, 0.35); color: var(--text-main); padding: 2px 6px; border-radius: 4px;">
+                  📏 BG 1676 mm
+                </span>
+                <span style="background: rgba(76, 201, 240, 0.1); border: 1px solid rgba(76, 201, 240, 0.3); color: var(--accent-blue); padding: 2px 6px; border-radius: 4px;">
+                  IRS: T 10 / T 29
+                </span>
+              </div>
+
+              ${specEntries.length > 0 ? `
+                <div style="background: rgba(14, 22, 38, 0.6); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 6px 8px;">
+                  <div style="font-size: 9.5px; font-weight: 700; color: var(--accent-yellow); text-transform: uppercase; margin-bottom: 4px;">Critical Parameters & Bounds:</div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 10.5px;">
+                    ${specEntries.slice(0, 4).map(([k, v]) => `
+                      <div style="color: var(--text-dim);"><strong style="color: var(--text-main);">${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}</div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
+              ${relatedNames.length > 0 ? `
+                <div style="font-size: 10px; color: var(--text-muted);">
+                  <strong style="color: var(--accent-cyan);">Kinematic Context:</strong> Interconnected with ${relatedNames.join(', ')}.
+                </div>
+              ` : ''}
+
+              <div style="font-size: 10px; color: var(--accent-orange); background: rgba(247, 37, 133, 0.08); border-left: 2px solid var(--accent-pink); padding: 4px 8px; border-radius: 0 4px 4px 0;">
+                ⚠️ <strong>Safeguard:</strong> Strict compliance with IRPWM Chapter 4 & Note 28 maintenance directives.
+              </div>
+            </div>
           `;
+
+          const provBox = document.getElementById('answer-provenance-box');
+          const linkedFact = rawKGFacts.find(f => f.subject_id === data.id || f.object_id === data.id);
+          if (linkedFact && linkedFact.source) {
+            provBox.style.display = "flex";
+            document.getElementById('prov-dwg-title').innerText = `${linkedFact.source.drawing_id} (${linkedFact.source.revision})`;
+            document.getElementById('prov-meta-line').innerText = `Region: ${linkedFact.source.region} | Method: ${linkedFact.extraction_method}`;
+            const cropImg = (linkedFact.source.crop && linkedFact.source.crop.endsWith('.png')) ? linkedFact.source.crop : "crops/t6155_notes_full.png";
+            document.getElementById('answer-crop-thumb').src = cropImg;
+            currentActiveCrop = cropImg;
+          } else {
+            provBox.style.display = "flex";
+            document.getElementById('prov-dwg-title').innerText = `${currentActiveDossier.drawing_number} (ALT ${currentActiveDossier.alteration_number || 13})`;
+            document.getElementById('prov-meta-line').innerText = `Region: Master Blueprint | Method: Coordinate Crop`;
+            const firstCrop = Object.values(currentActiveDossier.crops || {})[0] || "crops/t6155_notes_full.png";
+            document.getElementById('answer-crop-thumb').src = firstCrop;
+            currentActiveCrop = firstCrop;
+          }
+
+          const toolbar = document.getElementById('answer-card-toolbar');
+          if (toolbar) {
+            toolbar.style.display = "flex";
+            toolbar.innerHTML = `
+              <button class="answer-tool-btn" id="btn-answer-blueprint" onclick="openFullscreenActiveBlueprint()">
+                <span>🔍</span> Blueprint Crop
+              </button>
+              <button class="answer-tool-btn" id="btn-answer-twin" onclick="switchDrawerTab('twin')">
+                <span>📦</span> 3D Twin
+              </button>
+              <button class="answer-tool-btn" id="btn-answer-paths" onclick="renderPathFinderUI('${data.id}', 'std_irs_t10'); switchDrawerTab('paths');">
+                <span>🛤️</span> Trace Paths
+              </button>
+              <button class="answer-tool-btn" id="btn-answer-inspection" onclick="switchDrawerTab('inspection')">
+                <span>📋</span> Field Inspection
+              </button>
+              <button class="answer-tool-btn" id="btn-answer-procurement" onclick="switchDrawerTab('procurement')">
+                <span>📦</span> Spares & BOM
+              </button>
+            `;
+          }
+        } else {
+          // Entity without a turnout drawing (e.g. comp_joggled_fish_plate, roles, activities, materials)
+          // Strictly show verified authentic parameters & bounds without hardcoded fake data
+          const stdDrgs = Array.isArray(specs.StandardDrawings) ? specs.StandardDrawings : (specs.StandardDrawings ? [specs.StandardDrawings] : []);
+          const badgesHtml = stdDrgs.length > 0 
+            ? stdDrgs.map(d => `<span style="background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); color: var(--accent-cyan); padding: 2px 6px; border-radius: 4px; font-weight: 600;">📐 ${d}</span>`).join(' ')
+            : `<span style="background: rgba(0, 240, 255, 0.1); border: 1px solid rgba(0, 240, 255, 0.3); color: var(--accent-cyan); padding: 2px 6px; border-radius: 4px; font-weight: 600;">📖 Indian Railways Standard</span>`;
+
+          let safeguardHtml = '';
+          if (specs.SpeedRestriction) {
+            safeguardHtml = `<div style="font-size: 10px; color: var(--accent-orange); background: rgba(247, 37, 133, 0.08); border-left: 2px solid var(--accent-pink); padding: 4px 8px; border-radius: 0 4px 4px 0;">
+              ⚠️ <strong>Safeguard:</strong> Emergency speed restriction of ${specs.SpeedRestriction}. Mandatory compliance governed by IRPWM Chapter 3 & USFD Chapter 8.
+            </div>`;
+          } else if (specs.ClampingRequirement) {
+            safeguardHtml = `<div style="font-size: 10px; color: var(--accent-yellow); background: rgba(255, 214, 10, 0.08); border-left: 2px solid var(--accent-yellow); padding: 4px 8px; border-radius: 0 4px 4px 0;">
+              ⚠️ <strong>Mandate:</strong> ${specs.ClampingRequirement}.
+            </div>`;
+          } else {
+            safeguardHtml = `<div style="font-size: 10px; color: var(--accent-cyan); background: rgba(0, 240, 255, 0.06); border-left: 2px solid var(--accent-cyan); padding: 4px 8px; border-radius: 0 4px 4px 0;">
+              ℹ️ <strong>Standard Compliance:</strong> Governed by official Indian Railways permanent way maintenance codes.
+            </div>`;
+          }
+
+          descEl.innerHTML = `
+            ${queryBannerHtml}
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <div style="font-size: 11.5px; line-height: 1.45; color: #e0e8f8;">
+                ${data.desc || "Canonical railway track infrastructure asset governed by official RDSO technical specifications."}
+              </div>
+
+              <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 10px;">
+                ${badgesHtml}
+                <span style="background: rgba(157, 78, 221, 0.15); border: 1px solid rgba(157, 78, 221, 0.35); color: var(--text-main); padding: 2px 6px; border-radius: 4px;">
+                  🏛️ ${data.domain ? data.domain.toUpperCase() : 'CANONICAL'} ENTITY
+                </span>
+                <span style="background: rgba(0, 255, 136, 0.1); border: 1px solid rgba(0, 255, 136, 0.3); color: var(--accent-green); padding: 2px 6px; border-radius: 4px; font-weight: 600;">
+                  MACHINE-EXTRACTED DATA
+                </span>
+              </div>
+
+              ${specEntries.length > 0 ? `
+                <div style="background: rgba(14, 22, 38, 0.6); border: 1px solid var(--border-subtle); border-radius: 4px; padding: 6px 8px;">
+                  <div style="font-size: 9.5px; font-weight: 700; color: var(--accent-yellow); text-transform: uppercase; margin-bottom: 4px;">Authoritative Parameters:</div>
+                  <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 4px; font-size: 10.5px;">
+                    ${specEntries.filter(([k]) => k !== 'StandardDrawings').map(([k, v]) => `
+                      <div style="color: var(--text-dim);"><strong style="color: var(--text-main);">${k}:</strong> ${Array.isArray(v) ? v.join(', ') : v}</div>
+                    `).join('')}
+                  </div>
+                </div>
+              ` : ''}
+
+              ${relatedNames.length > 0 ? `
+                <div style="font-size: 10px; color: var(--text-muted);">
+                  <strong style="color: var(--accent-cyan);">Graph Connections:</strong> ${relatedNames.join(' · ')}.
+                </div>
+              ` : ''}
+
+              ${safeguardHtml}
+            </div>
+          `;
+
+          // Never show fake blueprint crops for non-drawing entities
+          const provBox = document.getElementById('answer-provenance-box');
+          const linkedFact = rawKGFacts.find(f => (f.subject_id === data.id || f.object_id === data.id) && f.source && f.source.crop && !f.source.crop.includes('t6155_notes_full.png'));
+          if (linkedFact && linkedFact.source && linkedFact.source.crop) {
+            provBox.style.display = "flex";
+            document.getElementById('prov-dwg-title').innerText = `${linkedFact.source.drawing_id} (${linkedFact.source.revision})`;
+            document.getElementById('prov-meta-line').innerText = `Region: ${linkedFact.source.region} | Method: ${linkedFact.extraction_method}`;
+            document.getElementById('answer-crop-thumb').src = linkedFact.source.crop;
+            currentActiveCrop = linkedFact.source.crop;
+          } else {
+            provBox.style.display = "none";
+          }
+
+          const toolbar = document.getElementById('answer-card-toolbar');
+          if (toolbar) {
+            toolbar.style.display = "flex";
+            const firstRelNode = connectedEdges[0] ? (connectedEdges[0].from === data.id ? connectedEdges[0].to : connectedEdges[0].from) : "act_greasing_lubrication";
+            toolbar.innerHTML = `
+              <button class="answer-tool-btn" id="btn-answer-paths" onclick="renderPathFinderUI('${data.id}', '${firstRelNode}'); switchDrawerTab('paths');">
+                <span>🛤️</span> Trace Paths
+              </button>
+              <button class="answer-tool-btn" id="btn-answer-manuals" onclick="switchDrawerTab('manuals')">
+                <span>📖</span> Governing Directives
+              </button>
+              <button class="answer-tool-btn" id="btn-answer-overview" onclick="switchDrawerTab('overview')">
+                <span>📋</span> Node Dossier
+              </button>
+              <button class="answer-tool-btn" id="btn-answer-3d" onclick="focusNodeIn3D('${data.id}')">
+                <span>🎯</span> Focus 3D
+              </button>
+              ${window.lastSearchQuery ? `
+                <button class="answer-tool-btn" id="btn-answer-qa" style="background: rgba(0,240,255,0.18); border-color: var(--accent-cyan); color: var(--accent-cyan); font-weight: 700;" onclick="switchDrawerTab('qa')">
+                  <span>❓</span> Query QA
+                </button>
+              ` : ''}
+            `;
+          }
         }
       }
 
@@ -5089,6 +2476,9 @@ html_template = r'''<!DOCTYPE html>
       renderRevisionDiffView(10, 13);
       renderConflictDashboard();
 
+      // 9.5 Dynamically update drawer tabs to display only relevant tabs
+      updateDrawerTabsVisibility(isDrawingNode, currentActiveDossier, data);
+
       // 10. Default to overview tab
       switchDrawerTab('overview');
 
@@ -5105,6 +2495,27 @@ html_template = r'''<!DOCTYPE html>
       if (!idOrQuery) return false;
       const q = String(idOrQuery).toLowerCase().trim();
       let node = kgPhysicsNodes.find(n => n.data.id === idOrQuery || n.data.id.toLowerCase() === q);
+      if (!node) {
+        const QUERY_ALIASES = {
+          'clause:irpwm:para_429': 'CLAUSE:IRPWM:CH_04:PARA_429',
+          'spec_irpwm_para429_crossing': 'CLAUSE:IRPWM:CH_04:PARA_429',
+          'tol_checkrail_clearance': 'dim_check_flange_44',
+          'tol:checkrail_clearance:41_45mm': 'dim_check_flange_44',
+          'sop_usfd_switch_testing': 'CHAPTER:USFD:CH_10'
+        };
+        if (QUERY_ALIASES[q]) {
+          node = kgPhysicsNodes.find(n => n.data.id === QUERY_ALIASES[q]);
+        }
+      }
+      if (!node) {
+        // Match clause or section without chapter segment, e.g. CLAUSE:IRPWM:PARA_429 -> CLAUSE:IRPWM:CH_04:PARA_429
+        node = kgPhysicsNodes.find(n => {
+          const nid = n.data.id.toLowerCase();
+          const normNid = nid.replace(/:ch_\d+:/g, ':');
+          const normQ = q.replace(/:ch_\d+:/g, ':');
+          return normNid === normQ;
+        });
+      }
       if (!node) {
         node = kgPhysicsNodes.find(n => {
           const nid = n.data.id.toLowerCase();
@@ -5196,7 +2607,7 @@ html_template = r'''<!DOCTYPE html>
               <span style="margin-left:4px; font-weight:500;">${ch.title}</span>
             </div>
             <div style="display:flex; gap:6px; align-items:center;">
-              <span style="font-size:9.5px; color:var(--text-dim);">p.${ch.pages[0]}-${ch.pages[1]}</span>
+              <span class="clause-page-badge" title="Open chapter in PDF" style="cursor:pointer;" onclick="event.stopPropagation(); openManualPdf('${manual.id}', ${ch.pages[0]}, 'Chapter ${ch.num} — ${ch.title.replace(/'/g, "\\'")}');">p.${ch.pages[0]}-${ch.pages[1]} ↗</span>
               <span style="font-size:9.5px; padding:1px 5px; border-radius:3px; background:rgba(157,78,221,0.2); color:var(--accent-purple);">${matchingClauses.length}</span>
             </div>
           `;
@@ -5216,7 +2627,7 @@ html_template = r'''<!DOCTYPE html>
             clRow.innerHTML = `
               <span class="clause-para-badge">§ ${cl.para}</span>
               <span class="clause-title-text" title="${cl.title}">${cl.title}</span>
-              <span class="clause-page-badge">p.${cl.page}</span>
+              <span class="clause-page-badge" title="Open source PDF at page ${cl.page}" style="cursor:pointer;" onclick="event.stopPropagation(); openManualPdf('${manual.id}', ${cl.page}, '${cl.title.replace(/'/g, "\\'")}');">p.${cl.page} ↗</span>
             `;
             clRow.onclick = (e) => {
               e.stopPropagation();
@@ -5254,6 +2665,16 @@ html_template = r'''<!DOCTYPE html>
       document.querySelectorAll('.tab-pane').forEach(p => {
         p.classList.toggle('active', p.id === `tab-pane-${tabId}`);
       });
+      const topAnswerCard = document.getElementById('drawer-answer-card');
+      if (topAnswerCard) {
+        topAnswerCard.style.display = (tabId === 'qa') ? 'none' : 'block';
+      }
+      if (tabId === 'manuals') {
+        const container = document.getElementById('manuals-tree-container');
+        if (container && (!container.children || container.children.length === 0)) {
+          renderManualsTree();
+        }
+      }
       if (tabId === 'paths') {
         const container = document.getElementById('pathfinder-container');
         if (container && (!container.children || container.children.length === 0)) {
@@ -5293,6 +2714,96 @@ html_template = r'''<!DOCTYPE html>
       }
     }
 
+    const MANUAL_PDF_REGISTRY = {
+      'DOC:IRPWM:2024:ACS14': 'manuals/IRPWM 2024 Corrected Up To ACS - 14 (29-07-2026)-1.pdf',
+      'doc_irpwm_2024': 'manuals/IRPWM 2024 Corrected Up To ACS - 14 (29-07-2026)-1.pdf',
+      'IRPWM': 'manuals/IRPWM 2024 Corrected Up To ACS - 14 (29-07-2026)-1.pdf',
+      
+      'DOC:USFD:2026:ACS4': 'manuals/usfd_new 24-2-26.pdf',
+      'doc_usfd_2026': 'manuals/usfd_new 24-2-26.pdf',
+      'USFD': 'manuals/usfd_new 24-2-26.pdf',
+      
+      'DOC:AT_WELD:2022': 'manuals/ATWeld_Manual-2022.pdf',
+      'doc_atweld_2022': 'manuals/ATWeld_Manual-2022.pdf',
+      'AT_WELD': 'manuals/ATWeld_Manual-2022.pdf',
+      'ATWELD': 'manuals/ATWeld_Manual-2022.pdf',
+      
+      'DOC:FBW:2022:CS5': 'manuals/FBW Manual-Reprint 2022- Incorporated up to CS5.pdf',
+      'doc_fbw_2022': 'manuals/FBW Manual-Reprint 2022- Incorporated up to CS5.pdf',
+      'FBW': 'manuals/FBW Manual-Reprint 2022- Incorporated up to CS5.pdf',
+      
+      'DOC:TMM:2020:ACS10': 'manuals/INDIAN RAILWAYS TRACK MACHINE MANUAL (INCORPORATED UPTO ACS 10)_FINAL.pdf',
+      'doc_tmm_2020': 'manuals/INDIAN RAILWAYS TRACK MACHINE MANUAL (INCORPORATED UPTO ACS 10)_FINAL.pdf',
+      'TMM': 'manuals/INDIAN RAILWAYS TRACK MACHINE MANUAL (INCORPORATED UPTO ACS 10)_FINAL.pdf',
+      
+      'DOC:STMM:2024': 'manuals/STMM-date  27.05.24.pdf',
+      'doc_stmm_2024': 'manuals/STMM-date  27.05.24.pdf',
+      'STMM': 'manuals/STMM-date  27.05.24.pdf'
+    };
+
+    function resolveManualPdfPath(docRef) {
+      if (!docRef) return MANUAL_PDF_REGISTRY['DOC:IRPWM:2024:ACS14'];
+      if (MANUAL_PDF_REGISTRY[docRef]) return MANUAL_PDF_REGISTRY[docRef];
+      const s = String(docRef).toUpperCase();
+      if (s.includes('IRPWM')) return MANUAL_PDF_REGISTRY['DOC:IRPWM:2024:ACS14'];
+      if (s.includes('USFD')) return MANUAL_PDF_REGISTRY['DOC:USFD:2026:ACS4'];
+      if (s.includes('AT_WELD') || s.includes('ATWELD') || s.includes('ALUMINO')) return MANUAL_PDF_REGISTRY['DOC:AT_WELD:2022'];
+      if (s.includes('FBW') || s.includes('FLASH BUTT')) return MANUAL_PDF_REGISTRY['DOC:FBW:2022:CS5'];
+      if (s.includes('TMM') || s.includes('TRACK MACHINE')) return MANUAL_PDF_REGISTRY['DOC:TMM:2020:ACS10'];
+      if (s.includes('STMM') || s.includes('SMALL TRACK')) return MANUAL_PDF_REGISTRY['DOC:STMM:2024'];
+      if (String(docRef).startsWith('manuals/') || String(docRef).endsWith('.pdf')) return docRef;
+      return MANUAL_PDF_REGISTRY['DOC:IRPWM:2024:ACS14'];
+    }
+
+    function openManualPdf(docRef, page, title, evidenceId) {
+      const pdfPath = resolveManualPdfPath(docRef);
+      const pageNum = parseInt(page) || 1;
+      const pdfUrl = `${pdfPath}#page=${pageNum}`;
+      const modal = document.getElementById('manual-pdf-modal');
+      const titleEl = document.getElementById('manual-pdf-modal-title');
+      const pageBadge = document.getElementById('manual-pdf-modal-page-badge');
+      const externalLink = document.getElementById('manual-pdf-external-link');
+      const iframe = document.getElementById('manual-pdf-modal-iframe');
+
+      if (titleEl) titleEl.innerText = title || `Official Railway Code / Manual: ${docRef}`;
+      if (pageBadge) pageBadge.innerText = `Page ${pageNum}`;
+      if (externalLink) {
+        externalLink.href = pdfUrl;
+        externalLink.title = `Open ${pdfPath} directly at page ${pageNum}`;
+      }
+      if (iframe) {
+        iframe.src = pdfUrl;
+      }
+      // Highlighted crop of the cited text when it has been rendered (python scripts/render_evidence.py).
+      const cropBox = document.getElementById('manual-pdf-evidence-crop');
+      const cropImg = document.getElementById('manual-pdf-evidence-img');
+      if (cropBox && cropImg) {
+        cropBox.style.display = 'none';
+        if (evidenceId) {
+          cropImg.onload = () => { cropBox.style.display = 'block'; };
+          cropImg.onerror = () => { cropBox.style.display = 'none'; };
+          cropImg.src = `artifacts/evidence/${String(evidenceId).replace(/[^A-Za-z0-9_.-]/g, '_')}.png`;
+        }
+      }
+      if (modal) {
+        modal.style.display = "flex";
+      }
+      return { pdfPath, pageNum, pdfUrl };
+    }
+
+    function closeManualPdfModal() {
+      const modal = document.getElementById('manual-pdf-modal');
+      const iframe = document.getElementById('manual-pdf-modal-iframe');
+      if (iframe) iframe.src = "about:blank";
+      const cropBox = document.getElementById('manual-pdf-evidence-crop');
+      if (cropBox) cropBox.style.display = 'none';
+      if (modal) modal.style.display = "none";
+    }
+
+    window.openManualPdf = openManualPdf;
+    window.closeManualPdfModal = closeManualPdfModal;
+    window.resolveManualPdfPath = resolveManualPdfPath;
+
     function openFullscreenBlueprint(src, title) {
       if (!src) return;
       const modal = document.getElementById('blueprint-modal');
@@ -5314,13 +2825,37 @@ html_template = r'''<!DOCTYPE html>
 
     function updateDrawerBreadcrumbs(query, nodeData, section) {
       window.lastSearchQuery = query || window.lastSearchQuery || '';
-      const currentLabelEl = document.getElementById('breadcrumb-current-node');
+      const trailContainer = document.getElementById('breadcrumb-trail');
       const backBtn = document.getElementById('breadcrumb-back-btn');
-      if (currentLabelEl && nodeData) {
-        currentLabelEl.innerText = nodeData.label || nodeData.id;
+      if (!trailContainer || !nodeData) return;
+
+      const trail = [];
+      let currId = nodeData.id;
+      let guard = 0;
+      while (currId && guard < 10) {
+        guard++;
+        const hEntry = window.nodeHierarchyMap ? window.nodeHierarchyMap.get(currId) : null;
+        const nodeObj = window.kgPhysicsNodesMap ? window.kgPhysicsNodesMap.get(currId) : null;
+        const label = (nodeObj && nodeObj.data.label) || currId;
+        trail.unshift({ id: currId, label });
+        if (!hEntry || !hEntry.parentId || hEntry.isRoot) break;
+        currId = hEntry.parentId;
       }
+
+      let html = `<span class="breadcrumb-item" onclick="reopenSearchDropdown()">Studio Search</span>`;
+      trail.forEach((item, idx) => {
+        html += `<span class="breadcrumb-sep">➔</span>`;
+        if (idx === trail.length - 1) {
+          html += `<span class="breadcrumb-active" id="breadcrumb-current-node">${item.label}</span>`;
+        } else {
+          html += `<span class="breadcrumb-item" style="cursor:pointer;" onclick="selectGraphNode('${item.id}')">${item.label}</span>`;
+        }
+      });
+      trailContainer.innerHTML = html;
+
       if (backBtn) {
         backBtn.style.display = window.lastSearchQuery ? 'flex' : 'none';
+        backBtn.innerHTML = `<span>↶</span> Back to Search`;
       }
     }
 
@@ -5339,8 +2874,8 @@ html_template = r'''<!DOCTYPE html>
       const container = document.getElementById('drawing-overview-container');
       if (!container) return;
 
-      const d = dossier || RDSO_EXTRACTED_KNOWLEDGE["RDSO_T_6155"] || {};
-      const dwgNo = d.drawing_number || (data.specs && (data.specs.DrawingNumber || data.specs["Drawing No"])) || data.label || "RDSO/T-6155";
+      const d = dossier || {};
+      const dwgNo = d.drawing_number || (data.specs && (data.specs.DrawingNumber || data.specs["Drawing No"])) || data.label;
       const title = d.title || data.desc || data.label;
       const isDrawing = (data.type === "DRAWING" || data.domain === "drawing" || data.id.startsWith("drg_"));
 
@@ -5423,8 +2958,9 @@ html_template = r'''<!DOCTYPE html>
           `;
         }
 
-        // Governing Drawing Label & Metadata accurately derived:
-        let govDrawing = `${currentActiveDossier.drawing_number} (ALT ${currentActiveDossier.alteration_number || 13})`;
+        let govDrawing = currentActiveDossier.drawing_number
+          ? `${currentActiveDossier.drawing_number} (ALT ${currentActiveDossier.alteration_number || 13})`
+          : (data.specs?.DrawingNumber || data.specs?.["Drawing No"] || (data.specs?.StandardDrawings ? (Array.isArray(data.specs.StandardDrawings) ? data.specs.StandardDrawings.join(', ') : data.specs.StandardDrawings) : (data.domain === 'manual' ? 'Indian Railways Track Standards' : 'IRS / RDSO Standard')));
         let assetTwinLabel = "Digital Twin Asset";
         let assetTwinValue = data.twinAsset || "Standard Geometry";
         let riskHeader = "Derailment Hazard & Safeguards";
@@ -5432,9 +2968,18 @@ html_template = r'''<!DOCTYPE html>
         let riskBadge = "SAFETY CRITICAL";
         let riskSubnote = "Mandatory maintenance compliance governed by IRPWM 2024 Chapter 4 and IRS specifications.";
 
+        if (data.specs && (data.specs.SpeedRestriction || data.specs.ClampingRequirement)) {
+          riskHeader = "Emergency Track Protection & Clamping Directive";
+          riskBadge = "SAFETY CRITICAL";
+          riskText = `Speed Restriction: ${data.specs.SpeedRestriction || '30 km/h under clamp'}. Clamping Requirement: ${data.specs.ClampingRequirement || 'Minimum 2 tight C-clamps'}. Application: ${data.specs.Application || 'Defective welds and rail flaws'}.`;
+          riskSubnote = "Mandatory compliance governed by IRPWM 2024 Chapter 3 (Para 307 & 349) and USFD Chapter 8 (Para 8.10).";
+        }
+
         if (data.type === "REVISION" || data.domain === "revision" || data.id.startsWith("rev_")) {
           const revNum = data.alt || parseInt((data.id.match(/alt(\d+)/i) || [])[1] || 11);
-          govDrawing = `${currentActiveDossier.drawing_number} (ALT ${revNum})`;
+          govDrawing = currentActiveDossier.drawing_number
+            ? `${currentActiveDossier.drawing_number} (ALT ${revNum})`
+            : `Revision ALT ${revNum}`;
           assetTwinLabel = "Alteration Category";
           assetTwinValue = "Engineering Revision Directive";
           riskHeader = "Operational Rationale & Clearance Safeguards";
@@ -5462,11 +3007,22 @@ html_template = r'''<!DOCTYPE html>
           riskText = data.desc;
         }
 
-        // Visual Evidence Crop
+        // Connected governing clauses for statutory evidence
+        const connectedClauseEdges = kgPhysicsEdges.filter(e => 
+          (e.from === data.id || e.to === data.id) &&
+          (e.from.startsWith('CLAUSE:') || e.to.startsWith('CLAUSE:') || e.from.startsWith('CHAPTER:') || e.to.startsWith('CHAPTER:'))
+        );
+        const connectedClauseIds = connectedClauseEdges.map(e => e.from === data.id ? e.to : e.from);
+        const connectedClauseNodes = connectedClauseIds.map(id => kgPhysicsNodes.find(n => n.data.id === id)).filter(Boolean);
+
+        // Visual Evidence Crop (only if authentic crop exists)
         const linkedFact = rawKGFacts.find(f => f.subject_id === data.id || f.object_id === data.id);
-        const cropImg = (linkedFact && linkedFact.source && linkedFact.source.crop && linkedFact.source.crop.endsWith('.png')) 
-          ? linkedFact.source.crop 
-          : ((data.type === "REVISION" || data.domain === "revision") ? "crops/t6155_title_alt13.png" : (Object.values(currentActiveDossier.crops || {})[0] || "crops/t6155_notes_full.png"));
+        const hasAuthenticCrop = (linkedFact && linkedFact.source && linkedFact.source.crop && !linkedFact.source.crop.includes('t6155_notes_full.png')) ||
+                                 (currentActiveDossier && currentActiveDossier.drawing_number && currentActiveDossier.crops && Object.values(currentActiveDossier.crops).length > 0) ||
+                                 (data.type === "REVISION" || data.domain === "revision");
+        const cropImg = hasAuthenticCrop 
+          ? (linkedFact?.source?.crop || ((data.type === "REVISION" || data.domain === "revision") ? "crops/t6155_title_alt13.png" : (Object.values(currentActiveDossier.crops || {})[0] || "")))
+          : "";
         const cropRegion = linkedFact?.source?.region || ((data.type === "REVISION" || data.domain === "revision") ? "Title Block Revision Ledger" : "Master Blueprint Assembly");
 
         const hEntry = nodeHierarchyMap?.get(data.id);
@@ -5528,9 +3084,9 @@ html_template = r'''<!DOCTYPE html>
               </div>
               <div class="drawing-meta-grid">
                 ${specEntries.map(([k, v]) => `
-                  <div class="drawing-meta-item">
+                  <div class="drawing-meta-item" style="${Array.isArray(v) ? 'grid-column: span 2;' : ''}">
                     <div class="drawing-meta-label">${k}</div>
-                    <div class="drawing-meta-value" style="font-size: 11px;">${v}</div>
+                    <div class="drawing-meta-value" style="font-size: 11px;">${Array.isArray(v) ? v.map(item => `<span style="display:inline-block; margin:2px 4px 2px 0; padding:2px 6px; background:rgba(0,240,255,0.12); border:1px solid rgba(0,240,255,0.3); border-radius:3px; color:var(--accent-cyan); font-size:10.5px; font-weight:600;">📐 ${item}</span>`).join('') : v}</div>
                   </div>
                 `).join('')}
               </div>
@@ -5571,20 +3127,40 @@ html_template = r'''<!DOCTYPE html>
             </div>
           </div>
 
-          <!-- Section 6: Grounded Visual Blueprint Evidence -->
-          <div class="drawing-section">
-            <div class="drawing-section-header">
-              <div class="drawing-section-title"><span>📸</span> Grounded Visual Blueprint Evidence</div>
-              <span class="drawing-section-badge">SOURCE CROP</span>
-            </div>
-            <div style="background: rgba(10, 16, 28, 0.8); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 6px; cursor: pointer;" onclick="openFullscreenBlueprint('${cropImg}', '${data.label}: Source Evidence')">
-              <img src="${cropImg}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 4px;" alt="Blueprint Evidence">
-              <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 9.5px;">
-                <span style="color: var(--accent-cyan); font-weight: 600;">Region: ${cropRegion}</span>
-                <span style="color: var(--text-dim);">🔍 Click to Expand</span>
+          <!-- Section 6: Grounded Evidence & Statutory Provisions -->
+          ${hasAuthenticCrop ? `
+            <div class="drawing-section">
+              <div class="drawing-section-header">
+                <div class="drawing-section-title"><span>📸</span> Grounded Visual Blueprint Evidence</div>
+                <span class="drawing-section-badge">SOURCE CROP</span>
+              </div>
+              <div style="background: rgba(10, 16, 28, 0.8); border: 1px solid var(--border-subtle); border-radius: 6px; padding: 6px; cursor: pointer;" onclick="openFullscreenBlueprint('${cropImg}', '${data.label}: Source Evidence')">
+                <img src="${cropImg}" style="width: 100%; height: 90px; object-fit: cover; border-radius: 4px;" alt="Blueprint Evidence">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 4px; font-size: 9.5px;">
+                  <span style="color: var(--accent-cyan); font-weight: 600;">Region: ${cropRegion}</span>
+                  <span style="color: var(--text-dim);">🔍 Click to Expand</span>
+                </div>
               </div>
             </div>
-          </div>
+          ` : (connectedClauseNodes.length > 0 ? `
+            <div class="drawing-section">
+              <div class="drawing-section-header">
+                <div class="drawing-section-title"><span>📜</span> Governing Statutory Manual Directives (${connectedClauseNodes.length})</div>
+                <span class="drawing-section-badge" style="color: var(--accent-green); border-color: rgba(0,255,136,0.3);">STATUTORY EVIDENCE</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px;">
+                ${connectedClauseNodes.slice(0, 5).map(cn => `
+                  <div style="background: rgba(10, 16, 28, 0.7); border-left: 3px solid var(--accent-cyan); border-radius: 0 4px 4px 0; padding: 7px 10px; cursor: pointer;" onclick="inspectNode(kgPhysicsNodes.find(n => n.data.id === '${cn.data.id}'))">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px;">
+                      <strong style="color: var(--accent-cyan); font-size: 11px;">${cn.data.label}</strong>
+                      <span style="font-size: 9px; color: var(--accent-purple); font-family: var(--font-mono);">${cn.data.specs?.Manual || 'IRPWM / USFD'}</span>
+                    </div>
+                    <div style="font-size: 10.5px; color: #cfd8ea; line-height: 1.4;">${cn.data.desc || cn.data.specs?.Verbatim || 'Official regulatory clause.'}</div>
+                  </div>
+                `).join('')}
+              </div>
+            </div>
+          ` : '')}
 
           <!-- Section 7: Applicable Drawing Notes -->
           ${notesHtml}
@@ -5947,7 +3523,7 @@ html_template = r'''<!DOCTYPE html>
     function computeRevisionDiff(baseAlt, targetAlt) {
       const b = parseInt(baseAlt, 10);
       const t = parseInt(targetAlt, 10);
-      const notes = RDSO_EXTRACTED_KNOWLEDGE["RDSO_T_6155"]?.general_notes || [];
+      const notes = currentActiveDossier?.general_notes || [];
 
       const diffItems = [];
       let addedCount = 0;
@@ -6294,7 +3870,7 @@ html_template = r'''<!DOCTYPE html>
           </div>
           <div class="drawing-meta-item">
             <div class="drawing-meta-label">Verification Status</div>
-            <div class="drawing-meta-value" style="color: var(--accent-green);">VERIFIED (GATE D)</div>
+            <div class="drawing-meta-value" style="color: var(--accent-green);">Evidence-linked (Gate D); not human-reviewed</div>
           </div>
           <div class="drawing-meta-item">
             <div class="drawing-meta-label">Extraction Method</div>
@@ -6519,12 +4095,17 @@ html_template = r'''<!DOCTYPE html>
 
       kgPhysicsNodes.forEach(n => {
         const inPath = pathSet.has(n.data.id);
-        n.mesh.material.opacity = inPath ? 1.0 : 0.12;
-        n.mesh.material.transparent = !inPath;
-        n.sprite.material.opacity = inPath ? 1.0 : 0.15;
+        if (n.mesh && n.mesh.material) {
+          n.mesh.material.opacity = inPath ? 1.0 : 0.12;
+          n.mesh.material.transparent = !inPath;
+        }
+        if (n.sprite && n.sprite.material) {
+          n.sprite.material.opacity = inPath ? 1.0 : 0.15;
+        }
       });
 
       kgPhysicsEdges.forEach(e => {
+        if (!e.line || !e.line.material) return;
         const inPath = pathSet.has(e.from) && pathSet.has(e.to);
         e.line.material.opacity = inPath ? 1.0 : 0.05;
         if (inPath) {
@@ -6551,7 +4132,7 @@ html_template = r'''<!DOCTYPE html>
       } else if (templateType === 'failure') {
         renderPathFinderUI('defect_joint_fatigue', 'hazard_derailment_split');
       } else if (templateType === 'procedure') {
-        renderPathFinderUI('doc_usfd_2026', 'equip_usfd_tester');
+        renderPathFinderUI('sop_epoxy_retrofit', 'drg_6155');
       } else if (templateType === 'procurement') {
         renderPathFinderUI('drg_6155', 'spare_bolt_25x310');
       }
@@ -6655,7 +4236,7 @@ html_template = r'''<!DOCTYPE html>
               </button>
               <button class="path-template-btn" onclick="loadPathTemplate('procedure')">
                 <div class="path-template-title"><span>📋</span> Procedure Path</div>
-                <div class="path-template-sub">USFD Code ➔ SOP ➔ Flaw Tester</div>
+                <div class="path-template-sub">Epoxy SOP ➔ Note 25 ➔ T-6155</div>
               </button>
               <button class="path-template-btn" onclick="loadPathTemplate('procurement')">
                 <div class="path-template-title"><span>📦</span> Procurement Path</div>
@@ -7093,251 +4674,7 @@ html_template = r'''<!DOCTYPE html>
       COMPONENT_LOOKUP: { label: "Component Detail", color: "#00f0ff", icon: "🧱" }
     };
 
-    const CANONICAL_QA_DATABASE = [
-      {
-        id: "qa_tongue_wear",
-        intent: "TOLERANCE_INQUIRY",
-        keywords: ["wear", "tongue rail", "permissible", "vertical wear", "lateral wear", "limit"],
-        question: "What is the permissible wear for 60kg tongue rails?",
-        statement: "Maximum permissible vertical wear on 60kg tongue rails is 6.0 mm; maximum lateral wear is 8.0 mm per IRPWM 2024 Para 429 and IRS:T-10.",
-        params: [
-          { name: "Max Vertical Wear", nominal: "0.0 mm (New)", limit: "6.0 mm", unit: "mm", risk: "Wheel flange climb risk over tongue rail", remedy: "Recondition by in-situ welding or replace switch rail" },
-          { name: "Max Lateral Wear", nominal: "0.0 mm (New)", limit: "8.0 mm", unit: "mm", risk: "Loss of rail wheel guidance at turnout entry", remedy: "Replace tongue rail with Thick-Web ZU-1-60 profile" }
-        ],
-        traversal: [
-          { id: "drg_6155", label: "RDSO/T-6155 (Drawing)", universe: "drawings" },
-          { id: "comp_tonguerail_lh", label: "Tongue Rail LH (Component)", universe: "drawings" },
-          { id: "std_irs_t10", label: "IRS:T-10 (Standard)", universe: "drawings" },
-          { id: "DOC:IRPWM:2024:ACS14", label: "IRPWM 2024 Para 429 (Statutory Clause)", universe: "manuals" }
-        ],
-        primaryNodeId: "comp_tonguerail_lh",
-        provenance: {
-          doc: "Indian Railways Permanent Way Manual (IRPWM)",
-          edition: "2024 Edition with ACS-14",
-          chapter: "Chapter 4: Track Structure on Curves & Turnouts",
-          clause: "Para 429(3)",
-          status: "VERIFIED",
-          confidence: 0.98
-        },
-        conflictNote: null,
-        workflow: { label: "Open Field Inspection Checklist", tab: "inspection" }
-      },
-      {
-        id: "qa_switch_throw",
-        intent: "TOLERANCE_INQUIRY",
-        keywords: ["throw", "toe", "switch opening", "stroke", "opening at toe", "clearance at toe"],
-        question: "What is the standard switch throw at the toe of curved switch?",
-        statement: "Standard switch opening at the toe of switch is 160 mm (-0 mm, +3 mm), giving an operating tolerance window of 160.0 to 163.0 mm per RDSO/T-6155 Note 12.",
-        params: [
-          { name: "Switch Opening at Toe", nominal: "160.0 mm", limit: "160.0 – 163.0 mm", unit: "mm", risk: "Under-throw (<160mm) risks facing point splitting; over-throw (>163mm) strains point motor", remedy: "Adjust drive rod stroke on point machine (S-3454)" }
-        ],
-        traversal: [
-          { id: "drg_6155", label: "RDSO/T-6155 (Drawing)", universe: "drawings" },
-          { id: "note_6155_12", label: "Note 12 (Directives)", universe: "drawings" },
-          { id: "comp_detailb", label: "Detail 'B' Flat Tie Bar", universe: "drawings" },
-          { id: "DOC:IRPWM:2024:ACS14", label: "IRPWM Para 429 (Clause)", universe: "manuals" }
-        ],
-        primaryNodeId: "comp_detailb",
-        provenance: {
-          doc: "RDSO/T-6155",
-          edition: "Alt 13 (Latest)",
-          chapter: "Title Block & Engineering Notes",
-          clause: "Note 12",
-          status: "VERIFIED",
-          confidence: 0.99
-        },
-        conflictNote: "Alt 11 vs Alt 12 note: Alt 11 set 160 mm strictly; Alt 12 amended tolerance window to +3 mm to prevent point machine motor burnouts under heavy vibration.",
-        workflow: { label: "Open Field Inspection Checklist", tab: "inspection" }
-      },
-      {
-        id: "qa_check_rail",
-        intent: "TOLERANCE_INQUIRY",
-        keywords: ["check rail", "clearance", "crossing clearance", "41", "45", "flange clearance"],
-        question: "What is the check rail clearance limit for 1:12 BG turnouts?",
-        statement: "Check rail clearance at the crossing nose must be maintained between 41.0 mm and 45.0 mm per IRPWM Para 429 and IRS:T-10.",
-        params: [
-          { name: "Check Rail Clearance", nominal: "43.0 mm", limit: "41.0 – 45.0 mm", unit: "mm", risk: "Clearance <41 mm risks wheel flange striking nose; >45 mm permits unguided wheel climb", remedy: "Adjust check rail packing washers or replace check rail blocks" }
-        ],
-        traversal: [
-          { id: "drg_6155", label: "RDSO/T-6155 (Turnout)", universe: "drawings" },
-          { id: "comp_cms_crossing", label: "CMS Crossing 1:12", universe: "drawings" },
-          { id: "std_irs_t10", label: "IRS:T-10", universe: "drawings" },
-          { id: "DOC:IRPWM:2024:ACS14", label: "IRPWM Para 429", universe: "manuals" }
-        ],
-        primaryNodeId: "comp_cms_crossing",
-        provenance: {
-          doc: "IRPWM 2024 / IRS:T-10",
-          edition: "2024 Edition",
-          chapter: "Chapter 4: Turnout Geometry",
-          clause: "Para 429 & Note 14",
-          status: "VERIFIED",
-          confidence: 0.99
-        },
-        conflictNote: null,
-        workflow: { label: "Open Field Inspection Checklist", tab: "inspection" }
-      },
-      {
-        id: "qa_rubber_pad_spec",
-        intent: "SPECIFICATION_GOVERNANCE",
-        keywords: ["rubber pad", "grsp", "composite", "specification", "governs", "standard", "pad"],
-        question: "Which IRS specification governs sleeper rubber pads?",
-        statement: "Grooved Rubber Sole Pads (GRSP 6mm & 10mm composite) are governed by IRS:T-46:2020 and layout standard RDSO/T-6154.",
-        params: [
-          { name: "GRSP Pad Thickness", nominal: "10.0 mm Composite", limit: "±0.5 mm", unit: "mm", risk: "Pad crushing leads to PSC sleeper rail seat attrition", remedy: "Renew with IRS:T-46 high-damping rubber pads" }
-        ],
-        traversal: [
-          { id: "drg_6154", label: "RDSO/T-6154 (Layout)", universe: "drawings" },
-          { id: "comp_grsp", label: "10 mm GRSP Pad (comp_grsp)", universe: "drawings" },
-          { id: "std_irs_t10", label: "IRS:T-10 (Standard)", universe: "drawings" }
-        ],
-        primaryNodeId: "comp_grsp",
-        provenance: {
-          doc: "IRS:T-46:2020",
-          edition: "2020 Edition",
-          chapter: "Elastomeric Pad Specifications",
-          clause: "Clause 4.1 & Table 2",
-          status: "VERIFIED",
-          confidence: 0.97
-        },
-        conflictNote: null,
-        workflow: { label: "View Drawing Overview", tab: "overview" }
-      },
-      {
-        id: "qa_erc_mkv_toe_load",
-        intent: "SPECIFICATION_GOVERNANCE",
-        keywords: ["erc", "toe load", "elastic rail clip", "clip", "fastener", "kg", "mkv", "mk-v"],
-        question: "What is the toe load standard for ERC Mk-V fasteners?",
-        statement: "ERC Mk-V High-Toe-Load Elastic Rail Clips require a nominal toe clamping load of 1200 to 1500 kg (minimum 1200 kg in service) governed by IRS:T-12:2009 / RDSO/T-5919.",
-        params: [
-          { name: "Toe Clamping Load", nominal: "1250 kg", limit: ">= 1200 kg", unit: "kg", risk: "Sub-standard toe load permits rail creep, track gauge spread, and rail rollover under 25t axle load", remedy: "Replace fatigued clips with new ERC Mk-V and renew GFN-66 liners" }
-        ],
-        traversal: [
-          { id: "drg_6155", label: "RDSO/T-6155", universe: "drawings" },
-          { id: "fastener_erc_mkv", label: "ERC Mk-V (Fastener)", universe: "drawings" },
-          { id: "std_irs_t10", label: "IRS:T-10", universe: "drawings" },
-          { id: "DOC:IRPWM:2024:ACS14", label: "IRPWM Para 429", universe: "manuals" }
-        ],
-        primaryNodeId: "fastener_erc_mkv",
-        provenance: {
-          doc: "IRS:T-12:2009 / RDSO/T-5919",
-          edition: "2009 Edition",
-          chapter: "Elastic Fastenings",
-          clause: "Specification IRS:T-12",
-          status: "VERIFIED",
-          confidence: 0.98
-        },
-        conflictNote: null,
-        workflow: { label: "Open Field Inspection Checklist", tab: "inspection" }
-      },
-      {
-        id: "qa_usfd_testing",
-        intent: "INSPECTION_PROCEDURE",
-        keywords: ["usfd", "ultrasonic", "scan", "testing", "flaw", "inspection", "probe", "frequency"],
-        question: "What is the USFD testing protocol for curved switches?",
-        statement: "USFD testing mandates 3-Zone ultrasonic scanning of machined tongue rails (Zone 1: head, Zone 2: web, Zone 3: foot) using 70° and 0° normal probes every 3 months or 10 GMT per USFD Manual 2026 Chapter 10.",
-        params: [
-          { name: "USFD Frequency", nominal: "3 Months / 10 GMT", limit: "Mandatory Periodic", unit: "GMT/M", risk: "Undetected internal fatigue fracture in machined web triggers sudden switch break under traffic", remedy: "Immediate joggled fishplating with emergency clamps per USFD protocol" }
-        ],
-        traversal: [
-          { id: "comp_tonguerail_lh", label: "Tongue Rail LH", universe: "drawings" },
-          { id: "DOC:USFD:2026:ACS4", label: "USFD Manual 2026", universe: "manuals" },
-          { id: "FAIL:TRACK:BOLT_HOLE_STAR_CRACK", label: "Star Crack (Defect)", universe: "manuals" }
-        ],
-        primaryNodeId: "doc_usfd_2026",
-        provenance: {
-          doc: "Indian Railways Manual for Ultrasonic Testing of Rails and Welds (USFD)",
-          edition: "2026 Edition with ACS-4",
-          chapter: "Chapter 10: Testing of Points & Crossings",
-          clause: "Clause 10.3 & Annexure 10/1",
-          status: "VERIFIED",
-          confidence: 0.96
-        },
-        conflictNote: null,
-        workflow: { label: "Open Field Inspection Checklist", tab: "inspection" }
-      },
-      {
-        id: "qa_alt11_changes",
-        intent: "REVISION_COMPARISON",
-        keywords: ["alt 11", "alteration 11", "changed in alt 11", "revision 11", "alt11", "difference"],
-        question: "What was changed in Alt 11 for T-6155?",
-        statement: "Alteration 11 (2018) introduced 222 mm drop for Detail 'B' Flat Tie Bars, standardized HTS 25x310 mm fishbolts with split pins, and mandated 10% LIST-A depot spares buffer under Note 28.",
-        params: [
-          { name: "Detail 'B' Drop", nominal: "222.0 mm", limit: "Exact", unit: "mm", risk: "Insufficient tie bar drop causes ballast collision during tamping operations", remedy: "Verify Detail 'B' stamp on tie bar forged body" },
-          { name: "LIST-A Spares Buffer", nominal: "10%", limit: "Statutory Mandate", unit: "%", risk: "Stockouts during emergency turnout renewal", remedy: "Maintain 10% buffer in divisional track depot" }
-        ],
-        traversal: [
-          { id: "drg_6155", label: "RDSO/T-6155", universe: "drawings" },
-          { id: "rev_6155_alt11", label: "Alteration 11 (2018)", universe: "drawings" },
-          { id: "comp_detailb", label: "Detail 'B' Flat Tie Bar", universe: "drawings" },
-          { id: "spare_bolt_25x310", label: "Fishbolt 25x310 mm", universe: "drawings" }
-        ],
-        primaryNodeId: "rev_6155_alt11",
-        provenance: {
-          doc: "RDSO/T-6155 Alteration Ledger",
-          edition: "Alteration 11",
-          chapter: "Revision Table",
-          clause: "Alt 11 Entry",
-          status: "VERIFIED",
-          confidence: 0.99
-        },
-        conflictNote: "Supersession note: Alt 11 replaced previous straight tie bar designs with the 222 mm cranked drop to clear heavy mechanized tamping machine tines.",
-        workflow: { label: "Open Revisions & Diff", tab: "revisions" }
-      },
-      {
-        id: "qa_lista_procurement",
-        intent: "BOM_PROCUREMENT",
-        keywords: ["buffer", "list-a", "procurement", "spares buffer", "sets", "how many spares", "order"],
-        question: "How are LIST-A spares calculated for 10 turnout sets?",
-        statement: "Under Note 28 mandate, 10% wear buffer is added to LIST-A components: 10 sets require 20 base Detail 'B' bars + ceil(20 * 0.10) = 2 buffer, totaling 22 units.",
-        params: [
-          { name: "Detail 'B' Tie Bars", nominal: "20 Base", limit: "+2 Buffer = 22 Total", unit: "Nos", risk: "Depot deficit", remedy: "Requisition per Note 28 formula" },
-          { name: "HTS Bolts 25x310", nominal: "240 Base", limit: "+24 Buffer = 264 Total", unit: "Nos", risk: "Fastener shortfall", remedy: "Include 10% bolt buffer in tender" }
-        ],
-        traversal: [
-          { id: "drg_6155", label: "RDSO/T-6155", universe: "drawings" },
-          { id: "note_6155_28", label: "Note 28 (Spares Buffer)", universe: "drawings" },
-          { id: "comp_detailb", label: "Detail 'B' Tie Bar", universe: "drawings" }
-        ],
-        primaryNodeId: "comp_detailb",
-        provenance: {
-          doc: "RDSO/T-6155",
-          edition: "Alt 13",
-          chapter: "Engineering Notes",
-          clause: "Note 28",
-          status: "DERIVED",
-          confidence: 0.98
-        },
-        conflictNote: null,
-        workflow: { label: "Open Spares & BOM Calculator", tab: "procurement" }
-      },
-      {
-        id: "qa_star_crack_mitigation",
-        intent: "FAILURE_MITIGATION",
-        keywords: ["star crack", "bolt hole", "mitigation", "fracture", "failure mode", "crack", "bolt"],
-        question: "What are the mitigations for bolt hole star cracks?",
-        statement: "Immediate remedial action requires clamping joggled fishplates over the affected bolt hole, imposing 30 km/h speed restriction, and scheduling rail renewal within 48 hours per USFD Chapter 10.",
-        params: [
-          { name: "Speed Restriction", nominal: "30 km/h", limit: "Maximum Speed", unit: "km/h", risk: "Dynamic axle impact causes complete switch web fracture", remedy: "Install joggled fishplate with 4 G-clamps immediately" },
-          { name: "Renewal Window", nominal: "Within 48 Hours", limit: "Strict Maximum", unit: "Hours", risk: "Derailment risk", remedy: "Replace tongue rail" }
-        ],
-        traversal: [
-          { id: "FAIL:TRACK:BOLT_HOLE_STAR_CRACK", label: "Star Crack (Defect)", universe: "manuals" },
-          { id: "comp_detailb", label: "Detail 'B' Hole Location", universe: "drawings" },
-          { id: "DOC:USFD:2026:ACS4", label: "USFD Chapter 10", universe: "manuals" }
-        ],
-        primaryNodeId: "FAIL:TRACK:BOLT_HOLE_STAR_CRACK",
-        provenance: {
-          doc: "USFD Manual 2026",
-          edition: "2026 Edition with ACS-4",
-          chapter: "Chapter 10: Classification of Rail Defects",
-          clause: "Para 10.4",
-          status: "VERIFIED",
-          confidence: 0.95
-        },
-        conflictNote: null,
-        workflow: { label: "Open Risks & SOPs", tab: "risks" }
-      }
-    ];
+    const CANONICAL_QA_DATABASE = [];   // no hand-written answers: every answer is retrieved from the manuals (see eval/retired_curated_answers.json)
 
     function detectQuestionIntent(query) {
       if (!query || typeof query !== "string") {
@@ -7346,8 +4683,8 @@ html_template = r'''<!DOCTYPE html>
       const q = query.trim().toLowerCase();
       const isQ = (
         q.endsWith("?") ||
-        /^(what|which|how|where|can|is|tell|explain|give|show)\b/i.test(q) ||
-        /(wear|throw|tolerance|clearance|standard|specification|irs:|is 2062|usfd|inspect|alt 10|alt 11|alt 12|buffer|spare|crack|defect|mitigat)/i.test(q)
+        /^(what|which|how|where|can|is|tell|explain|give|show|list|in which)\b/i.test(q) ||
+        /(wear|throw|tolerance|clearance|standard|specification|irs:|is 2062|usfd|inspect|alt 10|alt 11|alt 12|buffer|spare|crack|defect|mitigat|greas|lubricat|joggled|provisions?|destress|temperature|tensor|expansion|welded|lwr|cwr|curve|sleeper|ballast|joint|derail|gauge|cant|versine)/i.test(q)
       );
       if (!isQ) {
         return { isQuestion: false, intent: "UNKNOWN", confidence: 0.0 };
@@ -7356,13 +4693,13 @@ html_template = r'''<!DOCTYPE html>
       if (/(alt 10|alt 11|alt 12|alt 13|revision|alteration|difference|changed in)/i.test(q)) {
         return { isQuestion: true, intent: "REVISION_COMPARISON", confidence: 0.98 };
       }
-      if (/(inspect|usfd|ultrasonic|scan|check rail clearance|procedure|frequency|protocol)/i.test(q)) {
-        return { isQuestion: true, intent: "INSPECTION_PROCEDURE", confidence: 0.95 };
+      if (/(inspect|usfd|ultrasonic|scan|check rail clearance|procedure|frequency|protocol|greas|lubricat|joggled|provisions?)/i.test(q)) {
+        return { isQuestion: true, intent: "INSPECTION_PROCEDURE", confidence: 0.98 };
       }
       if (/(wear|throw|clearance|tolerance|opening|toe load|torque|limit)/i.test(q)) {
         return { isQuestion: true, intent: "TOLERANCE_INQUIRY", confidence: 0.98 };
       }
-      if (/(standard|specification|irs:|irs |is:|\bis 2062\b|\bis 814\b|govern|material|grade)/i.test(q)) {
+      if (/(destress|temperature|td\b|tensor|standard|specification|irs:|irs |is:|\bis 2062\b|\bis 814\b|govern|material|grade)/i.test(q)) {
         return { isQuestion: true, intent: "SPECIFICATION_GOVERNANCE", confidence: 0.96 };
       }
       if (/(crack|fracture|defect|failure|mitigat|remedy|risk|squat)/i.test(q)) {
@@ -7375,6 +4712,110 @@ html_template = r'''<!DOCTYPE html>
       return { isQuestion: true, intent: "COMPONENT_LOOKUP", confidence: 0.85 };
     }
 
+    // ---- Offline retrieval answers (P5.1): extractive, cited, refuses when evidence is thin ----------------
+    // Refusal threshold lives in the engine (lib/rdso_search.js refuseBelow); Gate P checks it equals eval/baseline.json.
+    const ALIAS_TO_DOC = { IRPWM: 'DOC:IRPWM:2024:ACS14', USFD: 'DOC:USFD:2026:ACS4', AT_WELD: 'DOC:AT_WELD:2022',
+                           FBW: 'DOC:FBW:2022:CS5', TMM: 'DOC:TMM:2020:ACS10', STMM: 'DOC:STMM:2024' };
+    let __searchEngine = null;
+    function escHtml(s) {
+      return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    }
+    function getSearchEngine() {
+      if (!__searchEngine && window.RDSOSearch && window.RDSO_SEARCH_INDEX) __searchEngine = window.RDSOSearch.create(window.RDSO_SEARCH_INDEX);
+      return __searchEngine;
+    }
+    function renderCrossRefs(id) {
+      const X = window.RDSO_CROSSREFS;
+      if (!X) return '';
+      const out = (X.out[id] || []).filter(r => r[1] !== 'chapter');
+      const incoming = X.in[id] || [];
+      if (!out.length && !incoming.length) return '';
+      const color = { RESOLVED: 'var(--accent-green)', EXTERNAL: 'var(--text-muted)', DELETED: 'var(--accent-yellow)', NOT_FOUND: 'var(--accent-red)', AMBIGUOUS: 'var(--accent-yellow)' };
+      const chip = (label, status, target) => `<span ${target ? `onclick="selectGraphNode('${escHtml(target)}')" style="cursor:pointer;` : 'style="'}font-size:10px;border:1px solid ${color[status] || '#888'};color:${color[status] || '#888'};border-radius:4px;padding:2px 6px;" title="${status}">${escHtml(label)}${status === 'RESOLVED' ? '' : ' · ' + status.toLowerCase().replace('_', ' ')}</span>`;
+      const seen = new Set();
+      const outChips = out.filter(r => { const k = r[0] + r[2]; if (seen.has(k)) return false; seen.add(k); return true; })
+        .slice(0, 24).map(r => chip(r[0], r[2], r[3][0])).join('');
+      const inChips = incoming.slice(0, 24).map(s => chip(s.split(':').slice(1, 2)[0] + ' ¶' + s.split('PARA_')[1], 'RESOLVED', s)).join('');
+      return `<div style="margin-top:8px;">` +
+        (outChips ? `<div style="font-size:10px;font-weight:600;color:var(--accent-purple);text-transform:uppercase;margin-bottom:4px;">References in this provision:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${outChips}</div>` : '') +
+        (inChips ? `<div style="font-size:10px;font-weight:600;color:var(--accent-purple);text-transform:uppercase;margin:6px 0 4px;">Referenced by:</div><div style="display:flex;gap:6px;flex-wrap:wrap;">${inChips}</div>` : '') + `</div>`;
+    }
+    function citationOf(r) {
+      return r.alias === 'DRAWINGS' ? `${escHtml(r.title)}` : `${escHtml(r.alias)} ${escHtml(r.type === 'TABLE' ? r.para : 'Para ' + r.para)} · p.${r.page}`;
+    }
+    // ---- Local feedback log (P7.2): stays in this browser until the user exports it -------------------------
+    const RDSO_FEEDBACK_KEY = 'rdso_feedback_v1';
+    window.rdsoFeedback = {
+      read() { try { return JSON.parse(localStorage.getItem(RDSO_FEEDBACK_KEY) || '[]'); } catch (e) { return []; } },
+      write(rows) { try { localStorage.setItem(RDSO_FEEDBACK_KEY, JSON.stringify(rows.slice(-500))); } catch (e) { /* storage unavailable: feedback is optional */ } },
+      log(entry) { const rows = this.read(); rows.push({ ts: new Date().toISOString(), ...entry }); this.write(rows); return rows.length; },
+      exportJsonl() { return this.read().map(r => JSON.stringify(r)).join('\n') + '\n'; },
+      download() {
+        const blob = new Blob([this.exportJsonl()], { type: 'application/x-ndjson' });
+        const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'rdso_feedback.jsonl'; a.click();
+      },
+      clear() { this.write([]); }
+    };
+    function sendFeedback(query, clause, verdict) {
+      window.rdsoFeedback.log({ type: 'feedback', query, clause, verdict });
+      const el = document.getElementById('qa-feedback-note');
+      if (el) el.textContent = verdict === 'up' ? 'Thanks: saved on this computer.' : 'Saved: this will go to the review queue when you export the log.';
+    }
+    window.sendFeedback = sendFeedback;
+
+    function retrievalAnswer(query, intent) {
+      const engine = getSearchEngine();
+      if (!engine) return null;
+      const ans = engine.answer(query, { k: 6 });
+      window.rdsoFeedback.log({ type: 'query', query, status: ans.status, coverage: +ans.coverage.toFixed(3), clause: ans.best ? ans.best.clause : null,
+        shown: ans.best ? [ans.best.clause, ...ans.related.map(r => r.clause)] : [] });
+      const meta = INTENT_METADATA[intent] || INTENT_METADATA.COMPONENT_LOOKUP || { label: 'Retrieval', color: 'var(--accent-cyan)', icon: '🔎' };
+      const base = { question: query, intent: intent, intentLabel: meta.label, intentColor: meta.color, intentIcon: meta.icon, params: [], conflictNote: null };
+      if (ans.status !== 'answer') {
+        return { ...base, id: 'qa_retrieval_none', statement: 'No sufficient evidence for this question in the loaded manuals and drawings. ' +
+                 `Only ${Math.round(ans.coverage * 100)}% of its key terms occur together in any one passage. Try naming the manual, a paragraph number, or a component.`,
+                 traversal: [], primaryNodeId: '', confidence: Math.min(ans.coverage, 0.55), confidenceLabel: 'none',
+                 provenance: { doc: 'Offline manual index', edition: 'no supporting passage', chapter: '', clause: '—', status: 'NO_EVIDENCE', confidence: ans.coverage }, workflow: null };
+      }
+      const best = ans.best, docId = ALIAS_TO_DOC[best.alias];
+      const cite = citationOf(best);
+      const evId = best.type === 'CLAUSE' ? 'ev:clause:' + best.clause : '';
+      const open = docId && best.page ? `<button class="btn" style="font-size:10px;padding:2px 8px;margin-left:6px;" onclick="openManualPdf('${docId}', ${best.page}, '${escHtml(cite)}', '${evId}')">📄 Open source page ↗</button>` : '';
+      const sentences = ans.sentences.map(s => `<li style="margin-bottom:4px;">${escHtml(s.text.replace(/\s+/g, ' ').trim())} <span style="color:var(--text-muted);font-size:10px;white-space:nowrap;">[${cite}]</span></li>`).join('');
+      const extras = (window.RDSO_CLAUSE_EXTRAS || {})[best.clause] || {};
+      const UNIT_LABEL = { kmph: 'km/h', degC: '°C', deg: '°', kn: 'kN', mpa: 'MPa', gmt: 'GMT', khz: 'kHz', mhz: 'MHz' };
+      const fmtValue = v => {
+        const [cmp, lo, hi, unit, quantity] = v, u = UNIT_LABEL[unit] || unit;
+        const text = cmp === 'max' ? `at most ${hi} ${u}` : cmp === 'min' ? `at least ${lo} ${u}` : cmp === 'range' ? `${lo} to ${hi} ${u}`
+          : cmp === 'tolerance' ? `${lo} / +${hi} ${u}` : `${lo} ${u}`;
+        return `<li>${quantity ? `<b>${escHtml(quantity)}</b>: ` : ''}${escHtml(text)} <span style="color:var(--text-muted);">— “${escHtml(v[5])}”${v[6] && v[6].length ? ` · near: ${escHtml(v[6].join(', '))}` : ''}</span></li>`;
+      };
+      const valuesBlock = extras.v && extras.v.length
+        ? `<details style="margin-top:4px;"><summary style="cursor:pointer;font-size:10px;color:var(--accent-cyan);">Values found in this provision (${extras.v.length}, machine-extracted)</summary>` +
+          `<ul style="margin:4px 0 0 16px;padding:0;font-size:11px;line-height:1.5;">${extras.v.map(fmtValue).join('')}</ul></details>` : '';
+      const subBlock = extras.s && extras.s.length
+        ? `<div style="font-size:10px;margin-top:6px;color:var(--text-muted);">This paragraph continues in its sub-paragraphs: ` +
+          extras.s.map(([n, id]) => `<a href="#" onclick="selectGraphNode('${escHtml(id)}'); return false;" style="color:var(--accent-cyan);">${escHtml(n)}</a>`).join(', ') + `</div>` : '';
+      const drawingsBlock = extras.d && extras.d.length
+        ? `<div style="font-size:10px;margin-top:6px;color:var(--text-muted);">Drawings cited here that are in this collection: ` +
+          extras.d.map(([n, f]) => `<a href="${escHtml(f)}" target="_blank" rel="noopener" style="color:var(--accent-cyan);">T-${escHtml(n)} ↗</a>`).join(', ') + `</div>` : '';
+      const full = escHtml(best.text.replace(/\s+\n/g, '\n').slice(0, 1600)) + (best.text.length > 1600 ? ' …' : '');
+      const related = ans.related.map(r => `<li>${citationOf(r)} — ${escHtml(r.title.slice(0, 80))}</li>`).join('');
+      const tier = { high: 'Strong match', medium: 'Probable match', low: 'Weak match: check the source' }[ans.confidence];
+      const statement = `<div style="font-size:10px;color:var(--text-muted);margin-bottom:4px;">${tier} · ${best.kind === 'table' ? 'rows copied from a table in' : 'sentences copied from'} ${cite}${open}</div>` +
+        (sentences ? `<ul style="margin:4px 0 6px 16px;padding:0;font-size:12px;line-height:1.5;color:#e0e8f8;">${sentences}</ul>` : '') +
+        valuesBlock + subBlock + drawingsBlock +
+        `<details style="margin-top:4px;"><summary style="cursor:pointer;font-size:10px;color:var(--accent-cyan);">Show the full passage</summary>` +
+        `<blockquote style="border-left:3px solid var(--accent-cyan);padding-left:10px;margin:4px 0;white-space:pre-wrap;font-size:11.5px;line-height:1.5;color:#e0e8f8;max-height:220px;overflow:auto;">${full}</blockquote></details>` +
+        (related ? `<div style="font-size:10px;color:var(--text-muted);margin-top:6px;">Other relevant provisions:</div><ul style="margin:2px 0 0 16px;font-size:11px;">${related}</ul>` : '');
+      return { ...base, id: 'qa_retrieval_' + best.clause, statement, primaryNodeId: best.clause,
+               confidence: Math.min(0.95, ans.coverage), confidenceLabel: ans.confidence,
+               traversal: [best, ...ans.related].filter(r => r.type === 'CLAUSE').map(r => ({ id: r.clause, label: `${r.alias} ¶${r.para}`, universe: 'manuals' })),
+               provenance: { doc: best.doc, edition: 'machine-extracted, unreviewed', chapter: best.chapter, clause: best.clause, status: 'MACHINE_EXTRACTED', confidence: ans.coverage },
+               workflow: best.alias === 'DRAWINGS' ? null : { label: 'Open Codes & Manuals', tab: 'manuals' } };
+    }
+    window.retrievalAnswer = retrievalAnswer;
+
     function answerEngineeringQuestion(query) {
       if (!query || typeof query !== "string") return null;
       const { isQuestion, intent, confidence } = detectQuestionIntent(query);
@@ -7386,12 +4827,15 @@ html_template = r'''<!DOCTYPE html>
       let bestMatch = null;
       let bestScore = 0;
 
+      let bestHits = 0;
       CANONICAL_QA_DATABASE.forEach(item => {
-        let score = 0;
+        if (item.retired) return;
+        let score = 0, hits = 0;
         if (item.intent === intent) score += 40;
         item.keywords.forEach(kw => {
           if (qLower.includes(kw)) {
             score += 35;
+            hits++;
           } else if (tokens.some(t => kw.includes(t))) {
             score += 12;
           }
@@ -7399,10 +4843,13 @@ html_template = r'''<!DOCTYPE html>
         if (score > bestScore) {
           bestScore = score;
           bestMatch = item;
+          bestHits = hits;
         }
       });
 
-      if (bestMatch && bestScore >= 35) {
+      // A curated answer needs at least two of its own keywords in the question. One shared word
+      // ("fractured") once returned a star-crack mitigation card for a casual-renewal question.
+      if (bestMatch && bestScore >= 35 && bestHits >= 2) {
         const intentMeta = INTENT_METADATA[bestMatch.intent] || { label: bestMatch.intent, color: "var(--accent-cyan)", icon: "ℹ️" };
         return {
           ...bestMatch,
@@ -7414,7 +4861,13 @@ html_template = r'''<!DOCTYPE html>
         };
       }
 
-      // Dynamic Fallback: Search kgPhysicsNodes for entity
+      // Offline retrieval over the whole corpus (lib/rdso_search.js). Answers are extractive: the best
+      // passage is quoted with its manual, paragraph and page. If too little of the question is
+      // covered by any passage the answer is an explicit "no sufficient evidence", never a guess.
+      const retrieved = retrievalAnswer(query, intent);
+      if (retrieved) return retrieved;
+
+      // Dynamic Fallback: Search kgPhysicsNodes for asset
       const matchedNode = kgPhysicsNodes.find(n => {
         const lbl = n.data.label.toLowerCase();
         return tokens.some(t => t.length > 3 && lbl.includes(t));
@@ -7444,7 +4897,7 @@ html_template = r'''<!DOCTYPE html>
             edition: "Canonical Core v1",
             chapter: d.type || "Engineering Asset",
             clause: d.id,
-            status: "VERIFIED",
+            status: String(d.verification_status || "machine_extracted").toUpperCase(),
             confidence: 0.88
           },
           conflictNote: null,
@@ -7454,6 +4907,206 @@ html_template = r'''<!DOCTYPE html>
 
       return null;
     }
+
+    
+    // =========================================================================
+    // 3D MULTI-HOP KNOWLEDGE GRAPH PATH HIGHLIGHTING ENGINE
+    // =========================================================================
+    let activeHighlightedPath = null; // { nodes: Set<string>, edges: Set<string> }
+
+    function findMultiHopPath(startIds, endIds, maxDepth = 4) {
+      if (!Array.isArray(startIds)) startIds = [startIds];
+      if (!Array.isArray(endIds)) endIds = [endIds];
+
+      const queue = [];
+      const visited = new Map();
+
+      startIds.forEach(id => {
+        if (kgPhysicsNodesMap.has(id)) {
+          queue.push(id);
+          visited.set(id, { prevNodeId: null, edgeKey: null });
+        }
+      });
+
+      let foundEndId = null;
+      const targetSet = new Set(endIds);
+
+      while (queue.length > 0) {
+        const currId = queue.shift();
+        if (targetSet.has(currId) && !startIds.includes(currId)) {
+          foundEndId = currId;
+          break;
+        }
+
+        const outgoing = kgPhysicsEdges.filter(e => e.from === currId);
+        const incoming = kgPhysicsEdges.filter(e => e.to === currId);
+
+        for (const e of [...outgoing, ...incoming]) {
+          const neighborId = (e.from === currId) ? e.to : e.from;
+          if (!visited.has(neighborId)) {
+            visited.set(neighborId, { prevNodeId: currId, edgeKey: e.from + '|' + e.rel + '|' + e.to });
+            queue.push(neighborId);
+          }
+        }
+      }
+
+      if (!foundEndId) return null;
+
+      const pathNodes = [];
+      const pathEdges = [];
+      let curr = foundEndId;
+      while (curr) {
+        pathNodes.unshift(curr);
+        const info = visited.get(curr);
+        if (info && info.edgeKey) {
+          pathEdges.unshift(info.edgeKey);
+        }
+        curr = info ? info.prevNodeId : null;
+      }
+
+      return { nodes: pathNodes, edges: pathEdges };
+    }
+    window.findMultiHopPath = findMultiHopPath;
+
+    function frameCameraOnNodes(nodeIds) {
+      const validNodes = nodeIds.map(id => kgPhysicsNodesMap.get(id)).filter(Boolean);
+      if (validNodes.length === 0) return;
+
+      let minX = Infinity, maxX = -Infinity;
+      let minY = Infinity, maxY = -Infinity;
+      let minZ = Infinity, maxZ = -Infinity;
+
+      validNodes.forEach(n => {
+        minX = Math.min(minX, n.x); maxX = Math.max(maxX, n.x);
+        minY = Math.min(minY, n.y); maxY = Math.max(maxY, n.y);
+        minZ = Math.min(minZ, n.z); maxZ = Math.max(maxZ, n.z);
+      });
+
+      const centerX = (minX + maxX) / 2;
+      const centerY = (minY + maxY) / 2;
+      const centerZ = (minZ + maxZ) / 2;
+
+      const sizeX = maxX - minX;
+      const sizeY = maxY - minY;
+      const sizeZ = maxZ - minZ;
+      const maxDim = Math.max(sizeX, sizeY, sizeZ, 12);
+
+      const targetCamZ = centerZ + maxDim * 1.8 + 15;
+
+      kgControls.target.set(centerX, centerY, centerZ);
+      kgCamera.position.set(centerX, centerY + maxDim * 0.4 + 4, targetCamZ);
+      kgControls.update();
+    }
+
+    function showPathResetControl(show, count = 0) {
+      const hud = document.getElementById('path-focus-hud');
+      const lbl = document.getElementById('path-focus-label');
+      if (!hud) return;
+      if (show) {
+        if (lbl) lbl.innerText = `Knowledge Path Highlighted: ${count} Entities Active`;
+        hud.style.display = 'flex';
+      } else {
+        hud.style.display = 'none';
+      }
+    }
+
+    function highlightGraphPath(nodeIds, edgeKeys) {
+      if (!nodeIds || nodeIds.length === 0) {
+        clearHighlightedPath();
+        return;
+      }
+
+      activeHighlightedPath = {
+        nodes: new Set(nodeIds),
+        edges: new Set(edgeKeys || [])
+      };
+
+      nodeIds.forEach(id => {
+        expandedNodeIds.add(id);
+        const h = nodeHierarchyMap.get(id);
+        let curr = h ? h.parentId : null;
+        let guard = 0;
+        while (curr && guard < 10) {
+          expandedNodeIds.add(curr);
+          const p = nodeHierarchyMap.get(curr);
+          curr = p ? p.parentId : null;
+          guard++;
+        }
+      });
+
+      updateGraphVisibility();
+
+      kgPhysicsNodes.forEach(n => {
+        const isPath = activeHighlightedPath.nodes.has(n.data.id);
+        if (isPath) {
+          n.group.visible = true;
+          n.group.traverse(child => {
+            if (child.isMesh && child.material) {
+              child.material.transparent = true;
+              child.material.opacity = 1.0;
+              if (child.material.emissiveIntensity !== undefined) {
+                child.material.emissiveIntensity = 0.95;
+              }
+            }
+            if (child.isSprite && child.material) {
+              child.material.opacity = 1.0;
+            }
+          });
+        } else {
+          n.group.traverse(child => {
+            if (child.isMesh && child.material) {
+              child.material.transparent = true;
+              child.material.opacity = 0.15;
+            }
+            if (child.isSprite && child.material) {
+              child.material.opacity = 0.15;
+            }
+          });
+        }
+      });
+
+      kgPhysicsEdges.forEach(e => {
+        if (!e.line || !e.line.material) return;
+        const isPathEdge = activeHighlightedPath.edges.has(e.from + '|' + e.rel + '|' + e.to) ||
+                           (activeHighlightedPath.nodes.has(e.from) && activeHighlightedPath.nodes.has(e.to));
+        if (isPathEdge) {
+          e.line.visible = true;
+          e.line.material.color.setHex(0x00f0ff);
+          e.line.material.opacity = 1.0;
+        } else {
+          e.line.material.opacity = 0.08;
+        }
+      });
+
+      frameCameraOnNodes(nodeIds);
+      showPathResetControl(true, nodeIds.length);
+    }
+    window.highlightGraphPath = highlightGraphPath;
+
+    function clearHighlightedPath() {
+      activeHighlightedPath = null;
+      showPathResetControl(false);
+      updateGraphVisibility();
+      kgPhysicsNodes.forEach(n => {
+        n.group.traverse(child => {
+          if (child.isMesh && child.material) {
+            child.material.opacity = 1.0;
+            if (child.material.emissiveIntensity !== undefined) {
+              child.material.emissiveIntensity = 0.55;
+            }
+          }
+          if (child.isSprite && child.material) {
+            child.material.opacity = 1.0;
+          }
+        });
+      });
+      kgPhysicsEdges.forEach(e => {
+        if (!e.line || !e.line.material) return;
+        e.line.material.opacity = 0.45;
+        e.line.material.color.setHex(e.color);
+      });
+    }
+    window.clearHighlightedPath = clearHighlightedPath;
 
     function focusAnswerEntityIn3D(nodeId) {
       if (!nodeId) return;
@@ -7476,7 +5129,7 @@ html_template = r'''<!DOCTYPE html>
       container.innerHTML = `
         <div class="qa-input-wrap">
           <span style="font-size: 15px;">❓</span>
-          <input type="text" class="qa-input" id="qa-user-input" placeholder="Ask any railway engineering question (wear, throw, standards, alt 11, USFD, spares)..." value="${initialQuery}">
+          <input type="text" class="qa-input" id="qa-user-input" placeholder="Ask any railway engineering question (wear, throw, standards, alt 11, USFD, spares, greasing)..." value="${initialQuery}">
           <button class="qa-ask-btn" onclick="submitUserQuestion()">
             <span>⚡</span> Ask Question
           </button>
@@ -7490,10 +5143,12 @@ html_template = r'''<!DOCTYPE html>
             <button class="qa-chip" onclick="onQuestionPromptSelected('What is the permissible wear for 60kg tongue rails?')">🎯 Tongue Rail Wear Limits</button>
             <button class="qa-chip" onclick="onQuestionPromptSelected('What is the standard switch throw at the toe of curved switch?')">📏 Switch Throw at Toe</button>
             <button class="qa-chip" onclick="onQuestionPromptSelected('What is the check rail clearance limit for 1:12 BG turnouts?')">⚠️ Check Rail Clearance</button>
+            <button class="qa-chip" onclick="onQuestionPromptSelected('What are the provisions of greasing of joggled fish plates?')">🛢️ Greasing of Joggled Fish Plates</button>
+            <button class="qa-chip" onclick="onQuestionPromptSelected('In which clauses is greasing mentioned?')">📖 Greasing Mention Clauses (70)</button>
             <button class="qa-chip" onclick="onQuestionPromptSelected('Which IRS specification governs sleeper rubber pads?')">⚖️ Rubber Pad IRS Spec</button>
-            <button class="qa-chip" onclick="onQuestionPromptSelected('What is the toe load standard for ERC Mk-V fasteners?')">🔩 ERC Mk-V Clamping Load</button>
+            <button class="qa-chip" onclick="onQuestionPromptSelected('What is the toe load standard for ERC Mk-V fasteners?')">🔨 ERC Mk-V Clamping Load</button>
             <button class="qa-chip" onclick="onQuestionPromptSelected('What is the USFD testing protocol for curved switches?')">🔍 USFD Inspection Protocol</button>
-            <button class="qa-chip" onclick="onQuestionPromptSelected('What was changed in Alt 11 for T-6155?')">📝 Alt 11 Revision Ledger</button>
+            <button class="qa-chip" onclick="onQuestionPromptSelected('What was changed in Alt 11 for T-6155?')">📋 Alt 11 Revision Ledger</button>
             <button class="qa-chip" onclick="onQuestionPromptSelected('How are LIST-A spares calculated for 10 turnout sets?')">📦 LIST-A Spares Calculation</button>
             <button class="qa-chip" onclick="onQuestionPromptSelected('What are the mitigations for bolt hole star cracks?')">🚨 Star Crack Mitigations</button>
           </div>
@@ -7638,7 +5293,7 @@ html_template = r'''<!DOCTYPE html>
               <h3 style="margin: 0; font-size: 14px; color: #fff; font-weight: 700;">${answer.question}</h3>
             </div>
             <div class="qa-confidence-meter" title="${confPct}% Statistical Evidence Grounding">
-              <span>${confPct}% CONF</span>
+              <span>${String(answer.provenance.status).startsWith('CURATED') ? 'CURATED · UNREVIEWED' : (answer.confidenceLabel ? answer.confidenceLabel.toUpperCase() + ' · ' : '') + confPct + '% EVIDENCE'}</span>
               <div class="qa-confidence-bar">
                 <div class="qa-confidence-fill" style="width: ${confPct}%;"></div>
               </div>
@@ -7671,6 +5326,15 @@ html_template = r'''<!DOCTYPE html>
           <!-- Conflict Disclosure -->
           ${conflictHtml}
 
+          ${String(answer.id).startsWith('qa_retrieval') ? `
+          <div style="display:flex;align-items:center;gap:8px;margin:8px 0;font-size:11px;color:var(--text-muted);">
+            <span>Was this the right provision?</span>
+            <button class="btn" style="padding:2px 8px;" onclick="sendFeedback(${JSON.stringify(answer.question).replace(/"/g, '&quot;')}, ${JSON.stringify(answer.provenance.clause).replace(/"/g, '&quot;')}, 'up')">👍 Yes</button>
+            <button class="btn" style="padding:2px 8px;" onclick="sendFeedback(${JSON.stringify(answer.question).replace(/"/g, '&quot;')}, ${JSON.stringify(answer.provenance.clause).replace(/"/g, '&quot;')}, 'down')">👎 No</button>
+            <button class="btn" style="padding:2px 8px;" onclick="rdsoFeedback.download()" title="Download the log stored in this browser">⬇ Export feedback log</button>
+            <span id="qa-feedback-note"></span>
+          </div>` : ''}
+
           <!-- Action Toolbar -->
           <div class="qa-card-toolbar">
             <button class="btn btn-primary" onclick="focusAnswerEntityIn3D('${answer.primaryNodeId}')" style="font-size: 11px; padding: 6px 12px;">
@@ -7688,6 +5352,50 @@ html_template = r'''<!DOCTYPE html>
 
     window.detectQuestionIntent = detectQuestionIntent;
     window.answerEngineeringQuestion = answerEngineeringQuestion;
+
+    function executeHeroQuery(query) {
+      if (!query || !query.trim()) return;
+      const q = query.trim();
+      
+      const gSearch = document.getElementById('global-search');
+      const hSearch = document.getElementById('hero-query-input');
+      if (gSearch) gSearch.value = q;
+      if (hSearch) hSearch.value = q;
+
+      const ans = answerEngineeringQuestion(q);
+      if (ans) {
+        toggleIntelligenceDrawer(true);
+        switchDrawerTab('qa');
+        renderQuestionAnswerCard(ans, document.getElementById('qa-answer-mount'));
+        const titleEl = document.getElementById('drawer-title');
+        const domainEl = document.getElementById('drawer-domain');
+        if (titleEl) titleEl.innerText = ans.question;
+        if (domainEl) {
+          domainEl.innerText = `${ans.intentLabel || 'SPECIFICATION'} · FROM THE MANUALS`;
+          domainEl.style.color = ans.intentColor || 'var(--accent-cyan)';
+        }
+        if (ans.traversal && ans.traversal.length > 0) {
+          highlightGraphPath(ans.traversal.map(t => t.id));
+        }
+      } else {
+        const results = rankHybridSearchResults(q);
+        if (results.length > 0) {
+          const topNode = results[0].node;
+          const targetUniv = getNodeUniverse(topNode.data);
+          if (currentKnowledgeUniverse !== 'combined' && currentKnowledgeUniverse !== targetUniv) {
+            switchKnowledgeUniverse(targetUniv);
+          }
+          inspectNode(topNode);
+          toggleIntelligenceDrawer(true);
+        }
+      }
+
+      if (gSearch) {
+        gSearch.dispatchEvent(new Event('input'));
+      }
+    }
+    window.executeHeroQuery = executeHeroQuery;
+
     window.focusAnswerEntityIn3D = focusAnswerEntityIn3D;
     window.renderQuestionInterface = renderQuestionInterface;
     window.onQuestionPromptSelected = onQuestionPromptSelected;
@@ -7695,439 +5403,29 @@ html_template = r'''<!DOCTYPE html>
     window.renderQuestionAnswerCard = renderQuestionAnswerCard;
 
     /* =========================================================================
-       PHASE 6: LEARNING SYSTEM & TRAINING ACADEMY (§17, §21, §36)
+       LEARNING: the hand-written tracks, flashcards, quiz, competency matrix and certificate were removed (2026-10-01): their facts were not
+       traceable to the manuals and some contradicted them. Learning now lives in learn.html, whose cards are generated from the manuals only.
        ========================================================================= */
 
-    const CANONICAL_LEARNING_TRACKS = [
-      {
-        id: "track_turnout_curved_switches",
-        title: "Turnout Engineering & Curved Switches",
-        doc: "RDSO/T-6155 & T-6154",
-        icon: "🛤️",
-        color: "var(--accent-cyan)",
-        stages: [
-          {
-            stage: 1,
-            name: "Identify",
-            topic: "Master Layout Geometry (1 in 12, 1676 mm Gauge)",
-            desc: "Master turnout parameters: 1:12 angle, 1676 mm broad gauge, 60kg rail section, and 39.992 m overall lead length.",
-            targetNode: "drg_6155",
-            actionLabel: "Inspect T-6155 ➔"
-          },
-          {
-            stage: 2,
-            name: "Understand",
-            topic: "Switch Assembly & Components (Thick-Web, Detail B)",
-            desc: "Examine curved asymmetric tongue rails, stock rails, spherical washers, and forged tie bar connections.",
-            targetNode: "comp_detailb",
-            actionLabel: "Inspect Detail 'B' ➔"
-          },
-          {
-            stage: 3,
-            name: "Trace",
-            topic: "Fastenings & Sleepers (PSC Sleepers, ERC Mk-V, GRSP)",
-            desc: "Trace wheel load path down through PSC sleepers, Elastic Rail Clips, and 10mm elastomeric pads.",
-            targetNode: "std_irs_t10",
-            actionLabel: "Inspect IRS:T-10 ➔"
-          },
-          {
-            stage: 4,
-            name: "Compare",
-            topic: "Revision Lineage (Alt 10 vs Alt 11 vs Alt 12)",
-            desc: "Analyze engineering evolution: Alt 10 baseline, Alt 11 222mm forged drop for tamping, and Alt 12 weld-free lug.",
-            targetTab: "revisions",
-            actionLabel: "Compare Revisions ➔"
-          },
-          {
-            stage: 5,
-            name: "Apply & Diagnose",
-            topic: "Field Tolerances & Defect Mitigations",
-            desc: "Execute statutory checks: 115mm toe throw, 41-45mm check rail gap, and star crack ultrasonic remediation.",
-            targetTab: "inspection",
-            actionLabel: "Launch Field Checklist ➔"
-          }
-        ]
-      },
-      {
-        id: "track_irpwm_statutory_tolerances",
-        title: "IRPWM 2024 Track Tolerances & Joint Inspection",
-        doc: "IRPWM 2024 ACS-14",
-        icon: "📜",
-        color: "var(--accent-green)",
-        stages: [
-          {
-            stage: 1,
-            name: "Identify",
-            topic: "Chapter 4 Turnout Classification",
-            desc: "Classifications for passenger mainline, loop line turnouts, and maximum authorized turnout turnout speeds.",
-            targetNode: "man_irpwm_ch4",
-            actionLabel: "Inspect IRPWM Ch 4 ➔"
-          },
-          {
-            stage: 2,
-            name: "Understand",
-            topic: "Statutory Maintenance Tolerances",
-            desc: "Master statutory operating limits for gauge (+3/-2mm), cross-level (±4mm), twist, and clearance.",
-            targetNode: "man_irpwm_ch4",
-            actionLabel: "View Tolerances ➔"
-          },
-          {
-            stage: 3,
-            name: "Trace",
-            topic: "P-Way and S&T Joint Inspection Mandates",
-            desc: "Joint inspection protocol: monthly joint walkthroughs by SSE/P-Way and SSE/Signal for motorized points.",
-            targetTab: "inspection",
-            actionLabel: "Open Joint Form ➔"
-          },
-          {
-            stage: 4,
-            name: "Compare",
-            topic: "ACS-14 Updates to Speed Regimes",
-            desc: "Review newest amendments under ACS-14 for 25T heavy axle load lines and enhanced track geometry standards.",
-            targetNode: "man_irpwm_ch4",
-            actionLabel: "Read ACS-14 ➔"
-          },
-          {
-            stage: 5,
-            name: "Apply & Diagnose",
-            topic: "Wear Gauging & Remedial Renewal",
-            desc: "Apply 6.0 mm vertical and 8.0 mm lateral tongue rail wear thresholds to condemn or recondition in-situ.",
-            targetTab: "qa",
-            actionLabel: "Q&A Diagnostics ➔"
-          }
-        ]
-      },
-      {
-        id: "track_usfd_flaw_detection",
-        title: "USFD 2026 Flaw Detection & Diagnostics",
-        doc: "USFD Manual 2026 Ch 10 & IRS:T-12",
-        icon: "🔍",
-        color: "var(--accent-purple)",
-        stages: [
-          {
-            stage: 1,
-            name: "Identify",
-            topic: "3-Zone Ultrasonic Probe Configuration (0°, 70°, 45°)",
-            desc: "Probe beam orientations: 0° for horizontal web flaws, 70° for transverse head cracks, and 45° for bolt hole cracks.",
-            targetNode: "man_usfd_ch10",
-            actionLabel: "Inspect USFD Ch 10 ➔"
-          },
-          {
-            stage: 2,
-            name: "Understand",
-            topic: "Echo Signal Interpretation & Defect Classifications",
-            desc: "Distinguish IMR (Immediate Removal - crack >50%), OBS (Observed flaw), and REM (Remedial monitoring) defect flags.",
-            targetNode: "man_usfd_ch10",
-            actionLabel: "Echo Criteria ➔"
-          },
-          {
-            stage: 3,
-            name: "Trace",
-            topic: "Tongue Rail & Crossing Testing Protocol",
-            desc: "Mandatory inspection interval: scan machined switch rails every 3 months or 10 GMT, whichever is earlier.",
-            targetNode: "man_usfd_ch10",
-            actionLabel: "View Frequency ➔"
-          },
-          {
-            stage: 4,
-            name: "Compare",
-            topic: "Historical Defect Thresholds vs 2026 Advanced Digital Phased Array",
-            desc: "Comparison of manual A-scan calibration versus digital B-scan continuous recording and pattern matching.",
-            targetTab: "conflicts",
-            actionLabel: "Standards Matrix ➔"
-          },
-          {
-            stage: 5,
-            name: "Apply & Diagnose",
-            topic: "Bolt Hole Star Cracks & Gauge Corner Flaking Remediation",
-            desc: "Statutory remediation: execute immediate fishplating with clamp, impose 30 km/h caution order, and replace within 3 days.",
-            targetTab: "paths",
-            actionLabel: "Trace Failure Path ➔"
-          }
-        ]
-      }
-    ];
+    window.CANONICAL_FLASHCARDS = [];
+    window.CANONICAL_QUIZ_QUESTIONS = [];
+    window.CANONICAL_LEARNING_TRACKS = [];
 
-    const CANONICAL_FLASHCARDS = [
-      {
-        id: "fc1",
-        category: "Track Tolerances",
-        question: "What is the statutory check rail clearance at the nose of a 1:12 BG turnout?",
-        hint: "Governed by IRPWM 2024 Para 429 and IRS:T-10 standards.",
-        answer: "41.0 mm to 45.0 mm (standard). Maximum permissible is 45.0 mm, minimum is 41.0 mm. Prevents wheel flanges striking the crossing nose or climbing unguided.",
-        citation: "IRPWM 2024 Para 429 & IRS:T-10",
-        doc: "IRPWM 2024",
-        nodeId: "std_irs_t10"
-      },
-      {
-        id: "fc2",
-        category: "Revision Lineage",
-        question: "Why was a 222 mm forged drop introduced in Detail 'B' Flat Tie Bars under Alteration 11?",
-        hint: "Relates to mechanized maintenance and on-track tamping machines.",
-        answer: "To provide essential physical clearance preventing mechanized tamping tool tines from striking and bending tie bars during ballast packing operations.",
-        citation: "RDSO/T-6155 Alt 11 Revision Record",
-        doc: "RDSO/T-6155",
-        nodeId: "comp_detailb"
-      },
-      {
-        id: "fc3",
-        category: "Procurement & Spares",
-        question: "What spares buffer percentage is mandated for LIST-A turnout items under Note 28?",
-        hint: "Specifies wear reserve allowance rounded up for depot stores.",
-        answer: "+10% spare components (rounded up to nearest whole integer) mandated to be requisitioned and stocked for maintenance replacements.",
-        citation: "RDSO/T-6155 General Note 28",
-        doc: "RDSO/T-6155",
-        nodeId: "drg_6155"
-      },
-      {
-        id: "fc4",
-        category: "Switch Geometry",
-        question: "What is the standard switch opening / throw at the toe of a curved switch?",
-        hint: "Measured at first stretcher bar position between stock and tongue rail.",
-        answer: "115 ± 3 mm (operating range: 112 mm to 118 mm; minimum permissible in field: 95 mm). Ensures adequate wheel flange passage.",
-        citation: "IRPWM 2024 Para 429 · IRS:T-10",
-        doc: "IRPWM 2024",
-        nodeId: "std_irs_t10"
-      },
-      {
-        id: "fc5",
-        category: "Maintenance Limits",
-        question: "What are the condemning wear limits for 60kg machined tongue rails?",
-        hint: "Separate vertical and lateral wear limits per IRPWM Para 429.",
-        answer: "Max 6.0 mm vertical wear and max 8.0 mm lateral head wear. If either limit is breached, tongue rail must be grounded for reconditioning or replaced.",
-        citation: "IRPWM 2024 Para 429",
-        doc: "IRPWM 2024",
-        nodeId: "man_irpwm_ch4"
-      },
-      {
-        id: "fc6",
-        category: "Fasteners & Pads",
-        question: "Which Indian Railway Standard governs Grooved Rubber Sole Pads (GRSP)?",
-        hint: "Covers 6mm and 10mm elastomeric composite sole pads.",
-        answer: "IRS:T-46:2020. Mandates tensile strength, elongation at break, and electrical resistance for 10mm composite pads beneath PSC sleepers.",
-        citation: "IRS:T-46:2020 Specification",
-        doc: "IRS Standards",
-        nodeId: "comp_grsp"
-      },
-      {
-        id: "fc7",
-        category: "NDT & USFD",
-        question: "Which ultrasonic probe angle is utilized to detect 360° star cracks around fishbolt holes?",
-        hint: "Uses angular shear wave reflection in rail web.",
-        answer: "45° shear wave probe (or tandem 45°/70° array) steered across the web to detect radial fatigue cracks originating from bolt hole edges.",
-        citation: "USFD Manual 2026 Chapter 10",
-        doc: "USFD Manual",
-        nodeId: "man_usfd_ch10"
-      },
-      {
-        id: "fc8",
-        category: "Fasteners",
-        question: "What is the statutory toe load requirement for Elastic Rail Clip (ERC) Mk-V?",
-        hint: "High-capacity elastic clip designed for 25T/32.5T heavy axle loads.",
-        answer: "1200 kg to 1500 kg toe load. Required to prevent longitudinal rail creep and maintain sleeper fastening grip under dynamic impact.",
-        citation: "IRS:T-10 & RDSO/T-5919",
-        doc: "IRS:T-10",
-        nodeId: "std_irs_t10"
-      },
-      {
-        id: "fc9",
-        category: "Layout Parameters",
-        question: "What is the lead length and curved switch radius for 1 in 12 60kg turnouts?",
-        hint: "Found in master layout drawing RDSO/T-6154/6155.",
-        answer: "Switch radius is 10,125 mm (curved thick-web switch); Overall turnout lead length is 39.992 meters from SRJ to theoretical crossing nose.",
-        citation: "RDSO/T-6154 Master Layout Drawing",
-        doc: "RDSO/T-6154",
-        nodeId: "drg_6155"
-      },
-      {
-        id: "fc10",
-        category: "Statutory Inspection",
-        question: "What is the mandated joint inspection frequency for motor-operated points?",
-        hint: "Conducted jointly by Civil and Signal engineering supervisors.",
-        answer: "Once every month jointly by Sectional SSE (P-Way) and SSE (Signal), with recorded joint compliance register.",
-        citation: "IRPWM 2024 ACS-14 & Joint Code",
-        doc: "IRPWM 2024",
-        nodeId: "man_irpwm_ch4"
-      }
-    ];
-
-    const CANONICAL_QUIZ_QUESTIONS = [
-      {
-        id: "q1_check_rail",
-        question: "What is the statutory check rail clearance at the nose of a 1:12 BG turnout?",
-        options: ["35.0 – 38.0 mm", "41.0 – 45.0 mm", "48.0 – 52.0 mm", "57.0 – 60.0 mm"],
-        correctIndex: 1,
-        citation: "IRPWM 2024 Para 429 & IRS:T-10",
-        domain: "Track Geometry & Layout",
-        explanation: "Standard check rail clearance must be between 41.0 mm and 45.0 mm to prevent wheel flanges striking the crossing nose or climbing unguided."
-      },
-      {
-        id: "q2_alt11_drop",
-        question: "What forged drop was standardized for Detail 'B' Flat Tie Bars under Alteration 11?",
-        options: ["150 mm", "185 mm", "222 mm", "250 mm"],
-        correctIndex: 2,
-        citation: "RDSO/T-6155 Alt 11 Record",
-        domain: "Revision Lineage & Amendments",
-        explanation: "Alteration 11 introduced the 222 mm drop to prevent tamping machine tool tines from striking tie bars during mechanized track maintenance."
-      },
-      {
-        id: "q3_lista_buffer",
-        question: "What spares buffer percentage is mandated for LIST-A turnout items under Note 28?",
-        options: ["5%", "10%", "15%", "20%"],
-        correctIndex: 1,
-        citation: "RDSO/T-6155 Note 28",
-        domain: "Procurement & BOM Spares",
-        explanation: "Note 28 requires adding a 10% wear buffer (rounded up) to all LIST-A components for depot stock maintenance."
-      },
-      {
-        id: "q4_usfd_frequency",
-        question: "How frequently must machined tongue rails undergo USFD 3-Zone ultrasonic scanning?",
-        options: ["Every 1 Month / 5 GMT", "Every 3 Months / 10 GMT", "Every 6 Months / 20 GMT", "Annually / 40 GMT"],
-        correctIndex: 1,
-        citation: "USFD Manual 2026 Chapter 10",
-        domain: "Failure Modes & Inspection",
-        explanation: "Periodic ultrasonic scanning of tongue rails is mandatory every 3 months or 10 GMT, whichever is earlier, to detect sub-surface fatigue flaws."
-      },
-      {
-        id: "q5_rubber_pad_spec",
-        question: "Which IRS specification governs elastomeric Grooved Rubber Sole Pads (GRSP)?",
-        options: ["IRS:T-10", "IRS:T-12", "IRS:T-46", "IRS:T-29"],
-        correctIndex: 2,
-        citation: "IRS:T-46:2020",
-        domain: "Fasteners & Sleeper Standards",
-        explanation: "Grooved Rubber Sole Pads (GRSP 6mm/10mm composite) are manufactured and tested in accordance with IRS:T-46:2020."
-      }
-    ];
-
-    window.currentLearningSubTab = 'tracks';
-    window.currentFlashcardIndex = 0;
-    window.masteredFlashcards = new Set();
-    window.userQuizChoices = {};
-    window.quizSubmitted = false;
-    window.lastQuizScore = null;
-
-    function renderLearningModule(subTab = 'tracks') {
+    function renderLearningModule() {
       const container = document.getElementById('learning-container');
       if (!container) return;
-
-      window.currentLearningSubTab = subTab;
-
+      const n = (window.RDSO_CARDS || []).length;
       container.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 8px;">
-          <!-- Academy Sub-Navigation -->
-          <div class="learning-subnav">
-            <button class="learning-subnav-btn ${subTab === 'tracks' ? 'active' : ''}" onclick="renderLearningModule('tracks')">
-              <span>🛤️</span> Tracks
-            </button>
-            <button class="learning-subnav-btn ${subTab === 'flashcards' ? 'active' : ''}" onclick="renderLearningModule('flashcards')">
-              <span>🎴</span> Flashcards
-            </button>
-            <button class="learning-subnav-btn ${subTab === 'quiz' ? 'active' : ''}" onclick="renderLearningModule('quiz')">
-              <span>📝</span> Assessment
-            </button>
-            <button class="learning-subnav-btn ${subTab === 'competency' ? 'active' : ''}" onclick="renderLearningModule('competency')">
-              <span>📊</span> Competency
-            </button>
+        <div id="learning-moved" style="display: flex; flex-direction: column; gap: 10px; padding: 8px 4px;">
+          <div style="font-size: 12.5px; font-weight: 700; color: #fff;">Practice cards from the manuals</div>
+          <div style="font-size: 11px; color: var(--text-main); line-height: 1.5;">
+            ${n} fill-in-the-number cards and multiple-choice questions, each one sentence of one manual paragraph with a measured value hidden,
+            with the manual, paragraph and page for every answer. Nothing is written by hand.
           </div>
-
-          <!-- Active Sub-View Mount -->
-          <div id="learning-subview-mount"></div>
-        </div>
-      `;
-
-      const mount = document.getElementById('learning-subview-mount');
-      if (subTab === 'tracks') {
-        renderTracksSubView(mount);
-      } else if (subTab === 'flashcards') {
-        renderFlashcardsSubView(mount);
-      } else if (subTab === 'quiz') {
-        renderQuizSubView(mount);
-      } else if (subTab === 'competency') {
-        renderCompetencySubView(mount);
-      }
+          <a href="learn.html" class="btn btn-primary" style="font-size: 11px; padding: 6px 10px; text-decoration: none; width: fit-content;">Open the practice page &rarr;</a>
+        </div>`;
     }
-
-    function renderTracksSubView(mount) {
-      let html = `
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <div style="font-size: 11px; color: var(--text-muted); line-height: 1.4; padding: 0 2px;">
-            Structured 5-stage learning progression (§17.3) guiding track engineers from asset identification to statutory failure diagnostics.
-          </div>
-      `;
-
-      CANONICAL_LEARNING_TRACKS.forEach((track, tIdx) => {
-        html += `
-          <div class="learning-track-card" style="border-left: 3px solid ${track.color};">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-              <div>
-                <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #fff; font-size: 12.5px;">
-                  <span>${track.icon}</span> <span>${track.title}</span>
-                </div>
-                <div style="font-size: 9.5px; color: var(--text-dim); margin-top: 2px;">
-                  Governing Reference: <span style="color: ${track.color}; font-family: var(--font-mono); font-weight: 600;">${track.doc}</span>
-                </div>
-              </div>
-              <span class="search-card-type-badge" style="background: rgba(255,255,255,0.06); color: var(--text-main);">5 STAGES</span>
-            </div>
-
-            <!-- Stages Progression -->
-            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
-        `;
-
-        const stageColors = [
-          'rgba(0, 240, 255, 0.2)',
-          'rgba(0, 150, 255, 0.2)',
-          'rgba(180, 80, 255, 0.2)',
-          'rgba(255, 170, 0, 0.2)',
-          'rgba(0, 255, 136, 0.2)'
-        ];
-        const stageTextColors = [
-          'var(--accent-cyan)',
-          '#66b3ff',
-          'var(--accent-purple)',
-          '#ffaa00',
-          'var(--accent-green)'
-        ];
-
-        track.stages.forEach(st => {
-          const bgCol = stageColors[st.stage - 1] || stageColors[0];
-          const textCol = stageTextColors[st.stage - 1] || stageTextColors[0];
-
-          html += `
-            <div class="learning-stage-row">
-              <div style="display: flex; flex-direction: column; gap: 2px; flex: 1;">
-                <div style="display: flex; align-items: center; gap: 6px;">
-                  <span class="learning-stage-badge" style="background: ${bgCol}; color: ${textCol}; border: 1px solid ${textCol}44;">
-                    STAGE ${st.stage} · ${st.name}
-                  </span>
-                  <span style="font-weight: 600; color: #fff; font-size: 11px;">${st.topic}</span>
-                </div>
-                <div style="color: var(--text-dim); font-size: 10px; line-height: 1.35; padding-left: 2px;">
-                  ${st.desc}
-                </div>
-              </div>
-              ${st.targetNode ? `
-                <button class="search-card-btn" onclick="inspectNodeById('${st.targetNode}')" style="white-space: nowrap; font-size: 9.5px; padding: 4px 8px;">
-                  ${st.actionLabel}
-                </button>
-              ` : st.targetTab ? `
-                <button class="search-card-btn" onclick="switchDrawerTab('${st.targetTab}')" style="white-space: nowrap; font-size: 9.5px; padding: 4px 8px; border-color: ${textCol}; color: ${textCol};">
-                  ${st.actionLabel}
-                </button>
-              ` : ''}
-            </div>
-          `;
-        });
-
-        html += `
-            </div>
-          </div>
-        `;
-      });
-
-      html += `</div>`;
-      mount.innerHTML = html;
-    }
+    window.renderLearningModule = renderLearningModule;
 
     function inspectNodeById(nodeId) {
       if (typeof kgPhysicsNodes !== 'undefined') {
@@ -8142,461 +5440,6 @@ html_template = r'''<!DOCTYPE html>
       }
     }
     window.inspectNodeById = inspectNodeById;
-
-    function renderFlashcardsSubView(mount) {
-      const total = CANONICAL_FLASHCARDS.length;
-      const idx = window.currentFlashcardIndex;
-      const card = CANONICAL_FLASHCARDS[idx];
-      const isMastered = window.masteredFlashcards.has(idx);
-
-      mount.innerHTML = `
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Progress Header -->
-          <div style="display: flex; justify-content: space-between; align-items: center; padding: 2px 4px;">
-            <div style="font-size: 11px; font-weight: 700; color: #fff;">
-              Flashcard <span style="color: var(--accent-cyan);">${idx + 1}</span> of ${total}
-            </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span class="search-card-rev-badge" style="background: ${isMastered ? 'rgba(0,255,136,0.2)' : 'rgba(255,255,255,0.06)'}; color: ${isMastered ? 'var(--accent-green)' : 'var(--text-muted)'};">
-                ${isMastered ? '★ MASTERED' : 'LEARNING'}
-              </span>
-              <span style="font-size: 10px; color: var(--text-dim); font-family: var(--font-mono);">
-                ${window.masteredFlashcards.size} / ${total} Mastered
-              </span>
-            </div>
-          </div>
-
-          <!-- 3D Flip Flashcard Box -->
-          <div class="flashcard-box" onclick="flipCurrentFlashcard()">
-            <div class="flashcard-card" id="active-flashcard-card">
-              <!-- FRONT FACE -->
-              <div class="flashcard-front">
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
-                    <span class="search-card-type-badge" style="background: rgba(0, 240, 255, 0.15); color: var(--accent-cyan); border: 1px solid var(--accent-cyan)44;">
-                      🏷️ ${card.category}
-                    </span>
-                    <span style="font-size: 10px; color: var(--text-dim); font-family: var(--font-mono);">CARD #${idx + 1}</span>
-                  </div>
-                  <div style="font-size: 13.5px; font-weight: 700; color: #fff; line-height: 1.45; margin-bottom: 8px;">
-                    ${card.question}
-                  </div>
-                  <div style="font-size: 11px; color: var(--text-muted); font-style: italic; line-height: 1.4;">
-                    💡 Hint: ${card.hint}
-                  </div>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px;">
-                  <span style="font-size: 10px; color: var(--accent-cyan); font-weight: 600;">
-                    🔄 Click anywhere to flip & reveal authoritative answer
-                  </span>
-                  <span style="font-size: 13px;">➔</span>
-                </div>
-              </div>
-
-              <!-- BACK FACE -->
-              <div class="flashcard-back">
-                <div>
-                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                    <span class="search-card-type-badge" style="background: rgba(0, 255, 136, 0.15); color: var(--accent-green); border: 1px solid var(--accent-green)44;">
-                      ✓ STATUTORY ANSWER
-                    </span>
-                    <span style="font-size: 9.5px; color: var(--accent-green); font-family: var(--font-mono); font-weight: 700;">
-                      ${card.doc}
-                    </span>
-                  </div>
-                  <div style="font-size: 12.5px; font-weight: 600; color: #fff; line-height: 1.45; margin-bottom: 8px;">
-                    ${card.answer}
-                  </div>
-                  <div style="background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); border-radius: 4px; padding: 6px 8px; font-size: 10px; color: var(--text-dim);">
-                    📜 Citation: <strong style="color: #fff;">${card.citation}</strong>
-                  </div>
-                </div>
-                <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 8px;">
-                  <button class="search-card-btn" onclick="event.stopPropagation(); markFlashcardMastered(${idx})" style="background: ${isMastered ? 'rgba(0,255,136,0.3)' : 'transparent'}; color: var(--accent-green); border-color: var(--accent-green); font-size: 10px; padding: 5px 10px;">
-                    ${isMastered ? '✓ Mastered' : '★ Mark as Mastered'}
-                  </button>
-                  ${card.nodeId ? `
-                    <button class="search-card-btn" onclick="event.stopPropagation(); inspectNodeById('${card.nodeId}')" style="font-size: 10px; padding: 5px 10px;">
-                      🔍 Inspect Asset
-                    </button>
-                  ` : ''}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <!-- Bottom Navigation Bar -->
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-            <button class="btn" onclick="prevFlashcard()" style="flex: 1; justify-content: center; font-size: 11px;">
-              ◀ Previous
-            </button>
-            <button class="btn" onclick="flipCurrentFlashcard()" style="flex: 1; justify-content: center; font-size: 11px; border-color: var(--accent-cyan); color: var(--accent-cyan);">
-              🔄 Flip 3D
-            </button>
-            <button class="btn" onclick="nextFlashcard()" style="flex: 1; justify-content: center; font-size: 11px;">
-              Next ▶
-            </button>
-          </div>
-        </div>
-      `;
-    }
-
-    function flipCurrentFlashcard() {
-      const cardEl = document.getElementById('active-flashcard-card');
-      if (cardEl) {
-        cardEl.classList.toggle('flipped');
-      }
-    }
-
-    function nextFlashcard() {
-      window.currentFlashcardIndex = (window.currentFlashcardIndex + 1) % CANONICAL_FLASHCARDS.length;
-      const mount = document.getElementById('learning-subview-mount');
-      if (mount) renderFlashcardsSubView(mount);
-    }
-
-    function prevFlashcard() {
-      window.currentFlashcardIndex = (window.currentFlashcardIndex - 1 + CANONICAL_FLASHCARDS.length) % CANONICAL_FLASHCARDS.length;
-      const mount = document.getElementById('learning-subview-mount');
-      if (mount) renderFlashcardsSubView(mount);
-    }
-
-    function markFlashcardMastered(idx) {
-      if (window.masteredFlashcards.has(idx)) {
-        window.masteredFlashcards.delete(idx);
-      } else {
-        window.masteredFlashcards.add(idx);
-      }
-      const mount = document.getElementById('learning-subview-mount');
-      if (mount) renderFlashcardsSubView(mount);
-    }
-
-    function renderQuizSubView(mount) {
-      const isSubmitted = window.quizSubmitted;
-      const scoreData = window.lastQuizScore;
-
-      let html = `
-        <div style="display: flex; flex-direction: column; gap: 12px;">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <div style="font-size: 12.5px; font-weight: 700; color: #fff;">
-                Official Competency Knowledge Assessment
-              </div>
-              <div style="font-size: 10px; color: var(--text-muted); margin-top: 1px;">
-                5 Canonical Questions · 80% Statutory Passing Standard (§17.4)
-              </div>
-            </div>
-            ${isSubmitted ? `
-              <button class="search-card-btn" onclick="resetQuizAssessment()" style="font-size: 10px; padding: 4px 8px;">
-                🔄 Retake
-              </button>
-            ` : ''}
-          </div>
-      `;
-
-      if (isSubmitted && scoreData) {
-        const pass = scoreData.passed;
-        html += `
-          <div style="background: ${pass ? 'rgba(0, 255, 136, 0.12)' : 'rgba(255, 51, 102, 0.12)'}; border: 1px solid ${pass ? 'var(--accent-green)' : 'var(--accent-red)'}; border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 6px;">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div style="font-weight: 800; font-size: 13px; color: ${pass ? 'var(--accent-green)' : '#ff8899'};">
-                ${pass ? '🏅 ASSESSMENT PASSED' : '⚠️ ASSESSMENT REQUIRES RETEST'}
-              </div>
-              <div style="font-family: var(--font-mono); font-weight: 800; font-size: 14px; color: #fff;">
-                ${scoreData.score} / ${scoreData.total} (${scoreData.percentage}%)
-              </div>
-            </div>
-            <div style="font-size: 10.5px; color: var(--text-main); line-height: 1.4;">
-              ${pass ? 'You have demonstrated statutory mastery of RDSO 1:12 turnout geometry, Alt 11 lineage, procurement buffers, and USFD protocols.' : 'Statutory threshold is 80% (4/5 questions correct). Review the citations below and re-test to earn your competency certification.'}
-            </div>
-          </div>
-        `;
-
-        // If passed, render the Official RDSO Certificate Card
-        if (pass) {
-          html += `
-            <div style="background: linear-gradient(135deg, rgba(255, 215, 0, 0.12), rgba(20, 25, 40, 0.95)); border: 2px solid #ffd700; border-radius: 8px; padding: 14px; box-shadow: 0 0 20px rgba(255, 215, 0, 0.2); display: flex; flex-direction: column; gap: 8px; text-align: center;">
-              <div style="font-size: 9px; font-weight: 800; letter-spacing: 1.5px; color: #ffd700; text-transform: uppercase;">
-                GOVERNMENT OF INDIA · MINISTRY OF RAILWAYS · RDSO
-              </div>
-              <div style="font-size: 14px; font-weight: 800; color: #fff; letter-spacing: 0.5px;">
-                CERTIFICATE OF ENGINEERING COMPETENCY
-              </div>
-              <div style="font-size: 10px; color: var(--text-dim);">
-                This certifies that the candidate has verified compliance under
-              </div>
-              <div style="font-size: 11.5px; font-weight: 700; color: var(--accent-cyan); font-family: var(--font-mono);">
-                RDSO/T-6155 · IRPWM 2024 (ACS-14) · USFD 2026 · IRS:T-10 / T-46
-              </div>
-              <div style="display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,215,0,0.3); padding-top: 8px; margin-top: 4px; font-size: 9.5px;">
-                <div>
-                  <span style="color: var(--text-muted);">SCORE:</span> <strong style="color: #ffd700;">${scoreData.percentage}%</strong>
-                </div>
-                <div>
-                  <span style="color: var(--text-muted);">CERT ID:</span> <strong style="color: #fff; font-family: var(--font-mono);">RDSO-ACS14-AUTH-99824</strong>
-                </div>
-                <div>
-                  <span style="color: var(--text-muted);">STATUS:</span> <strong style="color: var(--accent-green);">VERIFIED</strong>
-                </div>
-              </div>
-            </div>
-          `;
-        }
-      }
-
-      // Render the 5 questions
-      CANONICAL_QUIZ_QUESTIONS.forEach((q, qIdx) => {
-        const userChoice = window.userQuizChoices[q.id];
-        const hasChoice = typeof userChoice === 'number';
-
-        html += `
-          <div class="quiz-question-box" id="quiz-q-box-${qIdx}">
-            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <span class="search-card-rev-badge" style="background: rgba(0, 240, 255, 0.15); color: var(--accent-cyan); border-color: var(--accent-cyan);">Q${qIdx + 1}</span>
-                <span style="font-size: 10px; color: var(--text-dim); text-transform: uppercase; font-weight: 700;">${q.domain}</span>
-              </div>
-              <span style="font-size: 9.5px; color: var(--text-dim); font-family: var(--font-mono);">${q.citation}</span>
-            </div>
-
-            <div style="font-size: 12px; font-weight: 700; color: #fff; line-height: 1.4;">
-              ${q.question}
-            </div>
-
-            <!-- Options -->
-            <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
-        `;
-
-        q.options.forEach((opt, optIdx) => {
-          let extraClass = '';
-          if (isSubmitted) {
-            if (optIdx === q.correctIndex) {
-              extraClass = 'correct';
-            } else if (optIdx === userChoice && userChoice !== q.correctIndex) {
-              extraClass = 'wrong';
-            }
-          } else if (userChoice === optIdx) {
-            extraClass = 'selected';
-          }
-
-          html += `
-            <button class="quiz-option-btn ${extraClass}" onclick="selectQuizOption(${qIdx}, ${optIdx})" ${isSubmitted ? 'disabled' : ''}>
-              <span style="font-family: var(--font-mono); font-weight: 700; font-size: 10px; opacity: 0.8;">[${String.fromCharCode(65 + optIdx)}]</span>
-              <span style="flex: 1;">${opt}</span>
-              ${isSubmitted && optIdx === q.correctIndex ? '<span style="color: var(--accent-green); font-weight: 800;">✓ Correct</span>' : ''}
-              ${isSubmitted && optIdx === userChoice && userChoice !== q.correctIndex ? '<span style="color: var(--accent-red); font-weight: 800;">✗ Your Choice</span>' : ''}
-            </button>
-          `;
-        });
-
-        html += `</div>`;
-
-        if (isSubmitted) {
-          html += `
-            <div style="background: rgba(0,0,0,0.35); border: 1px solid rgba(255,255,255,0.06); border-radius: 6px; padding: 8px 10px; font-size: 10px; color: var(--text-muted); line-height: 1.4; margin-top: 4px;">
-              💡 <strong style="color: #fff;">Statutory Rationale:</strong> ${q.explanation}
-            </div>
-          `;
-        }
-
-        html += `</div>`;
-      });
-
-      if (!isSubmitted) {
-        const answeredCount = Object.keys(window.userQuizChoices).length;
-        html += `
-          <div style="margin-top: 4px; display: flex; flex-direction: column; gap: 6px;">
-            <button class="btn btn-primary" onclick="submitQuizAssessment()" style="padding: 10px; justify-content: center; font-size: 12px; font-weight: 700;">
-              <span>⚡</span> Submit Assessment (${answeredCount} / ${CANONICAL_QUIZ_QUESTIONS.length} Answered)
-            </button>
-          </div>
-        `;
-      }
-
-      html += `</div>`;
-      mount.innerHTML = html;
-    }
-
-    function selectQuizOption(qIdx, optIdx) {
-      if (window.quizSubmitted) return;
-      const q = CANONICAL_QUIZ_QUESTIONS[qIdx];
-      window.userQuizChoices[q.id] = optIdx;
-
-      // Update UI selection state in current question box
-      const box = document.getElementById(`quiz-q-box-${qIdx}`);
-      if (box) {
-        box.querySelectorAll('.quiz-option-btn').forEach((btn, idx) => {
-          btn.classList.toggle('selected', idx === optIdx);
-        });
-      }
-
-      // Update button count
-      const mount = document.getElementById('learning-subview-mount');
-      if (mount) {
-        const submitBtn = mount.querySelector('.btn-primary');
-        if (submitBtn) {
-          const count = Object.keys(window.userQuizChoices).length;
-          submitBtn.innerHTML = `<span>⚡</span> Submit Assessment (${count} / ${CANONICAL_QUIZ_QUESTIONS.length} Answered)`;
-        }
-      }
-    }
-
-    function submitQuizAssessment() {
-      let correct = 0;
-      const total = CANONICAL_QUIZ_QUESTIONS.length;
-      const results = [];
-
-      CANONICAL_QUIZ_QUESTIONS.forEach(q => {
-        const choice = window.userQuizChoices[q.id];
-        const isCorrect = (choice === q.correctIndex);
-        if (isCorrect) correct += 1;
-        results.push({
-          id: q.id,
-          domain: q.domain,
-          isCorrect: isCorrect
-        });
-      });
-
-      const pct = Math.round((correct / total) * 100);
-      const passed = pct >= 80;
-
-      window.lastQuizScore = {
-        score: correct,
-        total: total,
-        percentage: pct,
-        passed: passed,
-        results: results
-      };
-      window.quizSubmitted = true;
-
-      const mount = document.getElementById('learning-subview-mount');
-      if (mount) renderQuizSubView(mount);
-    }
-
-    function resetQuizAssessment() {
-      window.userQuizChoices = {};
-      window.quizSubmitted = false;
-      window.lastQuizScore = null;
-      const mount = document.getElementById('learning-subview-mount');
-      if (mount) renderQuizSubView(mount);
-    }
-
-    function renderCompetencySubView(mount) {
-      const scoreData = window.lastQuizScore;
-
-      const domainMap = [
-        { name: "Track Geometry & Layout", refId: "q1_check_rail", doc: "IRPWM 2024 Para 429", trackId: "track_turnout_curved_switches" },
-        { name: "Revision Lineage & Amendments", refId: "q2_alt11_drop", doc: "RDSO/T-6155 Alt 11", trackId: "track_turnout_curved_switches" },
-        { name: "Procurement & BOM Spares", refId: "q3_lista_buffer", doc: "RDSO/T-6155 Note 28", trackId: "track_turnout_curved_switches" },
-        { name: "Failure Modes & Inspection", refId: "q4_usfd_frequency", doc: "USFD 2026 Ch 10", trackId: "track_usfd_flaw_detection" },
-        { name: "Fasteners & Sleeper Standards", refId: "q5_rubber_pad_spec", doc: "IRS:T-46 & IRS:T-10", trackId: "track_irpwm_statutory_tolerances" }
-      ];
-
-      let overallPct = 0;
-      let evaluatedCount = 0;
-
-      const domainsEvaluated = domainMap.map(d => {
-        let score = 0;
-        let evaluated = false;
-        if (scoreData && scoreData.results) {
-          const res = scoreData.results.find(r => r.id === d.refId);
-          if (res) {
-            score = res.isCorrect ? 100 : 0;
-            evaluated = true;
-            evaluatedCount += 1;
-            overallPct += score;
-          }
-        }
-        return { ...d, score, evaluated };
-      });
-
-      const avgPct = evaluatedCount > 0 ? Math.round(overallPct / evaluatedCount) : 0;
-
-      let html = `
-        <div style="display: flex; flex-direction: column; gap: 10px;">
-          <!-- Competency Dashboard Summary -->
-          <div style="background: rgba(14, 22, 38, 0.9); border: 1px solid var(--border-subtle); border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
-            <div>
-              <div style="font-size: 12px; font-weight: 700; color: #fff;">
-                Permanent Way Engineering Competency Index
-              </div>
-              <div style="font-size: 10px; color: var(--text-dim); margin-top: 2px;">
-                ${evaluatedCount > 0 ? `Computed from active Assessment: ${avgPct}% Aggregate Score` : 'Take the Assessment to generate your live competency index'}
-              </div>
-            </div>
-            <div style="text-align: right;">
-              <div style="font-size: 16px; font-weight: 800; font-family: var(--font-mono); color: ${avgPct >= 80 ? 'var(--accent-green)' : avgPct > 0 ? '#ffaa00' : 'var(--text-muted)'};">
-                ${avgPct}%
-              </div>
-              <div style="font-size: 9px; text-transform: uppercase; font-weight: 700; color: var(--text-dim);">
-                ${avgPct >= 80 ? 'QUALIFIED' : avgPct > 0 ? 'PARTIAL' : 'NOT EVALUATED'}
-              </div>
-            </div>
-          </div>
-
-          <!-- Domain Breakdown -->
-          <div style="display: flex; flex-direction: column; gap: 8px;">
-      `;
-
-      domainsEvaluated.forEach((d, idx) => {
-        const colors = ['var(--accent-cyan)', '#ffaa00', 'var(--accent-green)', 'var(--accent-purple)', '#66b3ff'];
-        const barColor = colors[idx % colors.length];
-        const status = d.evaluated ? (d.score === 100 ? 'MASTERED' : 'NEEDS REVIEW') : 'UNTESTED';
-        const statusColor = d.evaluated ? (d.score === 100 ? 'var(--accent-green)' : 'var(--accent-red)') : 'var(--text-dim)';
-
-        html += `
-          <div class="competency-card">
-            <div style="display: flex; justify-content: space-between; align-items: center;">
-              <div>
-                <span style="font-weight: 700; color: #fff; font-size: 11px;">${d.name}</span>
-                <span style="font-size: 9.5px; color: var(--text-dim); margin-left: 6px;">(${d.doc})</span>
-              </div>
-              <div style="display: flex; align-items: center; gap: 6px;">
-                <span class="search-card-type-badge" style="background: ${statusColor}22; color: ${statusColor}; border: 1px solid ${statusColor}44; font-size: 9px;">
-                  ${status}
-                </span>
-                <span style="font-family: var(--font-mono); font-weight: 700; font-size: 11px; color: #fff;">
-                  ${d.evaluated ? `${d.score}%` : '—'}
-                </span>
-              </div>
-            </div>
-
-            <div class="competency-bar-track">
-              <div class="competency-bar-fill" style="width: ${d.evaluated ? d.score : 0}%; background: ${barColor};"></div>
-            </div>
-
-            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 9.5px; color: var(--text-muted); margin-top: 2px;">
-              <span>Aligned Module: <strong style="color: var(--text-main);">${d.trackId}</strong></span>
-              <button class="search-card-btn" onclick="renderLearningModule('tracks')" style="font-size: 9px; padding: 2px 6px;">
-                Open Track ➔
-              </button>
-            </div>
-          </div>
-        `;
-      });
-
-      html += `
-          </div>
-        </div>
-      `;
-
-      mount.innerHTML = html;
-    }
-
-    window.CANONICAL_LEARNING_TRACKS = CANONICAL_LEARNING_TRACKS;
-    window.CANONICAL_FLASHCARDS = CANONICAL_FLASHCARDS;
-    window.CANONICAL_QUIZ_QUESTIONS = CANONICAL_QUIZ_QUESTIONS;
-    window.renderLearningModule = renderLearningModule;
-    window.renderTracksSubView = renderTracksSubView;
-    window.renderFlashcardsSubView = renderFlashcardsSubView;
-    window.flipCurrentFlashcard = flipCurrentFlashcard;
-    window.nextFlashcard = nextFlashcard;
-    window.prevFlashcard = prevFlashcard;
-    window.markFlashcardMastered = markFlashcardMastered;
-    window.renderQuizSubView = renderQuizSubView;
-    window.selectQuizOption = selectQuizOption;
-    window.submitQuizAssessment = submitQuizAssessment;
-    window.resetQuizAssessment = resetQuizAssessment;
-    window.renderCompetencySubView = renderCompetencySubView;
 
     /* =========================================================================
        PHASE 7: SEMANTIC INTELLIGENCE & HYBRID RETRIEVAL (§24, §36)
@@ -8671,6 +5514,8 @@ html_template = r'''<!DOCTYPE html>
       const scored = [];
       kgPhysicsNodes.forEach(node => {
         const data = node.data;
+        const nodeUniv = getNodeUniverse(data);
+        const matchesCurrentUniv = (currentKnowledgeUniverse === 'combined' || nodeUniv === currentKnowledgeUniverse);
         const id = (data.id || '').toLowerCase();
         const idNorm = id.replace(/[-_/\\s]/g, '');
         const label = (data.label || '').toLowerCase();
@@ -8703,18 +5548,32 @@ html_template = r'''<!DOCTYPE html>
         if (desc.includes(q)) sLexical += 80;
         if (specsStr.includes(q)) sLexical += 60;
 
-        // Level 2: Metadata
+        // Multi-token lexical matching
+        const qTokens = q.split(/[\s,._-]+/).filter(t => t.length > 2);
+        let tokenMatches = 0;
+        qTokens.forEach(tok => {
+          if (allText.includes(tok)) tokenMatches++;
+        });
+        if (tokenMatches > 0) {
+          sLexical += tokenMatches * 80;
+          if (tokenMatches === qTokens.length && qTokens.length > 1) {
+            sLexical += 300; // All tokens matched in this entity!
+          }
+        }
+
+        // Level 2: Metadata - ONLY boost drawings if query actually relates to drawings!
         const isDrawingQuery = ['6155', '6154', '6216', '6280', '6275', 'drg', 'drawing', 't-'].some(k => q.includes(k));
         if (type === 'DRAWING' && isDrawingQuery) sMetadata += 300;
-        else if (type === 'DRAWING') sMetadata += 100;
         if (type.toLowerCase() === q || domain === q) sMetadata += 150;
 
-        // Level 3: Graph centrality
-        const edges = (data.edges || []);
-        sGraph += Math.min(edges.length * 10, 80);
+        // Level 3: Graph centrality - ONLY add if node had actual lexical or semantic relevance!
+        const nodeEdges = (data.edges || []);
+        if (sLexical > 0 || sSemantic > 0 || isDrawingQuery) {
+          sGraph += Math.min(nodeEdges.length * 10, 80);
+        }
         if (currentSelectedNode && currentSelectedNode.data) {
           const selId = currentSelectedNode.data.id;
-          if (edges.some(e => e.target === selId || e.source === selId)) {
+          if (nodeEdges.some(e => e.target === selId || e.source === selId || e.from === selId || e.to === selId)) {
             sGraph += 120;
           }
         }
@@ -8727,13 +5586,21 @@ html_template = r'''<!DOCTYPE html>
           }
         });
 
-        // Notes match for drg_6155
-        if (q.length >= 3 && data.id === 'drg_6155') {
-          const d = RDSO_EXTRACTED_KNOWLEDGE['RDSO_T_6155'];
-          if (d && d.general_notes) {
-            const matchingNotes = d.general_notes.filter(n => (n.text || '').toLowerCase().includes(q));
-            if (matchingNotes.length > 0) {
-              sLexical += 120 + (matchingNotes.length * 10);
+        // Notes match for drawing nodes with dossiers
+        if (q.length >= 3 && (data.type === 'DRAWING' || data.domain === 'drawing' || data.id.startsWith('drg_'))) {
+          let dossierLookupKey = null;
+          if (data.id.includes('6155')) dossierLookupKey = 'RDSO_T_6155';
+          else if (data.id.includes('6154')) dossierLookupKey = 'RDSO_T_6154';
+          else if (data.id.includes('6216')) dossierLookupKey = 'RDSO_T_6216';
+          else if (data.id.includes('6280')) dossierLookupKey = 'RDSO_T_6280';
+          else if (data.id.includes('6275')) dossierLookupKey = 'RDSO_T_6275';
+          if (dossierLookupKey) {
+            const dsr = RDSO_EXTRACTED_KNOWLEDGE[dossierLookupKey];
+            if (dsr && dsr.general_notes) {
+              const matchingNotes = dsr.general_notes.filter(n => (n.text || '').toLowerCase().includes(q));
+              if (matchingNotes.length > 0) {
+                sLexical += 120 + (matchingNotes.length * 10);
+              }
             }
           }
         }
@@ -9540,12 +6407,24 @@ html_template = r'''<!DOCTYPE html>
           score += 250;
         }
 
-        // 3. Entity type prioritization for drawings
+        // Multi-token lexical matching
+        const allText = id + ' ' + label + ' ' + desc + ' ' + specsStr;
+        const qTokens = q.split(/[\s,._-]+/).filter(t => t.length > 2);
+        let tokenMatches = 0;
+        qTokens.forEach(tok => {
+          if (allText.includes(tok)) tokenMatches++;
+        });
+        if (tokenMatches > 0) {
+          score += tokenMatches * 80;
+          if (tokenMatches === qTokens.length && qTokens.length > 1) {
+            score += 300; // All tokens matched in this entity!
+          }
+        }
+
+        // 3. Entity type prioritization for drawings - ONLY if query mentions drawings!
         const isDrawingQuery = ['6155', '6154', '6216', '6280', '6275', 'drg', 'drawing', 't-'].some(k => q.includes(k));
         if (type === 'DRAWING' && isDrawingQuery) {
           score += 300;
-        } else if (type === 'DRAWING') {
-          score += 100;
         }
 
         // 4. Domain & Type match
@@ -9562,12 +6441,20 @@ html_template = r'''<!DOCTYPE html>
         }
 
         // Verbatim notes match (if it's a drawing or has dossier)
-        if (q.length >= 3 && data.id === 'drg_6155') {
-          const d = RDSO_EXTRACTED_KNOWLEDGE['RDSO_T_6155'];
-          if (d && d.general_notes) {
-            const matchingNotes = d.general_notes.filter(n => (n.text || '').toLowerCase().includes(q));
-            if (matchingNotes.length > 0) {
-              score += 120 + (matchingNotes.length * 10);
+        if (q.length >= 3 && (data.type === 'DRAWING' || data.domain === 'drawing' || data.id.startsWith('drg_'))) {
+          let dossierLookupKey = null;
+          if (data.id.includes('6155')) dossierLookupKey = 'RDSO_T_6155';
+          else if (data.id.includes('6154')) dossierLookupKey = 'RDSO_T_6154';
+          else if (data.id.includes('6216')) dossierLookupKey = 'RDSO_T_6216';
+          else if (data.id.includes('6280')) dossierLookupKey = 'RDSO_T_6280';
+          else if (data.id.includes('6275')) dossierLookupKey = 'RDSO_T_6275';
+          if (dossierLookupKey) {
+            const dsr = RDSO_EXTRACTED_KNOWLEDGE[dossierLookupKey];
+            if (dsr && dsr.general_notes) {
+              const matchingNotes = dsr.general_notes.filter(n => (n.text || '').toLowerCase().includes(q));
+              if (matchingNotes.length > 0) {
+                score += 120 + (matchingNotes.length * 10);
+              }
             }
           }
         }
@@ -9604,6 +6491,10 @@ html_template = r'''<!DOCTYPE html>
 
       function handleSelectMatch(node) {
         window.lastSearchQuery = input.value;
+        const targetUniv = getNodeUniverse(node.data);
+        if (currentKnowledgeUniverse !== 'combined' && currentKnowledgeUniverse !== targetUniv) {
+          switchKnowledgeUniverse(targetUniv);
+        }
         inspectNode(node);
         dropdown.style.display = "none";
         input.value = node.data.label;
@@ -9693,6 +6584,14 @@ html_template = r'''<!DOCTYPE html>
           const typeName = d.type || (DOMAIN_METADATA[d.domain]?.label || d.domain || 'ASSET').toUpperCase();
           const descSnippet = (d.desc || 'Canonical railway track infrastructure asset.').slice(0, 110) + (d.desc && d.desc.length > 110 ? '...' : '');
 
+          let displayName = d.label;
+          if (d.type === 'DRAWING' || d.id.startsWith('drg_')) {
+            const dwgNo = d.specs?.DrawingNumber || d.specs?.["Drawing No"] || (d.id.match(/(RDSO_[A-Z0-9_]+)/i) || [])[1] || '';
+            if (dwgNo && !displayName.includes(dwgNo)) {
+              displayName = `${dwgNo.replace(/_/g, '/')} · ${displayName}`;
+            }
+          }
+
           let revPill = '';
           if (d.id.includes('6155') || (d.specs && d.specs.Alteration)) {
             revPill = '<span class="search-card-rev-badge">ALT 13</span>';
@@ -9701,12 +6600,26 @@ html_template = r'''<!DOCTYPE html>
           }
 
           let evidenceHtml = '';
-          if (d.id.startsWith('drg_')) {
-            evidenceHtml = '<span class="search-card-evidence"><span>📸</span> 3 Crops · 28 Notes</span>';
-          } else if (d.type === 'CLAUSE') {
-            evidenceHtml = '<span class="search-card-evidence"><span>📜</span> IRPWM 2024 ACS-14</span>';
+          if (d.id.startsWith('drg_') || d.type === 'DRAWING') {
+            evidenceHtml = '<span class="search-card-evidence"><span>📸</span> Blueprint & Notes</span>';
+          } else if (d.type === 'CLAUSE' || d.type === 'EVIDENCE' || d.id.startsWith('CLAUSE:') || d.id.startsWith('EVIDENCE:')) {
+            const rawMan = d.specs?.Manual || d.provenance?.document_id || 'Manual';
+            const manClean = rawMan.startsWith('DOC:') ? (rawMan.split(':')[1] || rawMan) : rawMan;
+            const pg = d.specs?.Page || d.provenance?.page_number || '';
+            evidenceHtml = `<span class="search-card-evidence"><span>📜</span> ${manClean}${pg ? ' · p.' + pg : ''}</span>`;
+          } else if (d.type === 'CHAPTER' || d.id.startsWith('CHAPTER:')) {
+            const rawMan = d.specs?.Manual || 'Manual';
+            const manClean = rawMan.startsWith('DOC:') ? (rawMan.split(':')[1] || rawMan) : rawMan;
+            evidenceHtml = `<span class="search-card-evidence"><span>📖</span> ${manClean} · Ch.${d.specs?.ChapterNumber || ''}</span>`;
+          } else if (d.type === 'DOCUMENT' || d.id.startsWith('DOC:')) {
+            evidenceHtml = `<span class="search-card-evidence"><span>📚</span> ${d.specs?.TotalPages || ''} Pages</span>`;
           } else {
             evidenceHtml = '<span class="search-card-evidence"><span>🔗</span> RDSO Knowledge Core</span>';
+          }
+
+          let pdfActionHtml = '';
+          if (d.type === 'CLAUSE' || d.type === 'EVIDENCE' || d.type === 'CHAPTER' || d.type === 'DOCUMENT' || d.id.startsWith('CLAUSE:') || d.id.startsWith('EVIDENCE:') || d.id.startsWith('CHAPTER:') || d.id.startsWith('DOC:')) {
+            pdfActionHtml = `<button class="search-card-btn action-pdf" style="color:var(--accent-cyan);" title="Open PDF source page">PDF ↗</button>`;
           }
 
           const meta = hybridMeta[d.id];
@@ -9721,7 +6634,7 @@ html_template = r'''<!DOCTYPE html>
             <div class="search-card-header">
               <div class="search-card-title search-item-title">
                 <span style="color: ${color};">●</span>
-                <span>${d.label}</span>
+                <span>${displayName}</span>
               </div>
               <div style="display: flex; gap: 4px; align-items: center;">
                 ${semHits > 0 ? `<span class="search-card-type-badge" style="background: rgba(180,80,255,0.15); color: var(--accent-purple); border: 1px solid rgba(180,80,255,0.4); font-size: 8px;">✨ ${semHits} semantic</span>` : ''}
@@ -9730,10 +6643,12 @@ html_template = r'''<!DOCTYPE html>
                 <span class="search-card-type-badge" style="background: ${color}22; color: ${color}; border: 1px solid ${color}44;">${typeName}</span>
               </div>
             </div>
+            <div class="search-card-canonical-id" style="font-size: 9px; font-family: var(--font-mono); color: var(--text-dim); margin: 2px 0 4px 14px;"><code>${d.id}</code></div>
             <div class="search-card-body">${descSnippet}</div>
             <div class="search-card-footer">
               ${evidenceHtml}
               <div class="search-card-actions">
+                ${pdfActionHtml}
                 <button class="search-card-btn action-inspect">Inspect</button>
                 <button class="search-card-btn action-3d">Focus 3D</button>
               </div>
@@ -9742,6 +6657,12 @@ html_template = r'''<!DOCTYPE html>
 
           // Card Click
           card.onclick = (e) => {
+            if (e.target.closest('.action-pdf')) {
+              e.stopPropagation();
+              const page = d.specs?.Page || (d.specs?.PageRange ? d.specs.PageRange.split('-')[0].trim() : 1);
+              openManualPdf(d.specs?.Manual || d.id, page, d.label);
+              return;
+            }
             if (e.target.closest('.action-3d')) {
               e.stopPropagation();
               focusNodeIn3D(d.id);
@@ -9786,6 +6707,26 @@ html_template = r'''<!DOCTYPE html>
           updateActiveCardSelection();
           e.preventDefault();
         } else if (e.key === 'Enter') {
+          const qVal = input.value.trim();
+          const ans = answerEngineeringQuestion(qVal);
+          if (ans) {
+            toggleIntelligenceDrawer(true);
+            switchDrawerTab('qa');
+            renderQuestionAnswerCard(ans, document.getElementById('qa-answer-mount'));
+            const titleEl = document.getElementById('drawer-title');
+            const domainEl = document.getElementById('drawer-domain');
+            if (titleEl) titleEl.innerText = ans.question;
+            if (domainEl) {
+              domainEl.innerText = `${ans.intentLabel || 'SPECIFICATION'} · FROM THE MANUALS`;
+              domainEl.style.color = ans.intentColor || 'var(--accent-cyan)';
+            }
+            if (ans.traversal && ans.traversal.length > 0) {
+              highlightGraphPath(ans.traversal.map(t => t.id));
+            }
+            dropdown.style.display = "none";
+            e.preventDefault();
+            return;
+          }
           if (activeCardIndex >= 0 && activeCardIndex <= maxIdx) {
             handleSelectMatch(currentMatches[activeCardIndex]);
             e.preventDefault();
@@ -9803,8 +6744,25 @@ html_template = r'''<!DOCTYPE html>
         }
       });
 
-      // Shortcut '/' to focus search
+      // Shortcut '/' to focus search, 'Escape' to close modals
       window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          const pdfModal = document.getElementById('manual-pdf-modal');
+          if (pdfModal && pdfModal.style.display === 'flex') {
+            closeManualPdfModal();
+            return;
+          }
+          const bpModal = document.getElementById('blueprint-modal');
+          if (bpModal && bpModal.style.display === 'flex') {
+            closeFullscreenBlueprint();
+            return;
+          }
+          const evModal = document.getElementById('evidence-modal');
+          if (evModal && evModal.style.display === 'flex') {
+            closeEvidenceModal();
+            return;
+          }
+        }
         if (e.key === '/' && document.activeElement !== input && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
           e.preventDefault();
           input.focus();
@@ -9903,17 +6861,5 @@ html_template = r'''<!DOCTYPE html>
       kgRenderer.setSize(w, h);
     }
 
+    window.addEventListener('DOMContentLoaded', () => { loadManualReadinessAudit().then(() => { if (currentSelectedNode) renderManualReadiness(currentSelectedNode.data); }); });
     window.addEventListener('DOMContentLoaded', initKnowledgeGraphApp);
-  </script>
-</body>
-</html>
-'''
-
-final_html = html_template.replace("__EXTRACTED_KNOWLEDGE_JSON__", "{}").replace("__CANONICAL_KG_JSON__", "{}").replace("__MANUALS_KNOWLEDGE_JSON__", "{}").replace("__MANUALS_TREE_JSON__", "[]")
-
-output_html_path = os.path.join(REPO_ROOT, "index.html")
-with open(output_html_path, "w", encoding="utf-8") as f:
-    f.write(final_html)
-
-print(f"[+] Successfully compiled index.html with Canonical Knowledge Core! Size: {len(final_html)} bytes")
-print(f"    Target: {output_html_path}")

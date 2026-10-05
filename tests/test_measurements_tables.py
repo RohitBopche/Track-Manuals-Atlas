@@ -119,12 +119,14 @@ def test_table_answer_returns_matching_rows():
 
 
 def test_form_like_tables_are_flagged_and_demoted():
-    passages = [json.loads(l) for l in (ROOT / "data/search/passages.jsonl").read_text(encoding="utf-8").splitlines()]
-    tables = [p for p in passages if p.get("kind") == "table"]
-    forms = [p for p in tables if p.get("form")]
-    assert forms and len(forms) < len(tables)
+    # Read the committed browser index, not data/search/passages.jsonl: that file is git-ignored,
+    # so it exists only after scripts/rebuild_all.py and a fresh clone would fail here.
     idx = (ROOT / "data/search/search_index.js").read_text(encoding="utf-8")
-    assert '"form":1' in idx
+    start = idx.index("RDSO_SEARCH_INDEX=") + len("RDSO_SEARCH_INDEX=")
+    docs = json.JSONDecoder().raw_decode(idx, start)[0]["docs"]
+    tables = [d for d in docs if d.get("kind") == "table"]
+    forms = [d for d in tables if d.get("form")]
+    assert forms and len(forms) < len(tables)
 
 
 def test_conditions_come_from_nearby_words_not_the_whole_sentence():

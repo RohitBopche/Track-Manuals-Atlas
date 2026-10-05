@@ -1,6 +1,8 @@
+> **Archived 2026-10-05. History only.** These are the Gemini agent's P0/P1 logs from 2026-09-30. Their "complete" claims were re-checked and overturned by the independent audit in [`DELIVERY_LOG.md` §37](../../DELIVERY_LOG.md); the master is not read-only (it is updated every sprint). Do not take status or commands from here.
+
 # Gemini Agent Tracking & Action Documentation
 
-**Reference Master Plan:** [`PROJECT_MASTER.md`](file:///f:/my%20git%20project/RDSO-Drawings/docs/PROJECT_MASTER.md) (Canonical, Approved, Read-Only)  
+**Reference Master Plan:** [`PROJECT_MASTER.md`](../../../docs/PROJECT_MASTER.md) (Canonical, Approved, Read-Only)  
 **Execution Context:** Proceeding strictly according to the Approved Project Master Document without making modifications to `docs/PROJECT_MASTER.md`. All logs, plans, and tracking are recorded within `docs/gemini/`.
 
 ---
@@ -9,14 +11,14 @@
 
 | Document | Purpose |
 |---|---|
-| [`ACTION_LOG.md`](file:///f:/my%20git%20project/RDSO-Drawings/docs/gemini/ACTION_LOG.md) | Chronological log of agent actions, inspections, commands, and validation status per Section 33 handoff protocol. |
-| [`P0_FOUNDATION_STATUS.md`](file:///f:/my%20git%20project/RDSO-Drawings/docs/gemini/P0_FOUNDATION_STATUS.md) | Progress, findings, and verification gates for Roadmap Phase P0 (Foundation & Reliability). |
+| [`ACTION_LOG.md`](../../../docs/gemini/ACTION_LOG.md) | Chronological log of agent actions, inspections, commands, and validation status per Section 33 handoff protocol. |
+| [`P0_FOUNDATION_STATUS.md`](../../../docs/gemini/P0_FOUNDATION_STATUS.md) | Progress, findings, and verification gates for Roadmap Phase P0 (Foundation & Reliability). |
 
 ---
 
 ## Current Roadmap Phase: P0 (Foundation and Reliability)
 
-Per [`PROJECT_MASTER.md` Section 26](file:///f:/my%20git%20project/RDSO-Drawings/docs/PROJECT_MASTER.md#L1147-L1158):
+Per [`PROJECT_MASTER.md` Section 26](../../../docs/PROJECT_MASTER.md):
 1. **Inspect current repository state** (In Progress)
 2. **Confirm current manual inventory** (Pending)
 3. **Confirm current chapter/section/provision coverage** (Pending)

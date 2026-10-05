@@ -1,0 +1,705 @@
+# Track Manuals Atlas — Delivery Log
+
+Master §37, moved out of [`PROJECT_MASTER.md`](PROJECT_MASTER.md) on 2026-10-05 so the master stays readable in one pass. Section numbers are unchanged, so every existing reference to "§37.N" points here.
+
+Each entry is dated and says what was built, how it was measured, and what is still open. Add new entries at the end as `### 37.N <title> — <date>`. Older entries are history: their counts were true when written; current numbers come only from `data/knowledge-graph/reports/metrics.json` and the gate output.
+
+---
+
+## 37. Independent Audit of P0/P1 Delivery (2026-09-29)
+
+**Scope:** verify the P0 (Foundation) and P1 (Manual browsing) completion claims in `docs/gemini/` against the repository at HEAD `04df0ab`, and against the product goal: an offline, self-improving, intelligent search/QA system over the railway manuals.
+**Method:** re-ran `scripts/validate_all.py`, `pytest` and `tests/verify_kg_manuals.js` (headless Chromium), then inspected canonical data (`data/knowledge-graph/`), the UI data bundle and the Q&A code path directly.
+**Verdict:** P0/P1 are **structurally delivered but not up to the mark**. The plumbing (hierarchy, tree, PDF page-jump, breadcrumbs) works and is reproducible. The knowledge content underneath it is thin, partly mislabelled as verified, and the QA layer is hand-authored rather than retrieval-based. P0/P1 should be treated as **PARTIAL**, not COMPLETE. Do not start P2 on the current data without the P0-R/P1-R remediation below.
+
+### 37.1 Reproduction of the claimed results
+
+| Claim (`docs/gemini/`) | Re-run result | Notes |
+|---|---|---|
+| 11/11 validation gates pass | **Reproduced** (after `pip install jsonschema pytest`) | Fresh env fails Gates A, E, G, H on missing dependencies; the gate runner should self-diagnose or install. |
+| 126/126 pytest | **Reproduced** | |
+| 11/11 CDP tests in `verify_kg_manuals.js` | **Reproduced** | Only with local flag patches: the test hard-codes Windows Chrome paths and a `C:\Users\LENOVO` artifact dir; it cannot run on Linux CI as written. |
+| CI validation exists | **Partially true** | `ci.yml` runs Gates A–K only on `main`. Browser/CDP tests are not in CI. |
+
+Passing gates do not imply data quality. Gates check referential integrity and shape, not content (see 37.2).
+
+### 37.2 Claim vs. verified reality (side by side)
+
+| # | Claim in P0/P1 reports | Verified reality | Severity |
+|---|---|---|---|
+| 1 | "2,731 statutory clauses" (P1 report §2.1, Master §2) | Canonical store has **1,838** clause nodes (IRPWM 673, STMM 396, TMM 349, USFD 174, FBW 131, AT Weld 115). Raw extraction detected 3,699 clause-like markers; 2,731 is not reproducible from any file. | High |
+| 2 | "7,321 nodes / 9,305 edges / 8,370 facts" | Canonical: **6,469 nodes / 8,370 edges**. The UI adds the legacy `rdso_manuals_knowledge.json` (1,838 clauses + 361 tolerances) at runtime to reach 7,321/9,305. "8,370 facts" is the **edge list re-emitted** (`facts` and `edges` both 8,370), not engineering facts. | High |
+| 3 | "One canonical knowledge core" (Master §1, §21) | **Two competing sources**: `data/knowledge-graph/canonical/*` and legacy `data/rdso_manuals_knowledge.json` + `manual_content_index.js`. TOLERANCE nodes (e.g. Check-rail 41–45 mm in Test 5) exist only in the legacy file; canonical has 0 TOLERANCE nodes. | High |
+| 4 | "Statutory verbatim provision text on clause cards" | Canonical clause nodes have **empty text** (`desc` is `"..."` for 1,838/1,838; `Manual Ref` and `Key Rule` empty for all). Text lives only in evidence quotes hard-capped at **300 chars** and in the UI bundle. | High |
+| 5 | Requirements complete | `requirements.jsonl` has 3,772 rows: **1,555 have statement `"..."`**; **1,934 IDs match no node** (legacy `CLAUSE:IRPWM:PARA_101` scheme, plus `TOL:`/`REQ:`). Gates pass anyway. | High |
+| 6 | Evidence-verified (Gate D) | **100% of nodes (6,469), requirements (3,772) and evidence (1,875) are `verification_status: verified`**, including automatic text extraction at confidence 0.95. Violates "human review for safety-relevant facts". Fact provenance for structural HAS_CLAUSE edges is stamped `raster_blueprint_crop_and_transcription`, confidence 1.0, `VERIFIED`, which is false (they were text-parsed). | High |
+| 7 | Evidence-backed graph edges (Master §10) | **0 of 8,370 edges carry an evidence reference.** Only 300 HAS_EVIDENCE edges (one evidence node per ~6 clauses). Evidence records lack page number and bbox; page is only inferable via `page_id`. | High |
+| 8 | "Complete manual hierarchy" | Hierarchy nodes exist (83 chapters, 2,082 sections, 1,819 subsections) but clause coverage is partial: IRPWM 1,738 detected vs 673 kept (~39%); TMM 1,062 vs 349; STMM is the reverse (179 detected vs 396 kept). IRPWM clause IDs include impossible paragraph numbers (`CH_02:PARA_5300`, `PARA_5164`, `PARA_2243`…, 18 IDs above 1600 in a manual that ends near 1500): table/figure numbers parsed as paragraphs. | High |
+| 9 | "Source registry and hashes validated" (P0.4) | The 6 manual PDFs have SHA-256 in `raw/source_registry.jsonl`; the 12 `documents.jsonl` rows carry none. Nothing re-verifies file hashes against disk in CI. | Medium |
+| 10 | "1,485 pages ingested" | 1,485 manual pages registered, but **64 pages have no extractable text** (USFD 32/157 = 20%, FBW 13/69, IRPWM 14, TMM 4, AT Weld 1). No OCR path exists, so those pages are invisible to search. | High |
+| 11 | "Search result cards" (P1.6) | UI cards work, but search is over token lists in a 7.5 MB `search_index.json` produced by the pipeline and the in-page filter; there is no BM25/inverted index, no stemming/synonyms, no rank tuning beyond a hand patch (`scratch/fix_search_ranking.py`). | Medium |
+| 12 | "Natural-language Q&A" (Phase 5 UI) | `answerEngineeringQuestion` is a **regex intent detector plus 13 hand-written `CANONICAL_QA_DATABASE` answers**, each with hard-coded `confidence: 0.9x` and `VERIFIED`. Questions outside those 13 topics fall to a substring filter. This is not retrieval, is not grounded per query, and the reported confidence is not computed. Intent labels were tuned to the test queries (Alt 11, Alt 12 etc.). | High |
+| 13 | Cross-references (P2 prerequisite; P1 checklist item) | 404 "Para NNN" and 236 "Annexure" mentions in IRPWM raw text; **5 REFERENCES edges** in the graph; no resolver, no RESOLVED/AMBIGUOUS/NOT_FOUND classification. | High |
+| 14 | "Self-improving / learning" (Learning system, Phase 6) | The "learning system" is a UI quiz/flashcard front-end over static content. `review_queue.jsonl` holds **2 hand-written items**. No query logging, no feedback capture, no gap detection, no regression question suite, no re-ingestion loop. The system does not improve itself. | High |
+| 15 | Offline-first | Achieved for the UI (no external URLs found in `index.html`; local Three.js). But ~48 MB of JSON/JS is loaded into the browser at start, and 22 MB `rdso_kg_data.js` duplicates canonical data. No local search engine or embedding index. | Medium |
+| 16 | Repo hygiene / handoff protocol §33 | Commit `04df0ab` bundles docs, `index.html` (+405/−68), tests and 30+ regenerated PNGs in one non-conventional message; `__pycache__` `.pyc` files, `index.html.bak` and 7 `scratch/` scripts are tracked despite `.gitignore`. Gemini docs reference `f:\my git project\...` paths and were written as "read-only master", so the record diverged from this file. | Medium |
+| 17 | P1 pilot acceptance (Master §28) | `P1_MANUAL_PILOT_PLAN.md` shows all 10 acceptance boxes **unchecked**, yet P1 is declared complete. Criteria such as cross-ref classification, deterministic rerun and "zero ungrounded claims" are unmet. | High |
+
+### 37.3 What is genuinely good (keep)
+
+- Deterministic source registry and per-page raw extraction (`raw/extracted_pages.jsonl`, 1,544 pages with text, headings, detected clauses).
+- Six-manual chapter tree (83 chapters), universe isolation from drawings, Gates F–K enforcing it.
+- Page-anchored PDF viewer (`#page=N`), breadcrumbs, back-to-search: working UX plumbing, verified in a real browser.
+- 126 pytest tests and a single validation entry point (`validate_all.py`).
+- Research workspace with a Docling benchmark harness (`research/`, `scripts/research/`), the right seed for better extraction.
+
+### 37.4 P0/P1 exit-criteria status after audit
+
+| Phase | Gemini status | Audited status | Reason |
+|---|---|---|---|
+| P0.1–P0.3 inventory/coverage | COMPLETE | **PARTIAL** | Inventory correct; coverage numbers wrong (rows 1, 2, 8). |
+| P0.4 registry + hashes | COMPLETE | **PARTIAL** | Hashes recorded but not enforced (row 9). |
+| P0.5 evidence integrity | COMPLETE | **FAIL** | Integrity gate is shape-only; evidence lacks page/bbox, edges unevidenced, false provenance (rows 6, 7). |
+| P0.6 unified command | COMPLETE | **PASS** | Add dependency bootstrap. |
+| P0.7 regression baseline | COMPLETE | **PARTIAL** | Data regression only; no retrieval/QA regression, browser tests not portable (37.1). |
+| P0.8 CI | COMPLETE | **PARTIAL** | Gates only; no browser tests, `main` only. |
+| P1 hierarchy/tree/navigation | COMPLETE | **PASS (structure)** | Content under nodes is empty (rows 4, 8). |
+| P1 provision detail | COMPLETE | **FAIL (canonical)** | Works only from legacy bundle (rows 3, 4). |
+| P1 source page opening | COMPLETE | **PASS** | Whole-page jump only; no highlight/crop (P2.2). |
+| P1 search cards / context | COMPLETE | **PASS (UI)** | Underlying ranking is basic (row 11). |
+
+### 37.5 Remediation plan (ordered; each is one small validated increment)
+
+**P0-R (must precede P2):**
+1. Make canonical the only source: fold legacy clauses/tolerances into canonical, generate `rdso_kg_data.js` from it, delete the runtime merge, add a gate failing on divergence.
+2. Store full clause text in canonical (`text`, `page_start/end`, `bbox` when available); fix the 1,934 dangling requirement IDs and 1,555 empty statements; add gates for empty text and dangling IDs.
+3. Re-baseline provenance: extraction output is `machine_extracted` (not `verified`) until human-reviewed; remove false `raster_blueprint_crop_and_transcription`/1.0 stamps; add review-state gate.
+4. Attach `evidence_id` (doc, page, bbox, hash of page) to every edge and clause; Gate D must fail on edges without evidence.
+5. Publish a single generated metrics file (`reports/metrics.json`) and make the docs quote only it; correct §2 numbers.
+6. Clause-boundary QA: reject paragraph numbers out of the manual's known range/monotonic order (e.g. `PARA_5300`); reconcile detected-vs-kept per manual with a diff report.
+7. OCR the 64 image-only pages (start with USFD 32) and record `extraction_method: ocr` with confidence.
+8. Make CDP tests portable (env-driven Chrome path, headless flags, repo-relative artifacts) and add them to CI; run CI on all branches/PRs.
+9. Repo hygiene: untrack `__pycache__`, `index.html.bak`, `scratch/`; stop committing regenerated PNGs.
+
+**P1-R:**
+10. Provision cards read from canonical text; show page number and offer source-page jump from every card.
+11. Re-mark the P1 pilot checklist honestly and complete it for IRPWM before scaling to other manuals.
+
+**New (needed for the product goal, currently missing):**
+12. **Offline retrieval core (moves P5 earlier):** local SQLite FTS5/BM25 over clause text with identifier and synonym expansion; later add a small local embedding index and graph expansion, all served without network.
+13. **Grounded QA:** replace the 13 hand-written answers with retrieve → rank → cite extractive answers; confidence computed from retrieval scores; refuse when evidence is weak; keep the 13 as regression questions, not as the engine.
+14. **Cross-reference resolver (P2):** classify the ~640 IRPWM references first, then all manuals.
+15. **Self-improvement loop (P7 pulled forward):** log queries locally, record thumbs/corrections, auto-queue zero-result/low-score queries and conflicting facts into `review_queue`, and turn every accepted review into a regression question run by `validate_all.py`.
+
+### 37.6 Recommended next priority
+
+One task: **P0-R.1 + P0-R.2**, unify canonical data and store full clause text, with gates for empty text, dangling requirement IDs and metric drift. Everything else in retrieval, QA and learning depends on that data being real.
+
+### 37.7 Process note
+
+The Gemini agent kept this document read-only and recorded status separately. Per §36, project status and audit results belong here. `docs/gemini/*` should be treated as **historical agent logs, not authoritative status**; where they conflict with §37, §37 governs.
+
+
+### 37.8 Remediation progress
+
+| Item | Status | Result (verified by re-run) |
+|---|---|---|
+| P0-R.1 single canonical source | **DONE (partial, see limits)** | `scripts/unify_manual_canonical.py` merges the two diverged stores (JSONL had name/status, compact JSON had provenance/hierarchy) into one node record; `rdso_manuals_knowledge.json` is now a *derived view* (content identical to the previous file); exports and `metrics.json` regenerate from it. |
+| P0-R.2 full clause text | **DONE** | 1,838/1,838 clauses carry `text`, `page`, `document_id`, evidence id; requirements regenerated (2,199 rows, 0 empty, 0 dangling); 1,573 legacy dangling rows moved to `intermediate/quarantine_dangling_requirements.jsonl` (nothing deleted); 361 tolerance nodes and 667 evidence-linked `SPECIFIES` edges now in canonical. |
+| Honest status | **DONE** | Extracted clauses/tolerances are `machine_extracted`; invented `mandatory/recommended` priority replaced by `unknown`. |
+| P0-R.3 provenance re-baseline | **DONE** | `scripts/provenance_policy.py` (applied by `unify_manual_canonical.py`): all 6,830 nodes, 2,199 requirements and 1,875 evidence records were `verified` with no human review; they are now `machine_extracted` with confidence capped at 0.95. 8,270 facts stamped `raster_blueprint_crop_and_transcription`/`VERIFIED`/1.0 that were actually text-derived were relabelled `deterministic_text_extraction`/`MACHINE_EXTRACTED`. The only route to `reviewed` (1 reviewer) or `verified` (2 independent reviewers) is a record in `canonical/reviews.jsonl` (starts empty). |
+| Gate M | **DONE** | `scripts/validate_provenance_policy.py`: statuses must equal what review records imply, no unreviewed confidence above 0.95, no text fact labelled raster transcription, review records well-formed and pointing at real ids. 5 tests incl. a negative test. |
+| Gate L | **DONE** | `scripts/validate_manual_text_integrity.py` (in `validate_all.py`): empty text, dangling/duplicate/empty requirements, JSONL vs core divergence, derived-view and browser-bundle drift, stale metrics, short-clause ratchet. Negative test proves it fails on empty clause text. |
+| Regression | **PASS** | 13/13 gates, 136 pytest (126 + 10 new), `verify_kg_manuals.js` 11/11 and `verify_knowledge_universes.js` pass in headless Chromium after the change. |
+
+**Limits found while doing this (carry into the plan):**
+1. **325 of 1,838 clauses (18%) have under 60 characters of text**: the extractor kept the heading, not the body (e.g. USFD 8.2 "Apparatus required:"). Gate L ratchets this at 325; it may only fall. Root cause: paragraph-boundary logic; fix in P0-R.6.
+2. **Tolerance nodes are bare numbers** ("30 mm"): 783 mentions collapse to 361 ids with no subject/quantity/limit type. They are indexed but are not engineering facts. Needs a structured `Measurement` model (P2-facts below).
+3. **Runtime merge still exists in `index.html`** (it reads `RDSO_MANUALS_KNOWLEDGE`). It is now a generated view so it cannot diverge (Gate L), but the frontend should read canonical directly (P1-R.10).
+4. **Two edge vocabularies**: compact JSON keeps `CONTAINS_CHAPTER`, JSONL uses `HAS_SECTION`; Gate L compares them after normalisation. Retire `CONTAINS_CHAPTER` when gates F/J are ported.
+5. `rdso_kg_data.js` is 24 MB (text now included twice: canonical + view). Acceptable now; shrink in the retrieval work (SQLite).
+6. Some "clauses" are not clauses (e.g. title `CHAPTER – 4` for Para 145; `Annexure` headers); see P0-R.6.
+
+### 37.9 Sprint A results (data truth) — 2026-09-30
+
+| WP | Result (verified by re-run) |
+|---|---|
+| P0-R.4 evidence locations | `scripts/locate_evidence.py` locates each manual node's source text on its PDF page with PyMuPDF (pinned `pymupdf==1.28.2`). **6,663 of 6,663 text nodes located** (clauses, sections, subsections, tables, figures, tolerances); 83 chapters are page-level. Evidence now carries `page_number` (1-based PDF index; note printed page numbers differ, e.g. Para 429 is PDF page 195, printed 165), `region` and per-line `line_regions` in PDF points, `page_width/height`, `pdf_sha256`, `page_sha256` (hash of the page text as held in the raw layer) and `match_ratio`; crop evidence carries `file_sha256`. Visually checked on Para 429: rectangles enclose exactly the cited text. Evidence records: 1,875 to 6,783. |
+| Edge evidence | 9,025 of 9,037 edges now cite evidence (structural edges cite the child heading/clause; drawing edges cite the crop of their source fact). The remaining **12 edges are ungrounded, hand-authored links** (greasing/lubrication, fish plate, keyman) added with the UI Q&A work; they are listed in `canonical/evidence_waivers.json`, may only shrink, and should be sourced or removed. |
+| Gate N | `scripts/validate_evidence_locations.py`: every edge cites resolvable evidence or is waived (stale waivers fail); PDF hash in registry equals the file on disk; page exists; `page_sha256` equals the raw page text; region inside the page; quote actually occurs on the cited page; crop hashes match. 5 tests including tamper tests. |
+| P0-R.5 metrics | `metrics.json` now includes per-manual short clauses, non-extractable pages, raw detected clauses, evidence pages/regions, edges without evidence; Gate L and CI (`--check-metrics`) fail when it is stale. |
+| P0-R.8 browser tests | `tests/browser_env.js` (Chrome discovery on Windows/macOS/Linux, `CHROME_PATH`, headless flags, DevTools wait instead of fixed sleep, screenshots to a temp dir via `RDSO_ARTIFACT_DIR`) and `scripts/run_browser_tests.py`. **12/12 suites pass headless on Linux.** Found and fixed: two suites returned exit code 0 on error (false passes) and the Windows-only Chrome/artifact paths. `verify_semantic_intelligence.js` still needs a hand-started Chrome and a hard-coded `F:\` path; not automated. |
+| P0-R.9 hygiene | `__pycache__`, `index.html.bak` and `scratch/` untracked and ignored. Old PNG screenshots remain in history/`artifacts/` but are no longer regenerated by test runs. |
+| P0-R.10 bootstrap | `validate_all.py` checks dependencies first and prints the exact `pip install` (or `--install`). |
+| CI | `ci.yml` now runs on every push and PR: `rebuild_all.py` (ingest, generate, unify, locate evidence, unify, bundle) then `git diff --exit-code -- data/` (**a rebuild from the source PDFs is byte-identical to the committed data**, proven locally), metrics freshness, Gates A to N, and a separate browser job. `manual-kg-continuous.yml` no longer auto-commits generated data to `main` (it previously could overwrite the unified canonical with an older generator's output). Chapter extraction timestamp made deterministic to allow the reproducibility check. |
+
+**Sprint A findings for the plan:**
+- The clause-quality problem is concentrated: **STMM has 240 of 396 clauses shorter than 60 characters**; USFD has 32 of 157 pages, FBW 13 of 69 without extractable text (metrics.json).
+- `nodes.jsonl` grew to 16 MB and `rdso_kg_data.js` to 26 MB because text is now inline; move text to the SQLite retrieval store in P5.1 and slim the browser bundle then.
+- Evidence text is the first 300 characters of each unit. Full-clause highlighting (whole paragraph span) is a P2.2 refinement.
+- The 12 waived edges and their nodes (`act_*`, `defect_*`, `mat_*`, `role_keyman`) are unsourced knowledge; treat as untrusted until sourced.
+
+### 37.10 Sprint B results (extraction quality) — 2026-09-30
+
+**What was wrong (verified in §37.2 rows 1, 8, 10):** clauses were found by page-local regexes on flat text. That produced false paragraphs (page numbers, drawing dimensions, table values: `PARA_5300`, `PARA_1676 RUNNING TRACK`), cut every clause at page end and at 1,200 characters, ran on contents pages, and hid this behind gates that only checked shape.
+
+**What was built:** `scripts/clause_parser.py`, a document-level layout parser. Heads are bold, left-margin rows starting with the manual's numbering; contents pages and running headers are removed; the numbering chain (longest strictly increasing sequence) rejects values that merely look like numbers; the chapter comes from the numbering itself; bodies run across pages until the next head or a stand-alone chapter/annexure banner; bare headings become sections, not clauses; deleted paragraphs are recorded as tombstones. `scripts/ocr_pages.py` OCRs the image-only pages (RapidOCR, offline).
+
+| Manual | Clauses before | Clauses now | Short bodies (<60 chars) before, now | Image-only pages (OCR'd) | Old regex "detected" |
+|---|---:|---:|---:|---:|---:|
+| IRPWM | 673 | **421** (+2 deleted tombstones) | 22, **0** | 14 | 1,738 |
+| TMM | 349 | **171** | 27, **0** | 4 | 1,062 |
+| STMM | 396 | **258** | 240, **14** | 0 | 179 |
+| USFD | 174 | **192** | ~14, **0** | 32 (6 weak) | 353 |
+| AT Weld | 115 | **73** | 7, **0** | 1 | 163 |
+| FBW | 131 | **57** | 15, **0** | 13 | 204 |
+| **Total** | **1,838** | **1,172** | **325, 14** | **64** | 3,699 |
+
+Interpretation: the earlier totals were inflated by false positives, not "more coverage". Evidence: in IRPWM, TMM and STMM the paragraph numbers now form a **contiguous run inside every chapter** (IRPWM 101 to 1515 with 517/518 explained as deleted; TMM 101 to 1216; STMM 101 to 2311), which the old set (numbers up to 8833) did not. Median IRPWM clause is 1,016 characters (old 437), Para 429 is complete (1,278 characters over its page; it previously stopped at an inline "Annexure" phrase in the old logic and at 1,200 characters).
+
+| Store | Before Sprint B | After |
+|---|---:|---:|
+| Canonical nodes / edges | 6,830 / 9,037 | 4,894 / 6,415 |
+| Requirements / evidence records | 2,199 / 6,783 | 1,632 / 4,847 |
+| Tolerance nodes (bare values, see §37.8) | 361 | 460 (full text now yields more mentions) |
+| Evidence regions located | 6,663 | 4,721 (all text nodes; 9 clause/section items are page-level only, ratcheted) |
+| Edges without evidence | 12 (waived) | 12 (waived) |
+
+**Other changes with reasons:**
+- `generate_canonical_kg.py` no longer reads `rdso_manuals_knowledge.json`. That read was circular (the file was a view written from canonical) and was the original source of the empty-text clause nodes. Nodes and edges are now rebuilt without reading earlier canonical outputs, so stale records cannot survive; `rebuild_all.py` twice gives byte-identical files.
+- **P1-R.1:** `index.html`, the bundle exporter and Gate L no longer use the legacy view; `data/rdso_manuals_knowledge.json` is deleted. Chapter ownership of clauses comes from the canonical id; provision cards read `text`, `page`, `roles`, `equipment`, `failure_modes`, `tolerance_texts` from the canonical node. Tests confirm nothing refers to the view (`test_frontend_single_source.py`); 12/12 browser suites pass; bundle 24 MB to 21 MB.
+- **Gate O** (new): each of the 64 image-only manual pages has an OCR record tied to the current PDF hash; weak results (USFD: 6 pages with no text found or low confidence; a person should confirm they are figures or blank) are in `intermediate/review_queue.jsonl`. OCR is a committed artifact, not part of the byte-identical rebuild (model output can differ across runtimes).
+- **Gate L** now also enforces numbering continuity for IRPWM, TMM and STMM (every number between a chapter's first and last is a clause, a bare heading or a deleted tombstone) and lowers the short-clause ratchet to 15. Gate I no longer fails decimal-manual clauses for sitting outside the *hand-written* registry page range (it warns, 85 warnings), because that registry is wrong for AT Weld (chapter 4 listed as pages 10 to 14, but its paragraphs run to page 17), FBW and parts of USFD.
+- 16 new tests (parser unit tests, continuity, OCR tamper, frontend single source; 141 to 157); 157 pytest and 12 browser suites pass; 15 gates (A to O) pass.
+
+**Known limits after Sprint B (honest):**
+1. **Completeness for decimal manuals is not proven.** The continuity invariant exists only for the paragraph-numbered manuals. USFD, AT Weld and FBW (322 clauses) rely on the bold-head rule; FBW headings are not bold, so it uses margin plus sequence only. A sample review by a person is required (add to the review queue) before treating them as complete. 47 bare headings (USFD 17, AT Weld 19, FBW 11) were kept as sections, not clauses.
+2. **Registry page ranges for AT Weld, FBW and USFD need a human correction** (numbering, not pages, currently owns the chapter). FBW pages 4 to 6 are an index and correction slips, not chapter text.
+3. Body text keeps inline correction-slip markers such as "ACS - 2"; they should become structured amendment metadata (with the amendment date) in P2.3.
+4. Clause bodies include tables and column text in reading order of the layout parser; table structure is not preserved. Table extraction is a separate work package (add to P2.3).
+5. 14 STMM clauses are short (mostly "Nil." consumables and table-only troubleshooting entries); accepted, ratcheted.
+6. There is no independent human gold set yet. All quality statements above rely on invariants (contiguity, coverage, gates) plus my inspection of sampled clauses.
+
+**P1-R.2 pilot sign-off (Master §28) for IRPWM, criterion by criterion:**
+
+| Criterion | Status | Evidence / gap |
+|---|---|---|
+| All pages registered | **MET** | 530/530 pages in `raw/extracted_pages.jsonl`, PDF SHA-256 in the registry (Gate N); 14 image-only pages OCR'd (Gate O). Per-page hashes are stored for every cited page. |
+| Hierarchy represented | **MET** | 15 chapters, sections and subsections from source headings (Gates F, I, J, K). |
+| Chapter order deterministic | **MET** | Numbering-derived; CI rebuild produces no diff. |
+| Provisions preserved where detectable | **MET (IRPWM)** | 421 paragraphs plus 2 tombstones, contiguous 101 to 1515 (Gate L). Tables and annexures are not yet attached to their paragraphs (75% of page text lies inside clauses; the rest is annexures, tables and banners). |
+| Source pages resolvable / source page opens | **MET** | Page numbers and rectangles verified on the PDF; viewer opens `#page=N` (browser suite). |
+| Full-text search works | **PARTIAL** | In-page token search only; no BM25/identifier index (P5.1). |
+| Natural-language queries retrieve evidence | **NOT MET** | Regex intents plus 13 canned answers (P5.1, P6.1). |
+| Citations resolve | **PARTIAL** | Canonical evidence resolves and is hash-checked; the canned answers cite hard-coded paragraph lists. |
+| Cross-references resolve or are classified | **NOT MET** | No resolver; 404 "Para NNN" and 236 "Annexure" mentions in IRPWM (P2.1). |
+| Uncertain extraction is flagged | **PARTIAL** | Everything is `machine_extracted`; weak OCR queued; no per-clause uncertainty score yet. |
+| No answer without retrieved evidence | **NOT MET** | Canned answers and substring fallback (P6.1). |
+| Regression tests exist | **MET for data/extraction, NOT MET for retrieval** | 157 pytest, 12 browser suites; no retrieval/QA evaluation set yet (P7.1). |
+| Rerun is deterministic | **MET** | `rebuild_all.py` twice and in CI: byte-identical (OCR excluded by design). |
+
+Verdict: the **structural half of the pilot (PDF to registry to hierarchy to provisions to evidence to source page) is MET for IRPWM**. The **retrieval half (search, questions, cross-references, grounded answers) is NOT met**, and the pilot is therefore not complete. Do not scale to other manuals for retrieval until Sprint C.
+
+### 37.11 Sprint C results (retrieval) — 2026-09-30
+
+**Order followed:** measure first, then build, then tune only on the dev split.
+
+**C1. Evaluation set (P7.1, started).** `eval/questions.jsonl`: 320 questions, built by `scripts/build_eval_set.py` from `eval/handwritten_questions.json`.
+
+| Category | n | What it tests | Gold |
+|---|---:|---|---|
+| `nl` | 100 | natural-language questions written from sampled clauses across all six manuals | the clause that answers it |
+| `ident` | 40 | "Para 429 IRPWM", "clause 710 of small track machines manual", "USFD 8.10" | that clause |
+| `title_auto` | 120 | a unique clause title as the query (a lexical floor) | that clause |
+| `kw_auto` | 40 | the `nl` questions reduced to bare keywords | that clause |
+| `oos` | 20 | questions the manuals cannot answer (cooking, cricket, Python ...) | none: must refuse |
+
+Each item has a deterministic dev/test split (hash of the question): 195 dev, 125 test. `eval/baseline.json` is committed; Gate P fails if Recall@5 or MRR of any category drops by more than 0.01 on either split, or if refusals regress.
+
+**C2. Offline retrieval engine (P5.1).** `lib/rdso_search.js` is one engine for the browser and for Node, with no dependency and no network: BM25F over 3,190 passages (700 to 1,100 characters, cut at line boundaries; clause title and chapter weighted x3), Porter stemmer, unit and "1 in 12 / 1:12" normalisation, a railway abbreviation table (`data/search/synonyms.json`, expansions down-weighted), paragraph-number matching ("Para 429", "IRPWM 2024 225"), manual-name scoping (longest match, so "small track machines manual" does not also select TMM), a small topic prior (flash-butt words favour FBW, thermit words favour AT Weld ...), bigram re-ranking, and an **evidence-coverage score** (share of the question's term weight found in the best passage) used to refuse out-of-scope questions. Index: 10,193 terms, 4.7 MB (`data/search/search_index.js`), built deterministically by `scripts/build_search_index.py` inside `rebuild_all.py`. Speed: 0.7 ms per query warm, 2 ms cold, index load 2 ms in Node.
+
+| Split | Category | n | R@1 | R@5 | R@10 | MRR |
+|---|---|---:|---:|---:|---:|---:|
+| dev | nl | 58 | 0.759 | 0.948 | 0.983 | 0.832 |
+| dev | kw_auto | 23 | 0.652 | 0.913 | 0.957 | 0.772 |
+| dev | ident | 29 | 1.000 | 1.000 | 1.000 | 1.000 |
+| dev | title_auto | 73 | 0.904 | 0.986 | 0.986 | 0.943 |
+| test | nl | 42 | 0.833 | 1.000 | 1.000 | 0.909 |
+| test | kw_auto | 17 | 0.882 | 1.000 | 1.000 | 0.941 |
+| test | ident | 11 | 1.000 | 1.000 | 1.000 | 1.000 |
+| test | title_auto | 47 | 0.957 | 1.000 | 1.000 | 0.975 |
+
+Refusal (threshold chosen on dev, coverage < 0.56 and no paragraph number resolved): dev 12/12 out-of-scope refused, 2 of 183 answerable wrongly refused; **test 6/8 out-of-scope refused**, 2 of 117 answerable wrongly refused. Two tuning steps were made on dev only (a longest-match manual detector that took `ident` from 0.93 to 1.0, and BM25 k1 1.2 to 1.0 with a topic prior and bigram weight 0.5); the test split was read once afterwards.
+
+**How far to trust these numbers (important).**
+1. The `nl` questions were written by the same author who was reading the clause, so they share vocabulary with the gold text; real users will paraphrase more. The numbers above are an upper bound.
+2. An informal probe of 12 unlabelled, engineer-style questions ("what should a gangmate do if he finds a rail fracture", "rail flaw detection frequency for 60kg rails", "tamping cycle for concrete sleepers", "what is the gauge tolerance in track" ...) gave an acceptable first result for about 8, the right paragraph in the top three for one more, and clear misses for three (flaw-detection frequency returned USFD 7.1 rather than 6.6, tamping cycle and gauge tolerance returned neighbouring but wrong clauses). Treat top-1 accuracy on real questions as roughly 60 to 70% until an independent set exists.
+3. `oos` has only 20 questions and the test half is 8, so the refusal figures carry wide error bars. Two test items ("How to repair a smartphone screen?", "speed limit for cars on national highways") share generic words with the manuals and are not refused.
+4. Gold labels are `author_drafted_unreviewed`; a second person should check them (P7.1 completion).
+5. Weak spots seen: USFD (and other decimal-numbered) clauses have poor titles (the label is the first sentence), which weakens the title field; queries about a value that lives in a table rank the surrounding prose.
+
+**C3. Cross-references (P2.1).** `scripts/crossrefs.py` finds paragraph (with lists such as "Paras 619 and 620" and sub-clauses "(3)(a)"), annexure, table, figure, chapter and standard references in every clause, keeps the exact character span, types "(Back to Para N)" editorial back-links separately, follows "of the Indian Railway Code" style scopes to EXTERNAL, and resolves the rest against the canonical store. `canonical/crossrefs.jsonl` (1,572 records) and `reports/crossref_report.json`:
+
+| Kind | Resolved | External | Not found | Notes |
+|---|---:|---:|---:|---|
+| paragraph | 548 | 9 | 9 | the 9 unresolved are listed in the report (e.g. IRPWM "Para 143", AT Weld "4.4.3.1", FBW "10.1.1") |
+| annexure | 333 | 0 | 12 | |
+| table | 79 | 0 | 11 | |
+| figure | 197 | 0 | 107 | figures that were never extracted as nodes |
+| chapter | 38 | 0 | 0 | |
+| standard (IS, IRS, RDSO, RT ...) | 0 | 229 | 0 | external by definition |
+
+1,676 `REFERENCES` edges were added (source clause to target; evidence = the source clause), taking the graph to 8,086 edges, all with evidence except the 12 waived ones. Gate Q recomputes the extraction and fails on stale data, wrong spans, missing targets or edges, and if unresolved paragraph references exceed 9.
+
+**C4. Source highlighting (P2.2, partial).** `scripts/render_evidence.py` draws the stored per-line evidence regions on the PDF page and crops around them (verified visually on Para 429). The viewer modal shows this crop above the PDF when `artifacts/evidence/<id>.png` exists and otherwise behaves as before. Limits: only the first 300 characters of a clause are highlighted (the evidence quote), not the whole paragraph; crops are a git-ignored cache produced on demand (`--doc IRPWM` or `--all`) rather than shipped (about 1,200 images); an in-browser highlight would need pdf.js, which cannot read local PDFs from `file://` pages without browser flags, so it was not attempted.
+
+**UI changes (index.html):**
+- A question that no curated answer matches now gets an **extractive answer**: the best passage quoted (HTML-escaped) with manual, paragraph and page, an "Open source page" button, other relevant provisions, status `MACHINE_EXTRACTED` and confidence equal to evidence coverage. If evidence is thin the card says **"No sufficient evidence"** and lists nothing. The previous fallback substring search that declared any keyword hit "VERIFIED, 94%" was removed.
+- **Bug found and fixed:** the curated-answer matcher returned the "bolt-hole star crack mitigation" card (status VERIFIED, 95%) for "How is casual renewal of a defective or fractured rail carried out?" because one keyword ("fractured") matched. Curated answers now need at least two of their own keywords.
+- Provision cards list **References in this provision** and **Referenced by** as clickable chips coloured by status, and the clause text scrolls instead of stretching the panel.
+
+**Test and gate state:** 17 gates (A to Q), 175 pytest, 13 browser suites, all passing; a rebuild from source is byte-identical (search index and cross-references included). New: `test_search_engine.py` (7), `test_crossrefs.py` (8), `test_render_evidence.py` (3), `verify_retrieval_ui.js` (5 checks). Browser tests now use a fresh Chrome profile per run (a crashed run had left a lock that failed the next one); the CI browser job installs PyMuPDF and Pillow.
+
+**Pilot status after Sprint C (Master §28, IRPWM):** full-text search **MET** (BM25 with identifiers); natural-language retrieval **PARTIAL** (good on the authored set, ~60 to 70% top-1 on informal probes); cross-references **MET** (classified, with 9 unresolved paragraph references reported); citations resolve **MET** for retrieval answers; no answer without retrieved evidence **PARTIAL** (retrieval answers and refusals are evidence-gated; the 13 curated answers remain and still carry hard-coded "VERIFIED"); regression tests for retrieval **MET**.
+
+### 37.12 Sprint D results (grounded answers and the feedback loop) — 2026-09-30
+
+**D1. A blind evaluation set, and what it showed.** No real engineer questions were available, so 47 practitioner-style questions were written *before* reading any clause text (`eval/blind_questions.json`; 35 answerable, 12 railway-related but unanswerable from these manuals) and gold-labelled afterwards. Caveat that matters: the labeller looked at the engine's top results to find candidates, so the gold is biased towards what the engine can find; a second, independent labeller is still required. `build_eval_set.py` also accepts `eval/reviewed_feedback.json` (category `real`) for questions accepted from users.
+
+| Blind set | n | R@1 | R@5 | MRR | Refusal of unanswerable |
+|---|---:|---:|---:|---:|---|
+| dev, before tuning | 20 | 0.650 | 1.000 | 0.800 | 20/20 (all out-of-scope items, threshold moved to 0.68 by the new railway-adjacent items) |
+| dev, after | 20 | 0.750 | 1.000 | 0.850 | 20/20 |
+| test, before | 15 | 0.667 | 0.933 | 0.767 | 10/12 |
+| test, after | 15 | 0.667 | 0.933 | 0.789 | 10/12; 9 of 132 answerable test questions wrongly refused |
+
+The only change kept from tuning on dev was a 1.15 authority prior for the Permanent Way Manual when the question names no manual and no topic (a clause aggregation variant was tried and rejected because it hurt paragraph-number queries). Unrefused test items: railway topics whose words appear in the manuals ("Rajdhani" appears in a speed clause, "coach ... cleaning" in a track-machine coach clause). Proximity-based coverage was tried as a better refusal signal and did not help. The blind numbers are much closer to the informal probe of Sprint C than the authored `nl` numbers are, so **expect roughly 65 to 75% first-result accuracy and about 93% in the top five on real questions**, with weakest results on railway-adjacent unanswerable questions.
+
+**D2. The hand-written answers were unsafe, and are now retired or labelled.**
+`scripts/audit_curated_answers.py` extracts the 13 curated answers from `index.html` and checks their numbers against the clauses they cite. Result: 1 supported, 5 with numbers absent from the cited clauses, 7 uncited (drawing knowledge that cannot be checked against manuals). The screening is coarse (number present anywhere in a cited clause passes), and a manual check found a worse case that it missed: the tongue-rail card stated **"maximum vertical wear 6.0 mm, lateral 8.0 mm per IRPWM Para 429 and IRS:T-10", status VERIFIED, 99% confidence. Para 429 gives 6 mm and 8 mm only as reconditioning limits for crossings and wing rails (and 10 mm / 8 mm for crossing wear); it gives no tongue-rail wear limits.** A safety limit attributed to the wrong component, presented as verified. Actions: the 6 manual-cited curated answers are `retired` and the questions are answered by retrieval; the remaining 7 keep working but are labelled **CURATED · UNREVIEWED** (no confidence percentage, status `CURATED_UNREVIEWED`); Gate P now fails if any curated answer claims `VERIFIED` or carries numbers its cited clauses lack. The `defect_*`, `act_*` and similar hand-made graph nodes behind them remain unsourced (12 waived edges).
+
+**D3. Grounded answers (P6.1, partial).** `engine.answer()` returns either `no_evidence` or a cited answer: the sentences of the best passage that carry the question's terms (idf weighting, synonym and bigram credit, a bonus for sentences with a quantity when the question asks for a value), each as an exact slice of the passage (offsets are tested), a confidence tier (strong, probable, weak: from coverage and the margin over the next clause), the full passage on demand, and related provisions. The UI card shows the tier, the sentences with `[manual Para n · p.N]`, "Open source page" (with the highlighted crop when rendered) and thumbs up/down. Limits: a table-heavy passage (for example the level-crossing indicator clause 921) yields jumbled sentences because the parser flattens tables; the engine picks the best passage, not always the best clause; there is no per-claim contradiction or revision check yet, and the refusal threshold (coverage below 0.68, chosen on dev) both wrongly refuses about 5% of answerable questions and lets a few railway-adjacent questions through.
+
+**D4. Feedback loop (P7.2, P7.3 partial).** The browser keeps a local log (queries with status, coverage and the clause shown; thumbs up/down) in `localStorage` (capped at 500 events) and exports it as JSONL on request; nothing leaves the machine. `scripts/ingest_feedback.py` merges exported logs into `data/feedback/feedback.jsonl` (git-ignored), rebuilds the `FB:*` items of `intermediate/review_queue.jsonl` (no-evidence questions, thumbs-down, low coverage), writes `reports/knowledge_gaps.json` (refused questions with counts) and `eval/candidates.jsonl` (thumbs-up pairs, `user_confirmed_unreviewed`). Candidates enter the evaluation set only after a person accepts them into `eval/reviewed_feedback.json`. Still missing from P7.3: applying reviewed synonyms automatically and the publish-blocking rebuild-and-evaluate step (today Gate P plays that role).
+
+**Decision on embeddings (P5.2):** not justified yet. On the blind dev set the right clause is in the top five for every question; the errors are ordering (first versus second result), refusal of railway-adjacent questions, and table text, none of which a small embedding model is likely to fix reliably. Revisit if the independent real-question set shows top-five recall below about 90%.
+
+**Not done this sprint (carried forward):** title repair for decimal-manual clauses, table-row indexing, per-claim revision/conflict flags, an independent second labeller for all `author_*` gold, and the automatic synonym loop. Test state: 17 gates, 180 pytest, 13 browser suites, all passing; 367 evaluation questions.
+
+### 37.13 Sprint E results (tables and structured measurements) — 2026-09-30
+
+**E1. Tables (P2.2).** `scripts/extract_tables.py` uses the PyMuPDF table finder over all six manuals and keeps only real data tables (at least two columns filled in half the rows, at least four filled cells, short cells); merged header cells are repeated, and a continuation table on the next page inherits the previous header. Result: 549 tables (TMM 152, IRPWM 204, STMM 139, USFD 24, AT_WELD 20, FBW 10) in `raw/tables.jsonl`, each with page, bounding box, rows, header rows, caption, the owning clause and the page hash. Gate R checks rectangular rows, header range, page hash against the raw text, that the owner clause exists, a floor of 540 tables, and that tables are in the search index. 526 tables reach the index as extra passages owned by their clause (`kind: table`, lines of the form "Header: value; ..."), so value queries ("versine for 4.5 degree curve") can hit a row. Limits: header detection is a heuristic; a scanned or ruled-line-free table can be missed or split; 23 tables are not indexed (no owner clause or no readable text).
+
+Retrieval effect (dev tuning, then re-baselined; 12 new blind table questions): table questions dev R@1 0.78 to 0.89 and R@5 0.89 to 1.00; identifier queries unchanged (R@1 1.0); blind dev R@1 0.75, test R@1 0.60 (was 0.67, 15 questions, one question of difference) and blind table test 0.67 (3 questions, too few to conclude). Table passages initially displaced identifier queries (FBW 8.3 beat the requested paragraph); fixed with a 0.9 factor for table passages and an identifier second pass. Refusal threshold re-chosen on dev at 0.66: 20/20 dev and 10/12 test out-of-scope refused; 7/212 dev and 6/135 test answerable questions wrongly refused. 379 evaluation questions.
+
+A side effect that is a quality loss: the tongue-rail wear question now answers from table rows of IRPWM Para 433 ("Switch 4; Distance between web to web of Tongue Rails"), tier "weak", where before it returned prose. The card says "rows copied from a table", which is honest, but the sentence extractor was built for prose and a row is a poor answer. Row-aware answer rendering (show the table with its header) is the next fix; the browser test now accepts both wordings.
+
+**E2. Structured measurements (P2.3).** `scripts/measurements.py` + `extract_measurements.py` write `canonical/measurements.jsonl`: 5,778 values (3,345 from clause text, 2,433 from table cells), each with comparator (max, min, range, tolerance, value), numeric bounds, canonical unit (mm, m, kmph, kg, kn, degC, %, month ...), a quantity label where one could be assigned, the subject words, and the exact character span or table cell. Gate S re-reads the clause or cell and requires the span to reproduce the recorded text, canonical units, ordered bounds, and a count floor of 5,500. Conservative by design: paragraph, annexure, table and figure references, years, standards, implausible speeds (over 400 kmph) and percentages (over 100) are skipped; a quantity label is dropped when the unit cannot measure it (a "60 kg" is never a "height"). 4,070 values (70%) have no quantity label; that is deliberate, not a gap to paper over. Everything is `machine_extracted`.
+
+Manual audit of 60 random labelled values: the number, unit and comparator were right in 59 of 60 (one truncated unit, `kg/cm2` read as `kg`, fixed and covered by a test). The quantity label was right in about 52 of 60 (roughly 87%); the wrong ones come from the nearest-keyword rule inside table-like paragraphs (for example a 3.6 m chord labelled "gauge", a temperature-table row labelled "length"). Treat the label as a search aid, not a fact. This audit is by the author of the extractor on a sample of 60; it is not independent.
+
+A candidate report (`reports/measurements_report.json`) counts 20 groups where one manual gives different maxima or minima for the same quantity and unit. These are candidates for a person to look at (different components or speed classes will often explain them), not detected conflicts. The older bare `TOLERANCE` nodes stay because the UI depends on them; they are superseded by measurements and should be retired when the UI reads measurements.
+
+**Not done this sprint (carried forward):** title repair for decimal-manual clauses (E3), registry page-range corrections for AT_WELD/FBW/USFD (E4, 85 warnings), row-aware answer rendering, measurement-to-graph edges, per-claim revision/conflict flags, independent second labeller and real engineer questions, automatic synonym loop. Test state: 19 gates (A to S), 191 pytest, 13 browser suites, all passing; rebuild is deterministic.
+
+### 37.14 Sprint F results (titles, registry ranges, table answers) — 2026-09-30
+
+**F1. Clause titles for numbered paragraphs without a heading (E3).** In the decimally numbered manuals a paragraph with no heading was given its first printed line as title, a wrapped fragment ("On Indian Railways Alumino-Thermic welding with short pre-heating process by using"). `clause_parser._repair_title` now replaces a fragment (55+ characters, no closing punctuation) with the first sentence of the paragraph, cut at a word boundary with an ellipsis at 100 characters. Real headings ("Shelf life of portion") are untouched. Limit: it cannot tell a heading from a first line by typography (bold is not carried through), so it works from length and punctuation; a few fragments under 55 characters remain (for example "Conventional A.T", cut at an abbreviation). The evaluation set is partly generated from titles, so it was regenerated and the baseline re-written deliberately: dev keyword and title recall@5 moved by one question each (0.913 to 0.88, 0.986 to 0.971), test unchanged in kind. Treat that as noise from a changed question set, not as a measured regression, but it is also not proof of no regression.
+
+**F2. Registry page ranges (E4).** The hand-typed chapter page ranges for the alumino-thermic welding and flash-butt welding manuals disagreed with where the numbered paragraphs are (85 warnings, for example FBW chapter 5 registered at pages 9 to 13, paragraphs on pages 11 to 18). The ranges are now corrected from the parsed paragraph pages (USFD already agreed). The 85 warnings are gone; remaining warnings are the honest ones: chapters share boundary pages, and USFD chapters 12 and 15 have no numbered paragraph. The test that pinned the old FBW page was updated. Not independently checked against the printed manuals beyond the parser's own page assignment.
+
+**F3. Table answers.** A question whose best passage is a table now answers with the matching whole rows (each cell prefixed with its column header) instead of sentence fragments, and merged cells that repeat their text are said once. The tongue-rail wear question of Sprint E (jumbled "Switch 4; Outer; Outer ...") is better but that particular table (IRPWM Para 433, a nested inspection proforma) is a poor data table and is still not a good answer; the fix for such tables is to exclude proformas from indexing, not done. Test state: 19 gates, 194 pytest, 13 browser suites, all passing.
+
+**Not done (carried forward):** proforma tables excluded from the table index, measurement-to-graph edges, per-claim revision/conflict flags, independent second labeller and real engineer questions, automatic reviewed-synonym loop, drawings (P3/P4).
+
+### 37.15 Sprint G results (form tables, conflict candidates) — 2026-09-30
+
+**G1. Form-like tables demoted.** 142 table passages come from label-heavy tables (fewer than 35% of body cells contain a digit: inspection proformas, nested check-lists). They stay searchable but carry `form: true` and score at 0.7 of a data table (times the 0.9 table factor). Effect on the evaluation: none measurable (dev and test metrics identical with and without it); the visible effect is that "tongue rail wear limit" now answers from prose Para 429 instead of the Para 433 proforma. That is one probe, not a tested improvement; there is no form-specific evaluation question. The 0.35 cut-off was chosen by looking at the distribution, not tuned.
+
+**G2. Conflict candidates from measurements.** `extract_measurements.py` now pairs bounds of the same manual, quantity, unit and comparator from different clauses with at least three shared subject words (`reports/measurement_conflict_candidates.json`). Result: 8 pairs, and on reading them none is a real contradiction (different speed bands, different components such as closure rail versus permanent closure, curve radius thresholds for different track classes). Without the earlier looser rule the list had 210 pairs of unrelated values. **Conclusion: regex measurements are good for value lookup, not for detecting conflicts between provisions; a conflict needs the condition each limit applies under (speed band, track class, component), which the extractor does not capture.** The list is kept as a review aid and no conflict flag is shown to users. Per-claim revision and conflict flags remain open, and need condition extraction first.
+
+Test state: 19 gates, 195 pytest, 13 browser suites, all passing.
+
+**Not done (carried forward):** condition extraction for measurements (speed band, track class, component), measurement-to-graph edges, independent second labeller and real engineer questions, automatic reviewed-synonym loop, drawings (P3/P4).
+
+### 37.16 Sprint H results (intake for real questions, reviewed synonyms) — 2026-09-30
+
+Sprint H builds the two human-in-the-loop pipelines that were missing. **It adds no new data and no measured improvement**: both need people to supply input, and none has been supplied.
+
+**H1. Real engineer questions, double-labelled (P7.1).** `eval/real_questions_template.json` documents the format; `scripts/ingest_real_questions.py` reads `eval/real_questions.json` and accepts a question only when two different labellers each supplied a label. Gold is the clauses both share; both saying "no answer" makes an expected-refusal question (`real_oos`); anything else is a disagreement, reported for adjudication and not used. It reports exact-set agreement and Cohen's kappa on the answerable / no-answer decision (`reports/real_question_agreement.json`), rejects single-labeller items, unknown clause references and duplicates, and ignores `_example` items. `build_eval_set.py` reads the result as categories `real` and `real_oos`. Smoke-tested end to end with two invented items (both passed, then removed). Until a real file exists, the evaluation has no independent questions, and the blind-set numbers of §37.12 (which the author labelled while looking at the engine) remain the best estimate.
+
+**H2. Reviewed synonyms (P7.3).** `scripts/apply_reviewed_synonyms.py` applies `eval/reviewed_synonyms.json` to `data/search/synonyms.json` only when each group has at least two phrases, a named reviewer, an existing evidence clause, at least one phrase found verbatim in the manuals, and is not a duplicate; a failing group blocks the whole batch. Accepted groups are recorded under `reviewed` with reviewer, reason and evidence. The regression check is the existing Gate P (`eval_retrieval.py --check` on the test split): a synonym that lowers retrieval fails the gate after the index is rebuilt. It is not automatic in the sense of learning from queries: `knowledge_gaps.json` still needs a person to propose the groups.
+
+Test state: 19 gates, 199 pytest, 13 browser suites (browser suites not re-run this sprint, no browser code changed). 
+
+**Next, and needs a person:** collect 50 to 100 real questions from engineers, have two people label them, run the intake, and then decide about embeddings (P5.2) from the resulting recall. Not done: condition extraction for measurements, measurement-to-graph edges, drawings (P3/P4).
+
+### 37.17 Sprint I results (drawing identity and revision evidence, P3 start) — 2026-09-30
+
+First drawing work, under the rule that the manuals are now proven enough to start. The 59 drawing PDFs are single-page raster scans with no text layer, so everything below rests on file names and OCR.
+
+**I1. OCR of the sheets.** `scripts/ocr_drawings.py` (RapidOCR, page scaled to at most 3,000 pixels on the long side) writes `raw/drawing_ocr.jsonl` with every line, its confidence and its position (0 to 1 of the page), bound to the PDF hash. Like the manual OCR it is a committed artifact, not part of the byte-identical rebuild.
+
+**I2. Registry.** `scripts/drawing_registry.py` writes `canonical/drawings_registry.jsonl`: per file, the drawing numbers stated in the file name (single, list or range endpoints, sub-sheets such as 6155/1, alteration marker ALT_n or ALT_NIL), the drawing numbers and dates read on the sheet, and checks that compare the two. Everything is `machine_extracted`. Results: 58 of 59 sheets show the number(s) stated in the file name (base number compared, so a wrong sub-sheet suffix would pass). The one that does not (`RDSO_T_3911 TO 3918`, a small sheet with a partial text layer) reads a different number (T-3002) and is left unconfirmed rather than forced. No file named ALT_NIL shows several dated revisions. Revision lineage: only T-6155 has several versions on disk (ALT_10, 12, 13); the newest by alteration number is also the one with the latest date read from the sheet (27-01-2025), so the two sources agree. Nothing else has more than one version, so the lineage feature is barely exercised.
+
+**I3. Audit of the hand-made drawing catalogue (`data/rdso_drawing_catalog.json`).** 45 of 59 entries have a title that is just the file name ("RDSO Drawing Specification (file.pdf)"), so they carry no drawing information; 28 files cover several drawings (ranges or lists) but the catalogue gives each one number; the `key_highlights` free text has no source location and cannot be checked. The knowledge graph holds only 6 drawing nodes against 59 files. The catalogue should not be treated as evidence.
+
+**I4. Gate T.** Every PDF has exactly one registry entry with the current hash, a parseable number, an OCR record for that hash, no ALT_NIL contradiction, and at least 55 sheets identity-confirmed. Tests: filename forms (ranges, lists, sub-sheets, the "RDSOT" typo, lower-case Alt), OCR zero-for-O tolerance, impossible dates, the two checks, and a negative test that removing an entry fails the gate. Test state: 20 gates (A to T), 205 pytest; browser suites not re-run (no browser code changed); rebuild deterministic.
+
+**Not done (P3 remainder):** title-block fields (description, scale, rail section) are not extracted, because OCR returns the description block as jumbled fragments in non-reading order; notes, parts lists and dimensions with tolerances; highlighted evidence crops for drawings; revision comparison; turning the registry into graph nodes and linking drawings to manual clauses. Recommended next step for drawings: crop the title block by position and OCR it at higher resolution, then extract the alteration table row by row.
+
+### 37.18 Sprint J results (title block and alteration table, P3.2 and P3.3) — 2026-09-30
+
+`scripts/title_block.py` reads the fixed sheet layout from positioned OCR lines (page fractions, not reading order): the bottom row SPECIFICATION, SCALE, ALT:, DESCRIPTION, DATE and the drawing number; the alteration rows stacked above it (number, description, date); and the drawing description block above the number. It returns None for anything it cannot locate. The result sits in `title_block` of each registry record, all `machine_extracted`.
+
+Measured on the 59 sheets (from `reports/drawing_registry_report.json`): a description was read for 58, a specification for 54, a scale for 46, and alteration rows for 23 sheets (28 rows). The 36 sheets without rows are mostly the older hand-lettered scans, where OCR reads handwriting poorly; that is a limit of the input, not something the code can fix.
+
+**A real cross-check exists for alterations.** The highest alteration number read from the sheet's table must equal the ALT_n in the file name. It could be tested on 8 sheets (a legible number in the top row): 7 agree, 1 disagrees (`RDSO_T_6290_ALT_1`, where OCR read "80" from a hand-lettered scale, listed in the report for review). Small sample; it supports the file-name alteration numbers but does not prove them for the other 50 sheets.
+
+**The hand-made catalogue disagrees with the sheets.** Of the 14 catalogue entries with a real title, the title read from the sheet matches the catalogue title closely (bigram overlap 0.9 or more) for 3, partly for 6 (paraphrase and OCR noise), and is different (below 0.6) for 5, for example a catalogue "Check Rail Arrangement and Chairs for 1 in 12 CMS Crossing" against a sheet reading "TIE PLATE FOR S.S.D FOR USE WITH (Zu-1-60) THICK-WEB SWITCH". Together with §37.17 (45 of 59 titles are file names) the catalogue should be considered unreliable and replaced by the registry.
+
+Known weaknesses: the sheet description text keeps OCR damage (fused words such as "10125mmCURVEDSWITCHWITH", confusions such as 0 for O), so it is searchable evidence, not a clean title; a revision row whose number OCR missed has number None (a row between two read numbers that leave one free is not inferred, on purpose); some stamp text can leak into the description on unusual layouts. Sheets with several drawings (ranges) carry one title block, which describes only one of them.
+
+Gate T now also requires 55 sheets with a description and 6 with a file-name/table alteration match. Tests use synthetic sheets (layout, missing anchors returning None, the alteration check). State: 20 gates, 208 pytest; browser suites not re-run (no browser code changed); rebuild deterministic.
+
+**Not done (P3 remainder):** notes, parts lists and dimensions with tolerances; highlighted crops for drawing evidence; revision comparison (needs two versions of a sheet with legible tables: only T-6155 has them); graph nodes for drawings and links to manual clauses; replacing the hand-made catalogue and the 6 hand-made drawing nodes with registry-derived ones; a human transcription queue for the hand-lettered sheets.
+
+### 37.19 Sprint K results (linking manual clauses to drawings, P3.6) — 2026-09-30
+
+`scripts/drawing_links.py` finds drawing numbers cited in clause text (`RT-6154`, `RDSO/T-6155`, "drawing No. RDSO/T-1899") and marks each citation `SHEET_HELD` when a sheet in `drawings/` covers that number (a "6171 To 6173" file also covers 6172) or `NO_SHEET`. Output: `canonical/drawing_links.jsonl` (exact span per citation) and `reports/drawing_links_report.json`. Gate U checks every span against the clause text, every sheet against the registry, and status against coverage.
+
+**Finding: the drawing collection barely overlaps what the manuals cite.** The manuals cite 103 distinct drawing numbers in 155 places; sheets exist for only 4 of them (6154, 6155, 6279, 6280, cited in IRPWM Paras 229 and 427), which involves 8 of the 59 sheet files. The other 51 sheets are cited by no manual clause, and 99 cited drawings are not in the collection (`cited_numbers_without_sheet`, a ready acquisition list). So a question that mixes a manual rule and a drawing can be answered for four drawings only; better drawing extraction will not change that, more drawings would.
+
+Caveats: matching is by number only, and treating the `RT-` and `T-` prefixes as one series is an assumption not checked against an RDSO index; the citation pattern is tuned on this corpus (bare `T-nnnn` is accepted only outside reference-like contexts) and was not evaluated for recall; where several versions of a sheet exist (T-6155 has three) the link lists all of them and does not choose. The hand-made `data/rdso_drawing_catalog.json` is not used by the application (only by `scripts/analyze_rdso_drawing.py`, which produced it) and is superseded by the registry; it is kept for history and should not be cited. I did not replace the 6 hand-made drawing nodes in the graph: they feed the browser tests and the demo turnout scenes, and replacing them is a UI change of its own.
+
+State: 21 gates (A to U), 213 pytest; browser suites not re-run (no browser code changed); rebuild deterministic.
+
+**Next for drawings:** acquire the missing sheets (list above), notes and parts lists with dimensions, evidence crops on sheets, and registry-derived graph nodes once the UI can take them.
+
+### 37.20 Sprint L results (surfacing the new data in the answer card) — 2026-09-30
+
+Until now measurements (§37.13) and drawing links (§37.19) existed only as files. `scripts/build_clause_extras.py` writes a compact browser file `data/search/clause_extras.js` (490 clauses, 109 KB): up to 12 text-derived values per clause and the held drawing sheets cited by the clause. The answer card for a retrieved clause now shows, under the cited sentences, a collapsed "Values found in this provision (n, machine-extracted)" list (quantity label if one was assigned, comparator in words, value and unit, with the original wording quoted) and, when the provision cites a drawing we hold, links to the sheet PDF in `drawings/`. Table-derived values are not repeated there because their rows already reach the user as table rows.
+
+What this does and does not give: only 490 of 1,172 clauses have any text value, and only 2 clauses (IRPWM Paras 229 and 427) link to drawings; the quantity label is right about 87% of the time (§37.13 audit) and 70% of values have none; the values are a reading aid next to the quoted sentences, not a replacement for them, which is why the original wording is always shown. Nothing in the answer text itself is generated from these values.
+
+Checks: browser Test 7 (Para 522 shows values with the machine-extracted label; Para 229 shows working sheet links), and a pytest that every value in the browser file exists in `measurements.jsonl` with the same wording and unit and every linked file exists. `build_clause_extras.py` is in the rebuild chain. State: 21 gates, 214 pytest, 13 browser suites, all passing; rebuild deterministic.
+
+**Still open:** condition extraction for measurements (so a value can say which speed band or component it applies to), measurement-to-graph edges, drawing notes and parts lists, registry-derived drawing nodes in the graph, real engineer questions with two labellers, embeddings decision.
+
+### 37.21 Sprint M results (conditions attached to measurements) — 2026-09-30
+
+`measurements.py` now records, for each value taken from clause text, the conditions named in the words around it (100 characters before, 60 after, never the value itself): rail section (52 kg, 60 kg, 60E1, 90/110 UTS), sleeper type, track geometry (straight, curve, turnout, crossing, switch, SEJ, bridge, tunnel, level crossing, running line ...), gauge, route class or zone, traffic, and, for a non-speed value, a speed value in the same sentence as `speed_band`. Fixed regular expressions, not understanding. 905 of 3,345 text values (27%) carry at least one condition; 2,440 carry none. Table cells carry no conditions yet (their row and column text would have to be parsed). Gate S checks the shape of the field; the browser card shows up to three of them as "near: ...".
+
+Precision, by reading 30 random conditioned values (author-audited, not independent): about 25 of 30 carried conditions that are relevant to the value (for example "Curve" for a curve tolerance, "52 kg" and "PSC sleepers" for a formation depth, "bridges" for a refuge distance); errors are a verb read as a noun ("trains may approach" taken as track approach), a rail size taken as a condition when it was part of a table row unrelated to the value, and window spill in flattened tables. Missing conditions are more common than wrong ones: the qualifier often sits in a table column or an earlier sentence.
+
+**Conflict candidates again, now with conditions:** pairs with the same manual, quantity, unit and comparator, and either the same non-empty condition set or overlapping subject words: 17 (9 by conditions, 8 by subject). Reading all 17: none is a real contradiction. The nine by conditions are curve-radius thresholds that belong to different purposes (track-recording tolerance bands in Para 520 to 525 versus pre-monsoon patrolling in Para 1112). **Conditions were not enough: what separates two limits is their purpose (what is being limited), which the extractor does not capture.** Consequence: no conflict flag is shown or planned from this data; a conflict feature needs a person reviewing pairs, and the candidate file is the queue for that.
+
+State: 21 gates, 217 pytest, 13 browser suites, all passing; rebuild deterministic.
+
+**Still open:** conditions for table cells, the purpose of a limit (needs a model or people), measurement-to-graph edges, drawing notes and parts lists, real engineer questions with two labellers, embeddings decision.
+
+### 37.22 Sprint N results (human review workflow) — 2026-09-30
+
+Every quality number in this document is still the author's own reading; nothing has ever been `reviewed` or `verified` by another person. Sprint N builds the way to change that with little effort from a reviewer.
+
+**`scripts/make_review_packet.py`** writes one self-contained offline HTML file (images embedded, no server, no network): a seeded random sample of extracted items, shuffled, each shown with what was extracted, the exact span highlighted in the clause text, and the source page crop with the region drawn on it (table bounding box for tables). Kinds: clause (boundary and text), cross-reference, measurement, table, drawing link. The reviewer types a name, answers Correct, Wrong or Unsure (with a note), and downloads `decisions_<name>_s<seed>.json`. `--per-kind 10 --seed 1` gives 50 items (about 3 MB); the same seed given to two people lets their agreement be measured. A browser test (14th suite) checks the packet loads, shows images and highlights, and collects decisions.
+
+**`scripts/ingest_reviews.py`** validates decision files (known target, matching kind, a named reviewer, no repeat by the same reviewer) and records them. Clause decisions go to `canonical/reviews.jsonl`, where the existing provenance policy (Gate M) applies: one approval gives `reviewed`, two distinct approvers give `verified`, any rejection gives `disputed`; the next rebuild applies it. Checked end to end with a throwaway decision (status changed to `reviewed`, Gate M passed), then removed. Decisions on other kinds go to `canonical/extractor_reviews.jsonl` and do not change any status. "Unsure" is counted, not recorded. `reports/review_accuracy.json` (rebuilt each time) gives, per kind, reviewed, correct, wrong, error rate with a 95% Wilson interval, and agreement between reviewers on items both saw. Because the sample is random, those error rates are honest estimates of each extractor, which the author-audited figures (measurement labels about 87%, conditions about 83%) are not.
+
+Limits: decisions are trusted as typed (no identity check); a rejection of a clause marks the whole clause disputed without saying why beyond the note; extractor reviews measure accuracy but cannot yet correct data automatically. State: 21 gates, 222 pytest, 14 browser suites, all passing; the review report is empty because no packet has been reviewed yet.
+
+**Action needed from people:** two engineers each complete a packet (50 items is about 30 to 60 minutes) and send back their decision files; `python scripts/ingest_reviews.py decisions_*.json` then `python scripts/rebuild_all.py`. This is the fastest route to independent accuracy numbers and to the first `reviewed` clauses.
+
+### 37.23 Sprint O results (clean-checkout reproducibility and docs) — 2026-09-30
+
+No new features. Checked that the repository stands on its own: a fresh `git clone` of the branch into an empty directory, `python scripts/rebuild_all.py` (2 min 50 s, including table extraction), left `git status` empty (the rebuild reproduces every committed generated file byte for byte), `unify_manual_canonical.py --check-metrics` passed, and `validate_all.py` passed all 21 gates (A to U) there. The clone had the Python dependencies of `requirements-dev.txt` and Node, but not `node_modules`; the browser suites were not re-run in the clone (they need Chrome and `npm ci`, which the CI browser job does). The GitHub Actions workflow could not be run from this environment, so CI itself remains unproven; its gate step is now labelled A to U and it already runs the rebuild, the `git diff --exit-code -- data/` check, the metrics check and the browser job, which covers the 14 suites.
+
+The README was the early prototype text with unverified statistics and a superseded drawing catalogue. It now opens with a status note pointing here, states that those sections are unverified prototype text, and lists the commands to rebuild, validate, test and search. It was not rewritten.
+
+### 37.24 Sprint P results (speed and start-up) — 2026-09-30
+
+Measured what an engineer's machine would feel, because nothing so far had timed it.
+
+**Search is fast.** Node, all 379 evaluation questions through `engine.answer()`: median 3.2 ms, 95th percentile 17 ms, worst 107 ms; index parse about 1 s in Node (6.3 MB file), engine construction 29 ms, about 180 MB resident. In the browser, the first question after load took 33 to 47 ms.
+
+**Start-up was slow, and the search data was not the cause.** In headless Chrome on this container (software WebGL, so a real machine with a GPU should do better, but the ratio should hold) the page took 6.5 to 8.8 s to load. All data scripts (22 MB knowledge-graph bundle, 6.3 MB search index, cross-references, extras) were done by 0.44 s. A CPU profile showed the time in the page's own start-up code: two quadratic lookups (a linear `rawNodes.find` inside the child-ordering sort comparator, and two linear `find` calls over 17k entities for each of about 8k edges) and the 3D scene. **Fixed the two lookups with id maps** (`rawNodeById`, `entityById`, the latter rebuilt if the entity list changes length): load fell to about 4.5 to 5.0 s, about 1.5 to 2 s saved. All 14 browser suites still pass.
+
+**Correction after profiling further (Sprint Q, no code change).** The paragraph first written here blamed the 14,695 scene objects for the remaining 4.5 s and called a lazy-scene rewrite the real fix. Further measurement does not support that. (a) About 2.5 s of the remaining start-up is WebGL shader compilation on the first render (`acquireProgram`, 1.1 s for one call chain alone); it runs in software GL in this container and is normally far faster on a real GPU driver. (b) Steady-state frames are cheap: over 3 s, JavaScript used about 170 ms in total (roughly 6.5 ms per frame, about 4.5 ms of it matrix updates for the 14.7k objects) and the thread was 93% idle; the low frame count in this container (about 8 per second) comes from software compositing, not from the page code. So the per-object cost is real but small, and a lazy-scene rewrite would risk 14 browser suites for a gain that cannot be shown here. Not done, and not recommended unless someone measures slow start-up on real hardware. Expected start-up on a laptop with a GPU is therefore probably 1 to 2 s, but that is an inference, not a measurement.
+
+State: 21 gates, 222 pytest, 14 browser suites, all passing. The timing figures come from one headless run in a container and were not repeated on user hardware.
+
+### 37.25 First human review (reviewer "rohit", packet seed 1, 50 random items) — 2026-09-30
+
+The first independent check of the extractors. Decision file kept at `eval/reviews/decisions_rohit_s1.json`; recorded in `canonical/reviews.jsonl` (clauses) and `canonical/extractor_reviews.jsonl` (other kinds); summary in `reports/review_accuracy.json`.
+
+| Kind | Reviewed | Marked Correct | Marked Wrong | Wrong rate (95% interval) |
+|---|---:|---:|---:|---|
+| table | 10 | 10 | 0 | 0% (0 to 28%) |
+| cross-reference | 10 | 2 | 8 | 80% (49 to 94%) |
+| measurement | 10 | 1 | 9 | 90% (60 to 98%) |
+| drawing link | 10 | 1 | 9 | 90% (60 to 98%) |
+| clause | 10 | 0 | 10 | 100% (72 to 100%) |
+
+One reviewer, 10 items per kind, so the intervals are wide and there is no agreement figure. The ten rejected clauses are now `disputed` (policy: any rejection disputes), which is the correct state until they are re-reviewed.
+
+**What I found when I checked the rejected items myself.** Not all are extractor errors in the sense the packet question implied, and the review exposed real defects I had not found in any earlier audit:
+
+1. **Clauses (10 of 10 rejected): the evidence highlight stopped after about 300 characters.** The clause text itself was complete, but the source-page highlight (used in the packet, in "Open source page" crops and in Gate N) covered only the first 300 characters (`QUOTE_CHARS`), so every clause longer than that looked cut off (for example Para 410 highlighted "...However, in exceptional" and nothing after). Gate N passed throughout because it only checked that the quoted prefix occurs on the page. **Fixed:** `locate_evidence.py` now locates the whole clause word for word, page by page, skipping page furniture, and records `coverage` (`full_clause` for 1,107 of 1,172 clauses, `prefix` for 65 whose words could not be matched in order, typically table-heavy) and, for clauses running onto later pages, `continuation` segments. Gate N now requires at least 1,100 full-coverage clauses; crops and review packets show continuation pages. A second, separate remark on clause 13.1 (it is only the opening of a paragraph whose sub-paragraphs 13.1.1 and following are separate clauses) is a design choice of the parser (sub-paragraphs are clauses) that the packet question did not explain; unchanged.
+2. **Cross-references (8 of 10 rejected), real defects:** dotted annexure numbers were cut ("Annexure 2.17" read as "Annexure 2", "5.8" as "5"), and an annexure, table or figure counted as "found" if any node merely mentioned its name in a sentence, with duplicates and, for repeated table numbers, several targets all listed as resolved. **Fixed:** the number regex keeps decimals; a target must be a node whose label starts with the annexure, table or figure name; one target per node; several targets are narrowed by chapter and then page distance, and if still tied the reference is `AMBIGUOUS` (19 today, with `candidates`, no edge). Resolved annexure, table and figure references now mean "a heading of that name exists", not "the name appears somewhere".
+3. **Measurements (9 of 10 rejected):** two real defects: a value preceded by the ordinary English word "is" was silently dropped (the standards filter for "IS 1367" matched case-insensitively; 66 values recovered), and "440 m or more" was recorded as an exact value instead of a minimum (fixed for "or more / above / less / below" directly after a value; cases where the words are split across flattened table lines are not fixable this way). The other rejected items, for example "up to 50 Kmph", "3 Kmph" (a patrolman's walking speed), "7.5 m", "250 hrs", "100 metres", look correct to me.
+4. **Drawing links (9 of 10 rejected) and several cross-references ("Para 1103 of the Indian Railway Code", "Para 143 to 147 of the Indian Railways Code", "Appendix-III" for guidance):** I cannot find a defect. The cited drawing numbers are real drawing numbers in drawing lists. Either the packet question was misread (the drawing-link question asked whether the highlighted text is a drawing number, and the crop showed the whole clause, not the number), or the reviewer applied a stricter rule such as rejecting links whose drawing is not in the collection. **This needs the reviewer's own criteria; until then those rejections are recorded as given and not acted on.** The packet also did not highlight the individual reference or value inside the clause crop, only in the text above it, which may have made these items hard to judge.
+
+**Consequence for earlier claims:** the author-audited accuracy figures (measurement label about 87%, conditions about 83%, cross-references "resolved" counts) were too optimistic or measured the wrong thing; the reviewer's measurement and link rates are the better evidence until re-reviewed, and the table extractor (10 of 10 correct) is the only one they support. Every "resolved" number quoted in earlier sections for annexures, tables and figures over-stated what was found.
+
+**Next:** a re-review packet (`rereview_s1.html`, 36 items: every rejected item as it now stands, with full-clause highlights) so the reviewer can re-judge after the fixes and say what "Wrong" meant for links and references. It is not a random sample, so its results must not be quoted as error rates. State: 21 gates, 229 pytest, 14 browser suites, all passing.
+
+### 37.26 Why the first review rejected almost everything, and how review effort is being reduced — 2026-09-30
+
+**Finding.** Checking the reviewer's decisions against item position explains most of §37.25. The packet crop highlighted only the start of the clause (the old 300-character evidence), and the question for cross-references, measurements and drawing links was "is the highlighted item right?". Items in the first 300 characters of their clause were approved (positions 93, 310, 369, 774 characters); almost every rejected item sat deeper in the clause (336 to 36,379 characters) where nothing was highlighted. So the rejections of those three kinds mostly reflect a packet that did not show the item, not extractor accuracy. The error rates in §37.25 for cross-references, measurements, drawing links and clauses must therefore not be quoted as accuracy; only the table result (10 of 10, tables being shown whole) is unaffected. Consequence for process: a review packet has to show each item itself.
+
+**Packet fixed.** Crops for references, values and drawing numbers are now built around the item (`render_evidence.render_span`): the clause lightly shaded, the item boxed in red, the page area around it. Clause crops show the whole clause and its continuation pages. The earlier "rereview_s1" packet used the old rendering and is superseded.
+
+**Reviewing with less human effort.** What I did instead of asking for another full review: I read 95 randomly drawn items (30 cross-references, 40 measurements, 25 drawing links; seeds 101 to 103) as a second reader, with the rule "does the highlighted text say what the record says". This is a model's reading, not an independent human verification, is not recorded as a review, and cannot set `reviewed` or `verified`; it is used to find defect classes. Findings: drawing links 25 of 25 are genuine drawing numbers; cross-references 4 of 30 had problems (2 drawing numbers filed as "standards", 1 rail section "IRS-52 kg" taken for a standard, 1 annexure target that only mentioned the name); measurements: value and unit correct in about 37 of 40, but about 6 of 40 came from flattened figure or table text where the number has no readable subject. Fixes made from these findings: RT- and RDSO/T- numbers are kind `drawing` (not `standard`); "IRS-52 kg" is no longer a standard; an attached minus sign is kept ("-10 mm" is now -10, the span includes the sign); areas and volumes ("13 m3") are no longer read as lengths; each text value now carries `context` = `prose` or `fragment` (by the share of ordinary words around it: 2,204 prose, 1,180 fragment at the time of writing), and the answer card shows only values with prose context. State: 21 gates, 230 pytest, 14 browser suites, all passing.
+
+**What still needs a person, and how little.** A calibration packet of 25 items (`calibration_s11.html`, 5 per kind, random, with item-level crops): about 15 to 20 minutes. Its purpose is (1) to measure whether my reading and the reviewer's agree, which decides how far model reading can stand in for human review, and (2) to give honest error rates now that the packet shows each item. If agreement is high, later rounds can be mostly automatic with small human spot-checks.
+
+### 37.27 Calibration review (packet 11) and what it exposed — 2026-09-30
+
+Decision file `eval/reviews/decisions_rohit_s11.json`, 25 items (5 per kind). Result as marked: tables 4 of 5 correct (one rejected: a real defect), everything else approved except two drawing links and one cross-reference rejected, and six items carrying the note that the screenshot did not contain the item.
+
+**Packet defect found again, this time by the reviewer's notes.** For clauses whose evidence covered only their opening (65 clauses) and for spans whose words the page matcher could not find exactly, the item crop was silently replaced by the start of the clause, so the reviewer could not see the item. The matcher compared whole words exactly (so "715" did not match the PDF word "715(1)", "RDSO/T- 5855/1" did not match its split words, "60 Kg" did not match "60Kg"), and clauses with partial evidence were searched only in their opening region. **Fixed:** matching ignores spaces and case and accepts a trailing prefix; clauses with partial evidence are searched over all their pages; an item with no crop is now skipped (never replaced by an unrelated crop) and counted. Measured on 60 random items per kind the crop now exists for 90% of cross-references (54 of 60), 93% of drawing links (56 of 60) and 92% of values (55 of 60), up from 50 to 85%; the rest are skipped from packets. Reviewer decisions made on crops that did not show the item (six items, `eval/reviews/voided.json`) and the whole of packet 1 for clauses, references, measurements and drawing links are excluded from accuracy; they stay on record.
+
+**Real extractor defect from the review: table wrapping.** Table TMM p.317 had 13 physical rows for 4 machines: records that wrap over several lines or have sub-items (i, ii, iii) came out as separate rows, and a wrapped header as three header rows ("Self-" / "propelle" / "d"). **Fixed:** in tables with an index first column (short numbers or letters), a row with an empty first cell continues the record above (cells appended, newline-separated), and a multi-row header becomes one header row. The table is now 1 header row and 4 logical rows, as the reviewer described. Applies to all 549 tables; header text still keeps hyphenation fragments ("Self- propelle d").
+
+**Accuracy figures that can be quoted today (valid packets only):** tables 14 correct of 15 (error 7%, 95% interval 1 to 30%); clauses 5 of 5, cross-references 4 of 4, measurements 2 of 2, drawing links 3 of 3 correct, which is far too few to conclude anything (intervals up to 0 to 66%). Five clauses are now `reviewed` (one approval each); the ten from packet 1 remain `disputed` until re-reviewed on a correct packet. A valid estimate for the other kinds needs about 30 items each from the corrected packet; `calibration_s21.html` (40 items, 8 per kind) is the next step and is mainly for measuring how well my second reading agrees with the reviewer.
+
+State: 21 gates, 234 pytest, 14 browser suites, all passing.
+
+### 37.28 Calibration packet 21: the first valid accuracy estimate — 2026-09-30
+
+Decision file `eval/reviews/decisions_rohit_s21.json`: 40 random items (8 per kind), every item boxed in red on its page. **39 approved, 1 rejected.** The one rejection (USFD paragraph 1.1, "not complete, other sub paras complete it") is the same observation the reviewer made on 13.1 earlier: in the decimally numbered manuals a paragraph can be only the lead-in of sub-paragraphs (1.1.1, 1.1.2 ...) that are clauses of their own. That is how the parser splits them, not a parsing error, but the card gave no hint. **Fixed in the interface:** such a card now says "This paragraph continues in its sub-paragraphs: 13.1.1, 13.1.2 ..." with links (from `clause_extras.js`, `s`; browser test 7b).
+
+**Accuracy from packets that actually showed the item (packets 11 and 21, plus tables from packet 1):**
+
+| Kind | Correct / reviewed | Error rate (95% interval) |
+|---|---:|---|
+| table | 22 / 23 | 4% (1 to 21%) |
+| clause | 12 / 13 | 8% (1 to 33%) |
+| cross-reference | 12 / 12 | 0% (0 to 24%) |
+| drawing link | 11 / 11 | 0% (0 to 26%) |
+| measurement | 10 / 10 | 0% (0 to 28%) |
+
+Read the upper ends of the intervals, not the point estimates: with 10 to 23 items per kind, the data are compatible with error rates of 25 to 30% for references, links and values. "Correct" here means what the packet asked: the boxed item is what the record says (a real reference with the right classification, a value with the right number, unit and comparator, a drawing number), judged by one reviewer. It does not mean the value is useful or complete. **These rates were obtained after the fixes that followed the earlier reviews (§37.25 to 37.27); the earlier rates are not comparable.**
+
+**Agreement with my own second reading (§37.26):** I had found problems in 4 of 30 cross-references and about 6 of 40 values from flattened text and fixed the classes behind them before this packet; the reviewer then found none of those in 8 and 8 new items. That is consistent but weak evidence (small numbers, reviewer different from me, items different), not a measured agreement.
+
+**Housekeeping.** Decisions made on packets that did not show the item are voided (`eval/reviews/voided.json`, keys `item@packet` and whole-packet entries) and no longer count or dispute anything: the ten clause rejections from packet 1 moved to `eval/reviews/voided_reviews.jsonl` (history kept) and those clauses are `machine_extracted` again. Clause status today: 12 reviewed (one approver each), 1 disputed (USFD 1.1), 1,159 machine_extracted. An item can be judged again after its earlier decision was voided. State: 21 gates, 235 pytest, 14 browser suites, all passing.
+
+**What this changes.** The review effort asked of a person can now be small and targeted: the estimate is good enough to keep using the extractors, and further rounds can be restricted to (a) items the automatic checks flag and (b) a fresh random 10 items per kind now and then to watch for drift.
+
+### 37.29 Offline chat assistant (chat.html) — 2026-09-30
+
+Requested: make the knowledge base behave like a chatbot that answers relevant questions. Built as `chat.html` (page) over `lib/rdso_chat.js` (dialogue layer, one module for the browser and Node) on top of the existing retrieval engine. **It is not a generative model**: nothing is written by the assistant except fixed sentences (greeting, refusal, clarification, "I am not sure"). Every answer statement is a sentence or table row copied from a cited paragraph; this is what keeps it safe to use for railway rules and is also why it stays offline and instant (about 3 ms per question, 6 MB index).
+
+What it does beyond a search box:
+- **Whole-sentence answers** with a link to the manual page (`manuals/<pdf>#page=N`) on each citation, the full paragraph and its highlighted page image on request (image present only if `render_evidence.py` was run), values that sit in the shown sentences (machine-extracted label), the sub-paragraphs a lead-in paragraph continues in, drawings we hold that the paragraph cites, and "also relevant" from a nearly-as-good second paragraph.
+- **Conversation memory.** "And what is the wear limit?" after a question on Para 429 is searched together with the topic of the previous answer and shows how it was understood. A fresh question is tried alone first and is only combined with the previous topic when it contains follow-up words (and, what about, it, that ...) or is very short and the fresh answer is weak, so a new question is not dragged into the previous manual; a low-confidence answer is never used as context.
+- **Commands:** more, source/which page, what else/related, new conversation. **Clarifying question** when two manuals answer about equally well and none was named. **Honest refusal** with the nearest topics when the terms do not occur together in any passage. A low-confidence answer is prefaced "I am not sure this answers your question" and offered as the closest passage.
+- **Suggested next questions:** related paragraphs and the paragraphs this one refers to (resolved cross-references).
+- **Feedback:** thumbs up/down and every question are logged locally in the same `rdso_feedback_v1` store the main application uses (tagged `via: chat`), exportable as JSONL into the existing ingest, knowledge-gap and review-queue loop. Nothing leaves the computer.
+
+Checks: 8 pytest dialogue tests (greeting, cited answer, commands, follow-up, refusal, no contamination across manuals, reset) and a **grounding sweep: 193 statements shown across 120 evaluation questions were all found verbatim in the cited passages (0 violations)**; a 15th browser suite loads the page, asks, follows a chip, checks the page link, the refusal, local feedback and that HTML typed into a question is not executed. State: 21 gates, 243 pytest, 15 browser suites, all passing.
+
+Limits, stated plainly: it answers only what the manuals state in words the search can match; it does not calculate, compare two values or combine facts from two paragraphs into a new sentence; unusual phrasing or a question whose answer is in a table the parser flattened can miss (weak matches are labelled); follow-up handling is rule-based and can misjudge (it shows its reading so the user can correct it); quality on real engineer questions is still unmeasured (the real-question packet is the next step); conversation state lasts only while the page is open.
+
+### 37.30 Chat quality round 1 (self-probing) — 2026-09-30
+
+I asked the assistant 30 practitioner questions of my own (not from the evaluation set) and read the answers. This is the author reading the author's system, so it finds defect classes but cannot measure accuracy. Findings and fixes:
+
+1. **Questions refused that the manuals could answer** ("permissible gap after aluminothermic welding": 28% coverage). The refusal rule counted a question word as present only if that exact stem occurs in the passage, so a spelling the manuals do not use ("aluminothermic" versus "alumino-thermic" or "thermit") made the question look unsupported even though the synonym rule retrieved the right passages. **Fixed in the engine:** a question word counts as covered when the passage has it or what the synonym rules say it stands for. Retrieval evaluation unchanged (dev and test, including refusals of 20/20 and 10/12 out-of-scope); that question is now answered from AT_WELD Para 4.1.1.1 with the 25 mm gap.
+2. **Answers that were only a heading or stub** ("11.4.1 Equipment:", "and 4/4(B).", "(Back to Para 717)"). **Fixed in the chat:** a sentence is shown only if it has at least five words of content and is not a heading, list marker or back-reference; when the best paragraph has nothing informative the next candidate is used; the same rule applies to "also relevant".
+3. **Hand-made graph notes surfaced as sources** ("What does DRAWINGS Para defect_cms_batter say?"): the search index also holds unsourced graph nodes. **Fixed:** the chat uses only the six manuals as sources and follow-up suggestions.
+4. Value lists showed rail sizes as values ("60 kg"): values without a quantity label in kg are no longer listed.
+
+Still failing in my probe, not fixed: "how often should rails be tested by ultrasonic flaw detector" (low confidence; the testing-frequency table is not retrieved), "what is the standard gauge in broad gauge track" (answers from level-crossing indicators, not the 1676 mm statement), "duties of the PWI" (answers from the AT welding manual; the manuals say SSE/P.Way, and "PWI" occurs 4 times), "what is the purpose of a check rail" (no paragraph defines it; the answer is unrelated and labelled medium), "destressing temperature for LWR" (right paragraph, wrong sentence), "how long should the weld cool before traffic" and "how many gangs are needed for a ballast cleaning machine" (refused, the answers may simply not be in the manuals). These are the class of failure that real user questions will show; each can be treated with reviewed synonyms or better sentence choice once people supply examples.
+
+`eval/chat_probe.json` (9 items, author-written) is a regression probe, run by `tests/test_chat.py` together with the grounding sweep, which now also fails on stub sentences. State: 21 gates, 244 pytest, 15 browser suites, all passing.
+
+### 37.31 Table-aware chat answers — 2026-10-01
+
+When the best passage is a table row, the chat now shows a real table: the column headers and only the matching row(s), with the cells the question's words matched highlighted, plus "show the whole table" (up to 60 rows) and the page link. Wide tables show only the identifying columns and the columns the question points at, so "what is the speed of the utility track vehicle" shows the machine name and its two speed columns (50 self-propelled, 60 in train formation) instead of a "Header: value;" string cut off before the speed. Implemented by `scripts/build_table_data.py` (browser file `data/search/tables.js`, 375 tables with headers, 334 KB, in the rebuild chain) and `tableView` in `lib/rdso_chat.js`. The 174 tables without a recognised header row are not available in this form and fall back to the earlier row text.
+
+Checks: a dialogue test for the utility vehicle question, a sweep over the table questions of the evaluation set plus others (7 table answers shown, every shown cell found in the stored table), and a browser test of the rendered table with highlighted cells. Limits: row choice is by word overlap with the question (no understanding of which column is wanted when the row matches but the header words do not); wrapped header text keeps hyphenation fragments ("Self- propelle d"); a table split by the page parser into several tables shows only the part holding the match. State: 21 gates, 246 pytest, 15 browser suites, all passing.
+
+---
+
+### 37.32 Browse manuals page and shared navigation — 2026-10-01
+
+- `browse.html` (new): manual selector, chapter tree with a filter box, reading view of one paragraph (full text, breadcrumb, previous/next with arrow keys), decimal-manual "Up to" and sub-paragraph links, tables owned by the paragraph, "refers to" and "referred to by" cross-reference links (resolved ones only), "Ask about this paragraph" (opens `chat.html?q=…&manual=…`), "Open page" in the PDF, "Copy link". Deep link: `browse.html#CLAUSE:IRPWM:CH_06:PARA_616`. Same nine themes and Aa panel (`ui/settings.js`) as the chat.
+- `lib/rdso_browse.js`: builds the tree from the search index; `tests/test_browse.py` checks that it rebuilds all 1,172 clauses of the six manuals with text equal to the canonical graph and the expected per-manual counts (421/171/258/192/73/57).
+- `chat.html`: top navigation tabs, `?q=` and `?manual=` parameters, and "Read in context" in the page viewer (opens Browse at that paragraph). `index.html` has a "Browse manuals" link beside "Ask the manuals".
+- Tests: new browser suite `tests/verify_browse_ui.js` (tree, reading view, deep link, next/previous, sub-paragraphs, tables, filter, manual switch, hand-off links, theme change); chat suite gained test 9 (hand-off and "Read in context").
+- Limits: titles of decimal manuals are often the first words of the paragraph, so the heading is omitted when longer than 70 characters; the PDF opens in the browser's own viewer (no highlight) unless an evidence crop exists; verified only in headless Chromium, not on phones or real hardware.
+
+### 37.33 Simple home page: graph and chat box only — 2026-10-01
+
+- User feedback: the old `index.html` (domains, timelines, 3D cosmos, many panels, floating buttons overlapping each other) was too complicated; wanted only the knowledge graph and a chat box at the bottom centre.
+- `index.html` is now exactly that: a full-screen 2D graph (6 manuals, their chapters and 1,172 paragraphs, 1,259 nodes; resolved paragraph-to-paragraph references drawn when a node is selected or an answer highlights it) and a chat box centred at the bottom. Click a dot for a small card (text, "Ask about this", "Read in context", "Open page"); a question answers in a card above the box and lights up and zooms to the cited paragraphs. Pan, scroll to zoom, "Reset view", themes via "Aa".
+- The previous full application is unchanged as `expert.html` (reachable through "Expert view" on the new page; it has a "Simple view" link back). All older browser suites and tests now point at `expert.html`.
+- New browser suite `tests/verify_graph_ui.js`. Layout is a deterministic radial layout (no force simulation); the graph shows the manuals only, not drawings or the 5,714-entity cosmos, which stay in the expert view.
+- Follow-up: the graph is now 3D (own perspective projection on the 2D canvas, no WebGL): paragraphs sit on small spheres around their chapter, chapters on a sphere around their manual, manuals on a ring at alternating heights; drag rotates, wheel zooms, Shift+drag pans, the camera eases to cited paragraphs, slow auto-rotation until the first interaction, depth fades and shaded dots.
+- Verified in headless Chromium only. 21 gates, 257 pytest, 17/17 browser suites pass.
+
+### 37.34 Answer-quality pass from 24 engineer-style questions — 2026-10-01
+
+- Method: 24 questions an engineer might type (written by me, not independent) were run through the chat and the answers read. Roughly half returned a plausible clause, but several showed a sentence that did not answer the question, and a few were refused although the manuals contain the answer.
+- Fixed: (1) a heading line ("4.9.3 Preheating time:") swallowed the sentence after it, so the numbers ("10 to 12 minutes ...") were dropped; headings now carry their following sentence. (2) Value-type questions (time, temperature, density, gauge, wear, number ...) now prefer sentences with a number and a unit, including ranges and Hz/°C/kN. (3) A manual's own subject word ("aluminothermic", "weld" in the aluminothermic welding manual) earns half credit towards evidence coverage when the question names that topic. (The synonym group aluminothermic / alumino-thermic / thermit already existed; an added duplicate broke the permissible-gap question and was reverted.) (4) For quantity questions the chat prefers a candidate that shows a number with a unit, and a table that shows it before prose that only contains one. Effect on the evaluation sets: retrieval ranks unchanged; answerable questions wrongly refused 4 to 2 (dev) and 7 to 4 (test); out-of-scope refusal unchanged (20/20 dev, 10/12 test). New regression probe item for the preheating question.
+- Tried and dropped: treating "many/need" as ignorable words would answer "how many sleepers per km" but lets the out-of-scope question "how many thermit welds can a team complete in a shift" through, so it was reverted; that question is still refused.
+- Still wrong or weak (known): "standard gauge" shows a list of references (Para 102) rather than 1676 mm; "check rail purpose" lands in the rail grinding machine chapter; "duties of a PWI" lands on an AT welding line (the manuals say JE/SSE/P.Way, a synonym needing approval); destressing temperature and "stress free temperature" show the right paragraph (347) but not its best sentence; "speed restrictions on sharp curves", "inspection frequency by the PWI", "tolerance in alignment after tamping" and "safe working practices" are refused.
+
+### 37.35 First real questions: 20 supplied by the user (IRPWM 2024) — 2026-10-01
+
+- Source: 20 technical questions with answers about the 2024 Permanent Way Manual (rail profiles and wear, fastenings, formation, turnouts, LWR, SEJ, track monitoring). They are long, multi-part questions, which is how engineers actually ask. Stored in `eval/real_questions_irpwm.jsonl`; key facts and expected paragraphs were picked by me by searching the manual text, so the supplied answers are confirmed present in the manual for the paragraphs listed, but the grading below is my own reading, not an independent review.
+- Before this pass: 8 of 20 were refused ("only 44% of your key terms occur together in one passage") although the right paragraph was usually ranked first, because a long question can never be 66% covered by one passage. 19 of 59 key numbers were shown.
+- Changes: (1) evidence mass: a question is answered when at least 40% is covered and the absolute amount of evidence found is large (mass of at least 18; the 8 refused real questions had 20 to 34, every out-of-scope question that stayed below 66% coverage had at most 16.4 and the number is a threshold chosen on 8 real questions plus the old sets, so treat it as provisional). The old dev and test sets are unchanged: 20/20 and 10/12 out-of-scope refused, retrieval ranks identical. (2) Multi-part questions (12 or more words) show up to 6 passage sentences instead of 3. (3) For quantity questions the table-like lines of the passage that carry numbers ("Rails 60 kg 90 UTS", "Total 350 clean 150") are added, ranked by words that are rare within the passage.
+- Result after the pass (my grading): 8 of 20 fully answered (R1, R5, R8, R10, R11, R12, R13, R17); 10 partly answered, right paragraph but not all requested facts shown (R2, R3, R4, R6, R7, R9, R14, R15, R18, R20); 2 wrong (R16 cites Para 337 where the answer is in Para 336; R19 asks about two welding manuals and the chat asks which one). None refused. The right paragraph is cited in 18 of 20. About 30 of 59 key numbers are shown.
+- Biggest remaining weakness: for long, multi-part questions the numbers are in one long paragraph and the chat shows the three to six best sentences, not every requested fact. Next step candidates: answer sub-questions separately (split on "and" and commas), show the whole table or paragraph region around the matched numbers, and rank R16-type paragraphs by rare words ("slotted", "joggled").
+- `tests/test_chat_real.py` guards: no refusals except the R19 clarification, right paragraph kept where it is right, correct answers keep their numbers.
+
+### 37.36 Hand-written answers removed from the expert page — 2026-10-01
+
+- `CANONICAL_QA_DATABASE` in `expert.html` held 13 hand-written answers (6 already retired, 7 active about drawings, USFD testing, LIST-A and similar). All 13 are removed; the array is now empty. Nothing in the application answers from hand-written text. The old texts are archived, as a record and as a source of candidate regression questions, in `eval/retired_curated_answers.json` (not data).
+- False labels removed from the expert page: the node-answer template stamped every entity "VERIFIED" (it now shows the node's own verification status, which is `MACHINE_EXTRACTED` for all but a handful); "100% VERIFIED", "VERIFIED DATA" and "VERIFIED QA" badges became "Machine-extracted", "MACHINE-EXTRACTED DATA" and "FROM THE MANUALS"; "VERIFIED (GATE D)" now reads "Evidence-linked (Gate D); not human-reviewed". Not touched: the quiz certificate in the training view still prints a made-up certificate id and "VERIFIED"; it is not an answer, but it should be removed or relabelled.
+- Consequence, stated plainly: three questions the hand-written answers used to cover are now answered by retrieval or refused in the expert page. "Which IRS specification governs sleeper rubber pads?" and "What was changed in Alt 11 for T-6155?" are refused (the facts live in drawing and component nodes that the paragraph index does not hold), and the switch-throw question loses its conflict box. These are the real gaps; the earlier answers hid them. The browser suite `verify_question_interface` now asserts "retrieved or explicitly refused" for them instead of the old figures.
+- Gate P (`audit_curated_answers.py --check`) passes with zero curated answers; `test_no_hand_written_answers_remain_in_the_application` guards it.
+
+### 37.37 Tables inside a cited paragraph — 2026-10-01
+
+- A paragraph often carries its numbers in a table of its own, while the chat showed only prose sentences. When the answer is a prose passage and one of that paragraph's stored tables matches at least two of the question's words, its matching rows are now shown under their column headers ("Table in this paragraph, page N") in the chat and on the home page. Cells come from the stored table (`RDSO_TABLES`, owner clause), and the grounding check was extended to them.
+- Effect on the 20 real questions: key numbers shown 30 to 35 of 59; R4 (minimum height and head width of old 60 kg and 52 kg rails) now fully answered (grade raised from partial to correct), R13 numbers complete. Known noise: for R18 the table shown (gauge limits) is not the acceleration limits asked for, because its header words match; for R8 the headers repeat.
+- Tried and dropped: answering a multi-part question part by part (each part searched on its own and its sentences added). On the 20 questions only 3 had an explicit split, and the added parts cited unrelated paragraphs (Para 721, Para 405), so it added noise and was reverted rather than shipped.
+- Graded state of the 20 (my reading): 9 fully answered, 9 partial, 2 wrong.
+
+### 37.38 Tables preferred for quantity questions — 2026-10-01
+
+- Finding from the 20 real questions: R16 (temporary speed restriction with slotted fishplates) was answered from Para 337 although the numbers (30, 20, 50 km/h) are in the speed-restriction table of Para 354, which scored 71.0 against 71.9. Rule added: for a quantity question, a table passage that scores at least 90% of the best prose passage and matches at least two of the question's words is used as the answer, shown as the table's matching rows.
+- Tables owned by the cited paragraph: up to two are now shown (those scoring at least 60% of the best), with words of the question that name a table's columns counting double. R2 (vertical wear 13.00 and 8.00 mm, loss of section 7% and 6%) now shows both tables.
+- Effect on the 20 (my grading): fully answered 11 (R1, R2, R4, R5, R8, R10, R11, R12, R13, R16, R17), partial 8, wrong 1 (R19 clarifies between three welding manuals). Key numbers shown 40 of 59 (was 30 before section 37.37, 19 before 37.35). The same rule moved "what is a switch expansion joint" to IRPWM Para 225 (a better paragraph than Para 350).
+- Still partial: R3 (depth below the rail table where lateral wear is measured), R6 (formation widths are in a sketch annexure), R7, R9, R14 (extra shoulder ballast of 600 mm), R15 (single-gap SEJ), R18 (the table shown is the gauge limits, not acceleration), R20.
+
+### 37.39 Phase P1 closed: pilot checklist for all six manuals (Gate V) — 2026-10-01
+
+- `scripts/pilot_checklist.py` turns each line of Master section 28 into one reproducible check per manual (14 criteria x 6 manuals): pages registered with the PDF hash recomputed, hierarchy, contiguous chapter order, text present with few stubs, pages in range, every paragraph found first by its number (every third paragraph tested), natural-language recall at 5 of at least 0.85 on the manual's own questions (at least 10), evidence resolves with page and region, PDF present, every cross-reference classified, status on every paragraph and no review claim without a review record, off-topic questions refused under strict manual scope, at least 20 evaluation questions with a gold paragraph in the manual, and (with `--rebuild`, about 3 minutes) the rebuild leaves `data/` unchanged. It is Gate V in `validate_all.py` (determinism line skipped there, CI rebuilds) and `tests/test_pilot_checklist.py`; `--write` stores `reports/pilot_checklist.json`.
+- Result: 84 of 84 pass with `--rebuild`. The first run found two real things: (1) a script bug (review records are keyed `target_ids`), and (2) FBW natural-language recall 14/18 = 0.78: the paragraphs "Macro examination" and "Transverse Testing" ranked tenth because words that merely name the manual ("flash butt weld") occur in every FBW passage. Fix: when the question's topic is a manual, its subject words count half in the score. Effect: FBW 16/18; development set recall at 5 0.962 to 0.971, at 10 0.986 to 0.995; test set unchanged; refusal results unchanged; on the 20 real questions R19 (two welding manuals named) now answers from Para 316 with all three tolerances, so the earlier clarification and "wrong" grade are gone.
+- Limits, stated plainly: the natural-language questions are author-drafted (label status unreviewed), so the recall line shows regressions, not independent accuracy; "uncertain extraction flagged" checks that every paragraph carries a status, not that extraction is correct; the committed `pilot_checklist.json` is a snapshot, regenerate it with `--write` after data changes.
+- Real-question state (my grading): 12 of 20 fully answered, 8 partial (R3, R6, R7, R9, R14, R15, R18, R20), 0 wrong. Key numbers shown 44 of 59. Details in `eval/real_questions_irpwm.jsonl`.
+
+### 37.40 Phase P2 closed: unresolved references explained, crops for every paragraph (Gates W and X) — 2026-10-01
+
+- **Unresolved references (Gate X, `scripts/crossref_diagnose.py`, report `reports/crossref_unresolved.json`).** Every NOT_FOUND (141) and AMBIGUOUS (20) reference now has a machine-readable reason, and where the text shows it, the page the thing is on: figure caption on a page without a figure node 103 (the figures are pictures), figure not in the text 10, annexure heading not in the text 8 (one on a page, one more), paragraph number not in the manual 9, table caption on page 8 and not in text 2, same label on several tables or figures 20. The gate fails if a reference has no reason or the committed report is stale. The report runs inside `rebuild_all.py` and feeds the browser: the Browse page lists "Figures, tables and annexures mentioned (shown only on the page)" with a link to the PDF page for each (browser suite test 4c).
+- **Resolver fix found while diagnosing:** `Annexure - X of Manual for Flash Butt Welding of Rails`, `Annexure - 1 of ... Alumino-Thermic process` and `Appendix IX of the ...` named another manual or an outside body, but the resolver looked only in the source manual. Scope words after an annexure, table or figure reference are now read as for paragraph references: two resolve into the named manual, one becomes EXTERNAL, and `table II of Para 308 of IRPWM` becomes AMBIGUOUS inside IRPWM (many Table II). Totals now: RESOLVED 1,172, EXTERNAL 234, NOT_FOUND 141, AMBIGUOUS 20.
+- **Page crops (Gate W, `scripts/evidence_coverage_report.py`, report `reports/evidence_coverage.json`).** All 1,172 paragraphs have a stored page region and all 1,172 crops render (checked by rendering all of them once, 2.5 minutes; the gate renders every 30th, 40 crops). 1,107 highlight the whole paragraph; 65 highlight only its opening, each with a reason: owns a table 41, continues over a page the locator could not match 23, one waived by hand after looking at the crop (USFD 5.1.3, a proforma format). The gate fails on an unexplained prefix-only paragraph.
+- **Not fixed, by design:** the 103 figure mentions stay NOT_FOUND as nodes (they are pictures; making figure nodes would need image extraction); the 9 paragraph numbers that do not exist in the manual (for example "Para 143", "Para 1048" in IRPWM) are listed, not guessed; the 20 ambiguous table and figure labels need a human to say which table is meant.
+- Gates now A to X (23 lines).
+
+### 37.41 Phase P7 (learning and reliability): practice cards generated from the manuals — 2026-10-01
+
+- **Removed:** the hand-written learning module in `expert.html` (5 learning tracks, 10 flashcards, a 5-question quiz, the competency matrix and a "certificate" with a made-up certificate id). Its facts were not traceable to the manuals and some contradicted them: a flashcard said maximum vertical rail wear is 6.0 mm where IRPWM Para 702 says 13.00 mm (60 kg) and 8.00 mm (52 kg). The tab now points to the new page and `window.CANONICAL_*` learning arrays are empty.
+- **Added:** `scripts/build_learning.py` writes `data/learning/cards.json`, `cards.js` and `coverage.json`: 130 cards (AT_WELD 6/73; FBW 3/57; IRPWM 61/421; STMM 21/258; TMM 28/171; USFD 11/192 cards per paragraphs). A card is one sentence of one paragraph with exactly one measured value (a number and unit the extractor found at that place) hidden; the options are the answer and three other values with the same unit from the same manual (spelling variants such as "4MHz" and "4 MHz" or "metres" and "meters" are not allowed to appear as different options). Nothing is written by hand and no model is used. `tests/test_learning.py` checks for every card that the sentence is a verbatim slice of the paragraph, that putting the answer back reproduces it, that the measurement exists in that paragraph, that the page matches, and that the four options are four different values. Cards are rebuilt in `rebuild_all.py`.
+- **`learn.html` (new, tab "Learn"):** practice cards (show answer, "I knew it" or "Not yet") and a 10-question quiz, filter by manual, progress by manual in this browser (Leitner boxes in `localStorage`), the full sentence and source (manual, paragraph, page, link to the paragraph in Browse) after every answer, and a **review queue**: questions the chat could not answer and answers marked not helpful, from the local chat log, exportable as a file. Browser suite `verify_learn_ui` and an updated `verify_learning_system` (the expert tab) cover it. No certificate is issued; the result line says that it is practice, not an assessment.
+- **Limits, stated plainly:** only 130 cards for 1,172 paragraphs (5 to 14% of paragraphs per manual; FBW and AT_WELD have 3 and 6 cards and several chapters without any, listed in `coverage.json`); only numeric facts are covered, not procedures or definitions; the distractors are other manual values, not curated wrong answers, so some questions are easier than others; sentences with several numbers or cut-off sentences are skipped on purpose; the cards were not reviewed by a person, so a card can be a poor question even though it is grounded.
+- **P7 status after this sprint:** regression questions (done), answer evaluation (done), flashcards and quiz from cited paragraphs (done, small), review queue (local, exportable; not yet loaded back into the repository by a button, `scripts/ingest_feedback.py` does that from the exported file), learning paths (not done), search analytics and knowledge-gap detection over many users (not possible without collecting data; per-browser only). Still needs from the owner: 50 to 100 real questions across all six manuals.
+
+### 37.42 Phase P6 (grounded answers): whole-paragraph numbers, citation verifier, edition line — 2026-10-01
+
+- **Root cause found in the 8 partial real answers:** the answer was built from one chunk (about 700 characters) of the paragraph, but the numbers a question asks for are often in a later chunk or in table-like lines of the same paragraph. The search engine now exposes `clauseText(clause)` (all chunks of a paragraph in order) and, for quantity questions, the answer builder selects sentences and number lines from the whole paragraph; for long questions up to seven number lines are added, ranked by words that are rare within the paragraph, with a short label line above a number line kept with it. Effect on the 20 real questions (my grading): fully answered 12 to 17 (R6, R7, R9, R14, R15 now complete), key numbers shown 44 to 55 of 59. Partial: R3 (depth below the rail table: the 13 to 15 mm figure is not in Para 702), R18 (the three acceleration values are shown but the speed bands sit in flattened table text and are hard to read), R20 (the 20 mm and 40 mm bands of the versine table are not selected). Retrieval ranks and refusal results are unchanged. The earlier rule "at least 75% fully answered" for this phase is met on this set (17 of 20 = 85%), with the caveat that I tuned on these 20 questions, so a new batch from other manuals is needed before trusting the number.
+- **Citation verifier, Gate Y (`scripts/verify_answers.py`, `tests/answer_verifier.js`):** over all 409 questions (evaluation sets, the 20 real questions, the probe) the chat answers 368 and refuses 41; every one of 1,364 shown fragments (sentences, table cells of the answer table and of tables owned by the cited paragraph, "also relevant" sentences, correction-slip marks) is a verbatim part of what it cites, and every answer has manual, paragraph, page and edition. A self-test seeds one fabricated sentence and one real sentence and requires the gate to flag exactly the fabricated one (the first draft of the self-test used a real sentence with two words wrong and the verifier caught that too). This is the "verifier rejects seeded hallucinations" criterion that must hold before any optional offline rewriting model (P6.2) may be considered; P6.2 itself is not built and is not needed now.
+- **Edition and amendment line:** each answer shows which edition it comes from (from the source registry through `data/search/editions.js`, never typed by hand) and the correction-slip marks the manual itself prints in the paragraph, for example "(ACS - 7)" in IRPWM Para 429 gives "ACS 7, 8, 12". It reports what the manual prints; it does not say what an amendment changed.
+- **Not done, with reason:** per-claim conflict flags. The 23 measurement conflict candidates (`reports/measurement_conflict_candidates.json`) are unreviewed and noisy (for example a 4 m closure rail against an 11 m permanent closure compare different things), so showing them to users would mislead; they stay in the review queue. Multi-part answering by splitting a question (tried in 37.37) stays dropped. Optional offline rewriting (P6.2) stays unbuilt.
+- Gates now A to Y.
+
+### 37.43 Phase P5 (hybrid retrieval): metadata filters in the interface, graph proximity tested, embeddings not justified — 2026-10-01
+
+- **Measured first.** On the 20 real questions the expected paragraph is first in 19 and in the top five in 20 of 20 (recall at 5 = 1.00; the Phase criterion is 0.90). Development set: recall at 1, 5, 10 = 0.838, 0.971, 0.995; test set 0.891, 0.993, 0.993 (answerable questions, clause level). These are the numbers after the Phase 1 subject-word change.
+- **Metadata filter built:** the search takes a chapter as well as a manual (`chapter` option in `lib/rdso_search.js`, `setScope(manual, chapter)` in the chat). The chat page shows a chapter list when a manual is chosen (`?manual=IRPWM&chapter=6` also works), and the home page's chapter card has "Ask only this chapter". The filter is strict: a chapter with no matching passage gives an explicit refusal. Tests: `test_chapter_filter_restricts_the_search_to_that_chapter`, browser tests 7b (chat) and 3b (graph).
+- **Graph proximity tested and rejected.** Idea: boost a passage whose paragraph is cross-referenced with one of the three best paragraphs. Boosts of 0.05, 0.1, 0.2 and 0.35 never improved recall at 5 on any set, and from 0.1 upward lowered recall at 1 (test set 0.891 to 0.883, 0.876, 0.869; real set 19 to 18 at 0.2). The code was removed rather than shipped switched off.
+- **Semantic layer (embeddings): not built, with a rule.** It is justified only if recall at 5 falls below 0.90 on real questions or below 0.95 on the development or test set; today it is 1.00, 0.971 and 0.993, so it is not justified. `tests/test_retrieval_real.py` holds both floors (recall at 5 of at least 0.90 on the real set, at least 0.95 on both evaluation sets) and the recall at 1 floor of 0.85, so a regression or a new batch of real questions that breaks them is visible. The remaining misses are ordering inside the top five, not absent paragraphs, and a vector model cannot be shown to fix that without more real questions.
+- **Caveat:** the real set is 20 questions from one manual that I tuned the answer builder on; the retrieval step was not tuned on it, but recall on it still says little about the other five manuals. A batch from TMM, STMM, USFD, AT_WELD and FBW is the test that matters, and the 50 to 100 real questions already asked for would settle it.
+
+### 37.44 Phase P4 (graph questions): relationships answered from the manuals' own cross-references — 2026-10-01
+
+- **What the data supports, measured:** the canonical graph has 4,862 nodes and 7,343 edges, but almost all are manual structure (chapters, sections, paragraphs) and 754 paragraph-to-value links. The engineering-entity part the plan imagined (components, failure modes, hazards, spares, procedures) is 6 hand-made drawing nodes plus about 50 nodes around them, with 2 failure-mode edges; it cannot answer failure-analysis, procurement or inspection-mode questions and no text in the manuals was extracted into such entities. The real relationship data is 489 resolved paragraph-to-paragraph references (131 of them printed as "(Back to Para N)" notes, which mean that N refers to this paragraph, so their direction is reversed in the query layer), 141 figure and 49 table mentions, and 155 drawing citations of 103 drawing numbers.
+- **Built (`lib/rdso_graphq.js`, wired into the chat and the home page):** (1) *what refers to Para X* and *what does Para X refer to*, two steps deep, each paragraph listed with the sentence that holds the reference; (2) *how is Para X connected to Para Y*, the shortest chain of references (at most six steps) with the sentence for each link; (3) *where is drawing T-NNNN cited*, with the sentence and whether the sheet is held; (4) *which figures, tables or annexures does Para X mention*, with the page where the caption is when the item is only a picture; (5) a typed filter on the home graph, "Show all cross-references between paragraphs" (420 links), and answers light up their paragraphs in the graph. A paragraph number that exists in several manuals gets a clarification question. Nothing is inferred: a link exists only where the manual prints a reference.
+- **Tests:** `tests/test_graphq.py` rebuilds the reference graph independently from `crossrefs.jsonl` and requires the same set of paragraphs two steps out for every paragraph and direction, the same shortest-chain length for 40 sampled pairs, the same number of citations for each drawing number, and every quoted sentence to be a verbatim slice of the paragraph that prints the reference (over 500 quotes). The citation verifier (Gate Y) now also runs 180 generated relationship questions and checks each quote; browser tests 7c (chat) and 3c (graph).
+- **Not done, with reason:** failure analysis, procurement and BOM, inspection mode and typed filters over component relationships need entity extraction that does not exist (only the hand-made drawing nodes); building it from prose would be new extraction work with its own review. The shortest chain is shortest in references, not the most meaningful one. Links only exist where a reference was resolved (141 NOT_FOUND figures and 9 missing paragraph numbers are not in the graph).
+- **Which relationship questions engineers ask** is still unknown; these five were chosen because the manuals' own data supports them. The 50 to 100 real questions would show which others matter.
+
+### 37.45 Coverage audit: is every aspect of the manuals in the knowledge base? — 2026-10-01
+
+**Question raised:** "there are more than 1000 paras in IRPWM alone, check whether every aspect of the manuals is covered."
+
+**Findings.**
+- IRPWM has 421 numbered paragraphs. The ">1000" count is sub-paragraph markers ((a), (i), 1) ...), which stay inside their paragraph's text. They are not separate paragraphs.
+- The audit did find real gaps: annexures, appendices, forms and proformas, front matter (contents, preface, correction slips) and continuation text were not in the knowledge base. Earlier "P1/P2 closed" statements were premature on this point.
+
+**Fix.**
+- `scripts/build_annexures.py` creates 219 units in `canonical/annexures.jsonl` (IRPWM 85, TMM 84, STMM 5, USFD 14, AT_WELD 12, FBW 19). 20 are loose-text runs and 6 are front matter. Text is verbatim page text.
+- Units are indexed (`kind:"annexure"`), browsable (Annexures group in Browse), citable ("IRPWM Annexure 3/17") and linked from cross-references (`ANNEXURE_UNIT_HELD`).
+- Retrieval demotes annexure passages (annexW 0.6, frontW 0.25) unless the question names an annexure, form, proforma or contents.
+- `scripts/coverage_audit.py` audits line by line (lines of 20 chars or more). Uncovered share now: IRPWM 0.1%, TMM 0.0%, STMM 0.1%, USFD 0.3%, AT_WELD 1.0%, FBW 0.2%.
+- Gate Z checks that the audit report is current. Pilot checklist has a 15th criterion, "coverage" (uncovered share at most 1.5%). Result: 90/90.
+
+**Verification.** 272 pytest, 18/18 browser suites, gates A-Z pass, citation verifier 367 answers with 0 violations. Rebuild is deterministic (checked after staging). Retrieval: dev R@1/5 0.838/0.976, test 0.891/0.993, real 19/20 first and 20/20 top-5.
+
+**Honest limits.**
+- Pictures and drawings without text are not interpreted.
+- Lines under 20 chars are ignored by the audit.
+- Annexure units are page-text blobs with coarse titles (28+ untitled); forms and tables appear as lines.
+- 5 annexure references are still NOT_FOUND.
+- Demotion factors were tuned on author-made sets.
+
+### 37.46 Entity layer (Step 3 of the knowledge-graph review): concepts, taxonomy, co-mention links, limits — 2026-10-01
+
+**Why.** The review of the project against the eight knowledge-graph steps found the ontology step weakest: of 4,862 nodes only about 30 were engineering things, and about 30 of 7,343 edges were domain relationships. The graph was a document-structure and cross-reference graph.
+
+**What was built.**
+- `data/ontology/concepts.json`: a curated lexicon of 130 concepts (rail and its parts, sleepers and fastenings, switches and crossings, welded track, geometry, defects, test methods, welding processes, maintenance activities, track machines, roles, safety, locations, materials) with aliases and curated `is_a` / `part_of` links. Add a concept by adding a row and rebuilding.
+- `scripts/build_entities.py` (rebuild step) finds every named concept in the paragraph and annexure text and writes four files in `canonical/`: `entities.jsonl`, `entity_mentions.jsonl` (about 35,700 mentions, each with a character span), `entity_relations.jsonl` (48 curated IS_A/PART_OF links and about 1,900 DISCUSSED_WITH links: two concepts in one sentence in at least 3 paragraphs, with example sentences) and `entity_limits.jsonl` (about 9,000 measured values that sit in a sentence naming a concept).
+- Contents pages (front matter) are excluded from co-mention links and from examples.
+- Browser file `data/search/entities.js` and `lib/rdso_entities.js`; the chat answers four kinds of concept question as quoted sentences with manual, paragraph and page: where a concept is named, what it is related to, its kinds and parts, and the values printed beside it. An ordinary question is never taken over: concept answers need an explicit pattern ("types of", "related to", "which paragraphs mention", "list all the values given for").
+- Gate AA (`scripts/validate_entities.py`): lexicon matches the file, every mention span reads as one of its concept's aliases, counts add up, every relation endpoint exists, every example sentence names both concepts, every limit sits in a sentence naming its concept, at least 35 concepts found in every manual (found now: IRPWM 124, TMM 119, STMM 89, USFD 84, AT_WELD 62, FBW 56). The citation verifier (Gate Y) now also asks every concept four questions and checks each quoted sentence against its paragraph.
+
+**Measured precision.** A hand audit of 120 random paragraph mentions (`eval/entity_precision_audit.json`) found 115 correct (95.8%). The five errors were generic words used in another sense ("station" as a chainage point, "signal" as an ultrasonic echo, "overhauling" of engines, "track" inside "Hydraulic Track Jack"). Two lexicon rows were fixed afterwards (bare "signal" replaced by specific signal names; "overhauling" removed); the fix was not re-audited.
+
+**Honest limits.**
+- The audit has one reviewer, who also wrote the lexicon, so it is not independent. Recall is not measured: a concept written in a way the aliases do not cover is missed.
+- The taxonomy and the choice of concepts come from my reading of track engineering, not from the manuals; only the mentions are from the text.
+- DISCUSSED_WITH means "named in the same sentence", not that one causes, requires or limits the other. A value found beside a concept is not always a limit on it.
+- There are still no typed domain relations such as "defect is detected by method" or "role is responsible for activity" extracted from sentences; that needs sentence-level extraction with its own labelled test set. The synonym question about PWI and JE/SSE/P.Way is still open: the lexicon groups them under one Role concept.
+- The 3D graph view does not yet show concepts.
+
+### 37.47 Context engineering audit: making the repository readable for agents — 2026-10-05
+
+**Why.** Coding agents opening the repository found no instruction file. The README described the old prototype. The master was 187 KB, so a default read cut it off. One grep over `data/` could return megabytes. One documented command overwrote `index.html`.
+
+**What changed.** Fifteen findings are in `docs/CONTEXT_ENGINEERING_AUDIT.md`, and all are closed:
+- New `CLAUDE.md`.
+- `.ignore` keeps generated bundles and `docs/archive/` out of search.
+- Broken code fences in the master fixed.
+- This log moved out of the master; "State now" block added at the top of the master.
+- README rewritten; prototype text archived.
+- `docs/gemini/` archived.
+- `scripts/README.md` index, guarded by a test.
+- `build_updated_app.py` deleted.
+- `expert.html` split into `ui/expert.js` and `ui/expert.css`.
+- `node_modules/` untracked.
+- A cloud SessionStart hook.
+- The passages test made independent of the rebuild.
+
+**Verification.**
+- Rebuild is reproducible.
+- pytest: 277 passed, without a prior rebuild.
+- Gates A to AA all pass.
+- Browser suites: 18/18 before and after the `expert.html` split.
+
+**Open.** Legacy prototype scripts are listed, not deleted. No product behaviour changed.

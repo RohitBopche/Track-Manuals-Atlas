@@ -43,7 +43,7 @@ def test_every_card_is_grounded_in_its_paragraph():
 
 
 def test_no_hand_written_learning_content_in_the_expert_page():
-    html = (ROOT / "expert.html").read_text(encoding="utf-8")
+    html = "\n".join((ROOT / f).read_text(encoding="utf-8") for f in ("expert.html", "ui/expert.js", "ui/expert.css"))
     assert "window.CANONICAL_FLASHCARDS = [];" in html and "window.CANONICAL_QUIZ_QUESTIONS = [];" in html
     assert "RDSO-ACS14-AUTH-99824" not in html and "CERTIFICATE OF ENGINEERING COMPETENCY" not in html
     assert "const CANONICAL_QUIZ_QUESTIONS = [\n" not in html and "CANONICAL_LEARNING_TRACKS = [\n" not in html
