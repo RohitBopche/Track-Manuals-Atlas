@@ -703,3 +703,35 @@ Checks: a dialogue test for the utility vehicle question, a sweep over the table
 - Browser suites: 18/18 before and after the `expert.html` split.
 
 **Open.** Legacy prototype scripts are listed, not deleted. No product behaviour changed.
+
+### 37.48 Re-grade of the 20 real questions — 2026-10-05
+
+**Method.**
+- Ran the 20 questions in `eval/real_questions_irpwm.jsonl` through the current chat (`lib/rdso_chat.js`, same code path as `tests/chat_real.js`).
+- Read every shown answer in full and checked doubtful items against the paragraph text in `canonical/nodes.jsonl`.
+- **Stricter rule than §37.42:** "correct" means every item the question asks for is shown and readable. Showing the key numbers somewhere is not enough.
+- Grades are stored as `graded_2026_10_05`, with a `grade_note_2026_10_05` where useful. The 2026-10-01 grades are kept.
+
+**Result.**
+- **15 of 20 correct (75%), 5 partial, 0 wrong.** The 2026-10-01 grade was 17 of 20.
+- Retrieval is unchanged: the expected paragraph is cited first for all 20.
+
+**Changes from 2026-10-01.**
+- R5 and R11 move from correct to partial:
+  - R5: the answer table drops the weight column, so the ERC-J weight (1 kg) is missing.
+  - R11: the position of station '0' is not shown, and Para 429 does not state it.
+- Still partial:
+  - R3: the 13 to 15 mm measuring depth is not in any IRPWM paragraph text.
+  - R18: the acceleration limits are shown without their speed bands.
+  - R20: the 20 mm and 40 mm versine bands are not shown.
+
+**Readability notes (graded correct).**
+- R7: flattened speed columns.
+- R9: an unrelated "WCMS – 6mm" line.
+- R17: the 875 m condition is shown as a sentence fragment.
+
+**What it means.**
+- The §40 target (at least 75% fully answered) is met, with no margin, on a set the answer builder was tuned on.
+- Three of the five partials share one cause: wide tables are flattened or have columns dropped (R5, R18, R20). Keeping all columns and the row and column headers of the owning table would address them.
+- R3 and R11 cannot be fixed from paragraph text.
+- One grader (Claude), not independent. Real questions from the other five manuals are still the missing test.
