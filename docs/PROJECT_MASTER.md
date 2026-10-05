@@ -603,7 +603,7 @@ data/
     indexes/
   drawings/
   shared/
-~~~
+```
 
 Never overwrite raw source extraction with normalized output.
 
@@ -1483,7 +1483,7 @@ Commit:
 
 Next priority:
 - one task
-~~~
+```
 
 Use conventional commits such as:
 

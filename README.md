@@ -17,7 +17,7 @@ _Historical prototype title: RDSO Universal Track Infrastructure Digital Twin & 
 > ```
 > pip install -r requirements-dev.txt && npm ci
 > python scripts/rebuild_all.py      # rebuild every generated artifact from the source PDFs (about 3 minutes); must leave `git diff data/` empty
-> python scripts/validate_all.py     # publication gates A to U
+> python scripts/validate_all.py     # all publication gates (A to AA)
 > python -m pytest -q                # unit and regression tests
 > python scripts/run_browser_tests.py  # headless browser suites
 > open chat.html                    # the offline chat assistant: cited answers, follow-up questions, no server needed (also works by double-clicking the file)
@@ -213,9 +213,7 @@ python scripts/validate_canonical_kg.py
 ```
 
 ### Compiling the Standalone Web App
-```bash
-python scripts/build_updated_app.py
-```
+**Do not run `scripts/build_updated_app.py`.** It is deprecated: `index.html` is now edited directly, and that script would overwrite it with an old template. Regenerate data with `python scripts/rebuild_all.py` instead.
 
 ### Running Automated Drawing Knowledge Extraction
 ```bash
