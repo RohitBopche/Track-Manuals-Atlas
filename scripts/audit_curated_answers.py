@@ -26,7 +26,7 @@ NUM = re.compile(r"(?<![\w.])(\d+(?:\.\d+)?)(?=\s*(?:mm|kg|km|kmph|m\b|%|deg|°|
 
 
 def load_answers() -> list[dict]:
-    html = (ROOT / "expert.html").read_text(encoding="utf-8")
+    html = "\n".join((ROOT / f).read_text(encoding="utf-8") for f in ("expert.html", "ui/expert.js"))
     a = html.index("const CANONICAL_QA_DATABASE = [")
     b = html.index("];", a) + 2
     js = html[a:b].replace("const CANONICAL_QA_DATABASE =", "module.exports =")

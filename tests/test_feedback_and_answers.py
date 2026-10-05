@@ -45,7 +45,7 @@ def test_paragraph_number_query_is_always_answered():
 
 
 def test_no_hand_written_answers_remain_in_the_application():
-    html = (ROOT / "expert.html").read_text(encoding="utf-8")
+    html = "\n".join((ROOT / f).read_text(encoding="utf-8") for f in ("expert.html", "ui/expert.js", "ui/expert.css"))
     assert "const CANONICAL_QA_DATABASE = [];" in html            # every answer is retrieved from the manuals
     assert 'status: "VERIFIED"' not in html
     for page in ("index.html", "chat.html", "browse.html"):

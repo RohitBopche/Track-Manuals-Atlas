@@ -1,9 +1,9 @@
 # Phase P1: Manual Structure, Browsing & Pilot Strategy
 
-**Reference:** [`docs/PROJECT_MASTER.md` Sections 26 (P1), 27 (Pilot Strategy), 28 (Pilot Criteria)](file:///f:/my%20git%20project/RDSO-Drawings/docs/PROJECT_MASTER.md#L1159-L1300)  
+**Reference:** [`docs/PROJECT_MASTER.md` Sections 26 (P1), 27 (Pilot Strategy), 28 (Pilot Criteria)](../../../docs/PROJECT_MASTER.md)  
 **Status:** Planned / Ready to Execute  
 **Pilot Target Manual:** IRPWM 2024 (ACS 1–14) — 530 pages  
-**Source Asset:** [`manuals/IRPWM 2024 Corrected Up To ACS - 14 (29-07-2026)-1.pdf`](file:///f:/my%20git%20project/RDSO-Drawings/manuals/IRPWM%202024%20Corrected%20Up%20To%20ACS%20-%2014%20(29-07-2026)-1.pdf)  
+**Source Asset:** [`manuals/IRPWM 2024 Corrected Up To ACS - 14 (29-07-2026)-1.pdf`](../../../manuals/IRPWM%202024%20Corrected%20Up%20To%20ACS%20-%2014%20(29-07-2026)-1.pdf)  
 
 ---
 

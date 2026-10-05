@@ -2,7 +2,7 @@
 
 ## 1. Executive Summary
 
-Phase **P1 — Manual structure and browsing** has been fully implemented and verified in strict accordance with [`docs/PROJECT_MASTER.md` Section 26 (P1)](file:///f:/my%20git%20project/RDSO-Drawings/docs/PROJECT_MASTER.md#L1159-L1170) and [Section 19: Search and UX](file:///f:/my%20git%20project/RDSO-Drawings/docs/PROJECT_MASTER.md#L845-L900).
+Phase **P1 — Manual structure and browsing** has been fully implemented and verified in strict accordance with [`docs/PROJECT_MASTER.md` Section 26 (P1)](../../../docs/PROJECT_MASTER.md) and [Section 19: Search and UX](../../../docs/PROJECT_MASTER.md).
 
 > **Phase P1 Exit Criterion:**
 > *"A user can browse manuals structurally and reach source evidence."*
@@ -108,7 +108,7 @@ The following visual artifacts were generated during automated browser verificat
 
 ## 6. Next Phase: P2 — Evidence and Cross-Reference Intelligence
 
-With Phase P1 complete and verified, the next phase per [`docs/PROJECT_MASTER.md` Section 26](file:///f:/my%20git%20project/RDSO-Drawings/docs/PROJECT_MASTER.md#L1171-L1180) is:
+With Phase P1 complete and verified, the next phase per [`docs/PROJECT_MASTER.md` Section 26](../../../docs/PROJECT_MASTER.md) is:
 - **P2.1:** Evidence registry completeness.
 - **P2.2:** Source highlighting and high-resolution crops.
 - **P2.3:** Cross-reference extraction between clauses, standards, and drawings.

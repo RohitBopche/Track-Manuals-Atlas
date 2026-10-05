@@ -1,8 +1,8 @@
 # Agent Action Log
 
 ## Protocol Compliance
-Follows [`docs/PROJECT_MASTER.md` Section 33: Agent Handoff Protocol](file:///f:/my%20git%20project/RDSO-Drawings/docs/PROJECT_MASTER.md#L1446-L1495):
-- Read-only respect for [`PROJECT_MASTER.md`](file:///f:/my%20git%20project/RDSO-Drawings/docs/PROJECT_MASTER.md).
+Follows [`docs/PROJECT_MASTER.md` Section 33: Agent Handoff Protocol](../../../docs/PROJECT_MASTER.md):
+- Read-only respect for [`PROJECT_MASTER.md`](../../../docs/PROJECT_MASTER.md).
 - Inspect HEAD and working tree before changes.
 - Small coherent tasks with explicit validation.
 - All actions, plans, and metrics recorded in `docs/gemini/`.
@@ -17,7 +17,7 @@ Follows [`docs/PROJECT_MASTER.md` Section 33: Agent Handoff Protocol](file:///f:
 ### Inspected:
 - **Current HEAD:** `104e189 docs(research): document USFD EXP-01 baseline`
 - **Working Tree:** Clean (0 uncommitted files prior to creating `docs/gemini/`)
-- **Master Plan:** [`docs/PROJECT_MASTER.md`](file:///f:/my%20git%20project/RDSO-Drawings/docs/PROJECT_MASTER.md) verified and maintained as canonical read-only source of truth.
+- **Master Plan:** [`docs/PROJECT_MASTER.md`](../../../docs/PROJECT_MASTER.md) verified and maintained as canonical read-only source of truth.
 - **Repository Inventory:**
   - `manuals/`: 6 official railway manual PDFs present (`ATWeld_Manual-2022.pdf`, `FBW Manual...pdf`, `INDIAN RAILWAYS TRACK MACHINE MANUAL...pdf`, `IRPWM 2024...pdf`, `STMM...pdf`, `usfd_new...pdf`).
   - `scripts/`: Ingestion, canonicalization, and validation scripts present.
@@ -75,7 +75,7 @@ Follows [`docs/PROJECT_MASTER.md` Section 33: Agent Handoff Protocol](file:///f:
 **Agent:** Gemini Assistant  
 
 ### Objectives Executed:
-Executed all 7 deliverables of Phase P1 per [`docs/PROJECT_MASTER.md` Section 26](file:///f:/my%20git%20project/RDSO-Drawings/docs/PROJECT_MASTER.md#L1159-L1170) and Section 19:
+Executed all 7 deliverables of Phase P1 per [`docs/PROJECT_MASTER.md` Section 26](../../../docs/PROJECT_MASTER.md) and Section 19:
 1. Complete manual hierarchy (Document ➔ Chapter ➔ Section ➔ Clause ➔ Tolerance/Evidence).
 2. Chapter tree in Intelligence Drawer (`renderManualsTree`, 6 manuals, 83 chapters).
 3. Section/subsection navigation with live filter (`filterManualsTree`).
@@ -85,7 +85,7 @@ Executed all 7 deliverables of Phase P1 per [`docs/PROJECT_MASTER.md` Section 26
 7. Context preservation with hierarchical breadcrumbs bar (`#breadcrumb-trail`), `lastSearchQuery` retention, and back to search functionality.
 
 ### Codebase Changes Made:
-- [`index.html`](file:///f:/my%20git%20project/RDSO-Drawings/index.html):
+- [`index.html`](../../../index.html):
   - Added `#manual-pdf-modal` CSS styles and responsive layout.
   - Added `#manual-pdf-modal` HTML markup with page badge, external link button, close button, and PDF iframe.
   - Added `MANUAL_PDF_REGISTRY`, `resolveManualPdfPath`, `openManualPdf`, and `closeManualPdfModal`.
@@ -94,11 +94,11 @@ Executed all 7 deliverables of Phase P1 per [`docs/PROJECT_MASTER.md` Section 26
   - Enhanced `updateDrawerBreadcrumbs` to construct the full ancestor trail (`Manual ➔ Chapter ➔ Clause`) from `nodeHierarchyMap` with click-to-navigate ancestor links and back-to-search button.
   - Enhanced `initSearchAutocomplete` result cards to display canonical entity IDs (`<code>${d.id}</code>`), unified drawing numbers + titles, dynamic manual evidence indicators (`📜 IRPWM · p.202`), and direct `PDF ↗` action buttons.
   - Added global Escape key listener to close modals cleanly.
-- [`tests/verify_kg_manuals.js`](file:///f:/my%20git%20project/RDSO-Drawings/tests/verify_kg_manuals.js):
+- [`tests/verify_kg_manuals.js`](../../../tests/verify_kg_manuals.js):
   - Added Test 9: Official Railway Manual Source PDF Page Opening (`openManualPdf`).
   - Added Test 10: Hierarchical Breadcrumb Navigation & Context Preservation.
   - Added Test 11: Search Result Cards with Canonical IDs & PDF Action Buttons.
-- [`docs/gemini/P1_MANUAL_BROWSING_STATUS.md`](file:///f:/my%20git%20project/RDSO-Drawings/docs/gemini/P1_MANUAL_BROWSING_STATUS.md):
+- [`docs/gemini/P1_MANUAL_BROWSING_STATUS.md`](../../../docs/gemini/P1_MANUAL_BROWSING_STATUS.md):
   - Created complete verification and architecture report for Phase P1.
 
 ### Automated Verification:

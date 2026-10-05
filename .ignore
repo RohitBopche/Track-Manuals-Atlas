@@ -10,3 +10,6 @@ data/knowledge-graph/exports/
 data/knowledge-graph/raw/
 data/knowledge-graph/intermediate/
 data/knowledge-graph/canonical/*.jsonl
+
+# History only (see docs/archive/README.md); open by path when needed.
+docs/archive/
