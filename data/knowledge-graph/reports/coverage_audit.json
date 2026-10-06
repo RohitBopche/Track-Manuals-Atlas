@@ -4,11 +4,11 @@
   "lines_checked": 14432,
   "by_class": {
    "BOILERPLATE": 8,
-   "COVERED": 14409,
-   "TABLE": 4,
-   "UNCOVERED": 11
+   "COVERED": 14411,
+   "TABLE": 3,
+   "UNCOVERED": 10
   },
-  "uncovered_share": 0.0008,
+  "uncovered_share": 0.0007,
   "worst_pages": [
    {
     "page": 424,
@@ -61,13 +61,6 @@
     ]
    },
    {
-    "page": 387,
-    "uncovered_lines": 1,
-    "examples": [
-     "Chapter No 3, Part D pertaining to provisions on LWR."
-    ]
-   },
-   {
     "page": 423,
     "uncovered_lines": 1,
     "examples": [
@@ -87,17 +80,17 @@
   "pages": 458,
   "lines_checked": 10277,
   "by_class": {
-   "COVERED": 10275,
-   "UNCOVERED": 2
+   "BOILERPLATE": 10,
+   "COVERED": 10266,
+   "UNCOVERED": 1
   },
-  "uncovered_share": 0.0002,
+  "uncovered_share": 0.0001,
   "worst_pages": [
    {
-    "page": 294,
-    "uncovered_lines": 2,
+    "page": 239,
+    "uncovered_lines": 1,
     "examples": [
-     "XI. Observations/Remarks of Inspecting Officials(6 pages desirable)",
-     "XII. Observations/Remarks of Inspecting Supervisors (16 pages desirable)"
+     "Pattern Sheet for RGM-72 stone"
     ]
    }
   ]

@@ -10,7 +10,8 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 import measurements as M  # noqa: E402
 
-MIN_MEASUREMENTS = 5500
+MIN_MEASUREMENTS = 5200   # was 5500; 2026-10-05 (§37.50) TMM paragraphs stopped absorbing their annexures, so about 380 values printed in
+                          # Annexures 7.x, 8.x and 12.x are no longer mis-cited as paragraph values (5,576 -> 5,267)
 CANON_UNITS = set(M.UNIT_MAP.values())
 COND_TYPES = {k for k, _ in M.CONDITION_RES} | {"speed_band"}
 

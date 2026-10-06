@@ -5824,11 +5824,11 @@
 {"from": "CLAUSE:IRPWM:CH_06:PARA_650", "to": "TOL:IRPWM:1500_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 650", "source": null, "evidence_ids": ["ev:src:TOL:IRPWM:1500_mm"]}
 {"from": "CLAUSE:IRPWM:CH_06:PARA_650", "to": "TOL:IRPWM:250_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 650", "source": null, "evidence_ids": ["ev:src:TOL:IRPWM:250_mm"]}
 {"from": "CLAUSE:IRPWM:CH_06:PARA_650", "to": "TOL:IRPWM:125_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 650", "source": null, "evidence_ids": ["ev:src:TOL:IRPWM:125_mm"]}
+{"from": "CLAUSE:IRPWM:CH_07:PARA_702", "to": "TOL:IRPWM:13_to_15_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 702", "source": null, "evidence_ids": ["ev:src:TOL:IRPWM:13_to_15_mm"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_702", "to": "TOL:IRPWM:52_kg", "rel": "SPECIFIES", "rationale": "Specified by Para 702", "source": null, "evidence_ids": ["ev:src:TOL:IRPWM:52_kg"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_702", "to": "TOL:IRPWM:60_Kg", "rel": "SPECIFIES", "rationale": "Specified by Para 702", "source": null, "evidence_ids": ["ev:src:TOL:IRPWM:60_Kg"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_702", "to": "TOL:IRPWM:1_5_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 702", "source": null, "evidence_ids": ["ev:src:TOL:IRPWM:1_5_mm"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_702", "to": "TOL:IRPWM:60_kg", "rel": "SPECIFIES", "rationale": "Specified by Para 702", "source": null, "evidence_ids": ["ev:src:TOL:IRPWM:60_kg"]}
-{"from": "CLAUSE:IRPWM:CH_07:PARA_702", "to": "TOL:IRPWM:13_00_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 702", "source": null, "evidence_ids": ["ev:src:TOL:IRPWM:13_00_mm"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_708", "to": "TOL:IRPWM:50000_tonnes", "rel": "SPECIFIES", "rationale": "Specified by Para 708", "source": null, "evidence_ids": ["ev:src:TOL:IRPWM:50000_tonnes"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_714", "to": "TOL:IRPWM:52kg", "rel": "SPECIFIES", "rationale": "Specified by Para 714", "source": null, "evidence_ids": ["ev:src:TOL:IRPWM:52kg"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_714", "to": "TOL:IRPWM:60_kg", "rel": "SPECIFIES", "rationale": "Specified by Para 714", "source": null, "evidence_ids": ["ev:src:TOL:IRPWM:60_kg"]}
@@ -6085,6 +6085,7 @@
 {"from": "CLAUSE:TMM:CH_02:PARA_210", "to": "TOL:TMM:9_to_13_m", "rel": "SPECIFIES", "rationale": "Specified by Para 210", "source": null, "evidence_ids": ["ev:src:TOL:TMM:9_to_13_m"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_210", "to": "TOL:TMM:14_to_19_7m", "rel": "SPECIFIES", "rationale": "Specified by Para 210", "source": null, "evidence_ids": ["ev:src:TOL:TMM:14_to_19_7m"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_211", "to": "TOL:TMM:3_to_5_m", "rel": "SPECIFIES", "rationale": "Specified by Para 211", "source": null, "evidence_ids": ["ev:src:TOL:TMM:3_to_5_m"]}
+{"from": "CLAUSE:TMM:CH_02:PARA_214", "to": "TOL:TMM:0_578_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 214", "source": null, "evidence_ids": ["ev:src:TOL:TMM:0_578_mm"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_220", "to": "TOL:TMM:10_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 220", "source": null, "evidence_ids": ["ev:src:TOL:TMM:10_mm"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_220", "to": "TOL:TMM:50_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 220", "source": null, "evidence_ids": ["ev:src:TOL:TMM:50_mm"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_222", "to": "TOL:TMM:10_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 222", "source": null, "evidence_ids": ["ev:src:TOL:TMM:10_mm"]}
@@ -6121,7 +6122,6 @@
 {"from": "CLAUSE:TMM:CH_03:PARA_310", "to": "TOL:TMM:320_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 310", "source": null, "evidence_ids": ["ev:src:TOL:TMM:320_mm"]}
 {"from": "CLAUSE:TMM:CH_03:PARA_310", "to": "TOL:TMM:4150_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 310", "source": null, "evidence_ids": ["ev:src:TOL:TMM:4150_mm"]}
 {"from": "CLAUSE:TMM:CH_03:PARA_313", "to": "TOL:TMM:5_12_m", "rel": "SPECIFIES", "rationale": "Specified by Para 313", "source": null, "evidence_ids": ["ev:src:TOL:TMM:5_12_m"]}
-{"from": "CLAUSE:TMM:CH_03:PARA_316", "to": "TOL:TMM:56_3_M", "rel": "SPECIFIES", "rationale": "Specified by Para 316", "source": null, "evidence_ids": ["ev:src:TOL:TMM:56_3_M"]}
 {"from": "CLAUSE:TMM:CH_04:PARA_403", "to": "TOL:TMM:3400mm", "rel": "SPECIFIES", "rationale": "Specified by Para 403", "source": null, "evidence_ids": ["ev:src:TOL:TMM:3400mm"]}
 {"from": "CLAUSE:TMM:CH_04:PARA_405", "to": "TOL:TMM:9_tonnes", "rel": "SPECIFIES", "rationale": "Specified by Para 405", "source": null, "evidence_ids": ["ev:src:TOL:TMM:9_tonnes"]}
 {"from": "CLAUSE:TMM:CH_04:PARA_405", "to": "TOL:TMM:12_tonnes", "rel": "SPECIFIES", "rationale": "Specified by Para 405", "source": null, "evidence_ids": ["ev:src:TOL:TMM:12_tonnes"]}
@@ -6194,11 +6194,11 @@
 {"from": "CLAUSE:TMM:CH_06:PARA_602", "to": "TOL:TMM:150_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 602", "source": null, "evidence_ids": ["ev:src:TOL:TMM:150_mm"]}
 {"from": "CLAUSE:TMM:CH_06:PARA_602", "to": "TOL:TMM:15mm", "rel": "SPECIFIES", "rationale": "Specified by Para 602", "source": null, "evidence_ids": ["ev:src:TOL:TMM:15mm"]}
 {"from": "CLAUSE:TMM:CH_06:PARA_603", "to": "TOL:TMM:2_3_m", "rel": "SPECIFIES", "rationale": "Specified by Para 603", "source": null, "evidence_ids": ["ev:src:TOL:TMM:2_3_m"]}
-{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "TOL:TMM:700_1200_mm", "rel": "SPECIFIES", "rationale": "Specified by Para 810", "source": null, "evidence_ids": ["ev:src:TOL:TMM:700_1200_mm"]}
-{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "TOL:TMM:0_500mm", "rel": "SPECIFIES", "rationale": "Specified by Para 810", "source": null, "evidence_ids": ["ev:src:TOL:TMM:0_500mm"]}
-{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "TOL:TMM:0_300mm", "rel": "SPECIFIES", "rationale": "Specified by Para 810", "source": null, "evidence_ids": ["ev:src:TOL:TMM:0_300mm"]}
-{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "TOL:TMM:0_200mm", "rel": "SPECIFIES", "rationale": "Specified by Para 810", "source": null, "evidence_ids": ["ev:src:TOL:TMM:0_200mm"]}
-{"from": "CLAUSE:TMM:CH_09:PARA_904", "to": "TOL:TMM:4___6_M", "rel": "SPECIFIES", "rationale": "Specified by Para 904", "source": null, "evidence_ids": ["ev:src:TOL:TMM:4___6_M"]}
+{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "TOL:TMM:2400mm", "rel": "SPECIFIES", "rationale": "Specified by Para 810", "source": null, "evidence_ids": ["ev:src:TOL:TMM:2400mm"]}
+{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "TOL:TMM:850mm", "rel": "SPECIFIES", "rationale": "Specified by Para 810", "source": null, "evidence_ids": ["ev:src:TOL:TMM:850mm"]}
+{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "TOL:TMM:300mm", "rel": "SPECIFIES", "rationale": "Specified by Para 810", "source": null, "evidence_ids": ["ev:src:TOL:TMM:300mm"]}
+{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "TOL:TMM:550mm", "rel": "SPECIFIES", "rationale": "Specified by Para 810", "source": null, "evidence_ids": ["ev:src:TOL:TMM:550mm"]}
+{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "TOL:TMM:225mm", "rel": "SPECIFIES", "rationale": "Specified by Para 810", "source": null, "evidence_ids": ["ev:src:TOL:TMM:225mm"]}
 {"from": "CLAUSE:TMM:CH_12:PARA_1206", "to": "TOL:TMM:180_bar", "rel": "SPECIFIES", "rationale": "Specified by Para 1206", "source": null, "evidence_ids": ["ev:src:TOL:TMM:180_bar"]}
 {"from": "CLAUSE:STMM:CH_01:PARA_106", "to": "TOL:STMM:60_kg", "rel": "SPECIFIES", "rationale": "Specified by Para 106", "source": null, "evidence_ids": ["ev:src:TOL:STMM:60_kg"]}
 {"from": "CLAUSE:STMM:CH_02:PARA_204", "to": "TOL:STMM:60_kg", "rel": "SPECIFIES", "rationale": "Specified by Para 204", "source": null, "evidence_ids": ["ev:src:TOL:STMM:60_kg"]}
@@ -6792,6 +6792,8 @@
 {"from": "CLAUSE:IRPWM:CH_06:PARA_661", "to": "CLAUSE:IRPWM:CH_03:PARA_354", "rel": "REFERENCES", "rationale": "Text reference: 354", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_06:PARA_661"]}
 {"from": "CLAUSE:IRPWM:CH_06:PARA_665", "to": "EVIDENCE:IRPWM:CH_06:P0356:01_525b97fc", "rel": "REFERENCES", "rationale": "Text reference: Annexure - 6/8", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_06:PARA_665"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_702", "to": "CLAUSE:IRPWM:CH_04:PARA_429", "rel": "REFERENCES", "rationale": "Text reference: 429", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_702"]}
+{"from": "CLAUSE:IRPWM:CH_07:PARA_702", "to": "CLAUSE:IRPWM:CH_07:PARA_717", "rel": "REFERENCES", "rationale": "Text reference: 717", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_702"]}
+{"from": "CLAUSE:IRPWM:CH_07:PARA_702", "to": "CLAUSE:IRPWM:CH_07:PARA_721", "rel": "REFERENCES", "rationale": "Text reference: 721", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_702"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_705", "to": "CLAUSE:IRPWM:CH_02:PARA_205", "rel": "REFERENCES", "rationale": "Text reference: 205", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_705"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_705", "to": "CLAUSE:IRPWM:CH_02:PARA_209", "rel": "REFERENCES", "rationale": "Text reference: 209", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_705"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_705", "to": "CLAUSE:IRPWM:CH_02:PARA_212", "rel": "REFERENCES", "rationale": "Text reference: 212", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_705"]}
@@ -6821,6 +6823,7 @@
 {"from": "CLAUSE:IRPWM:CH_07:PARA_717", "to": "CLAUSE:IRPWM:CH_07:PARA_702", "rel": "REFERENCES", "rationale": "Text reference: 702 (2) (d)", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_717"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_718", "to": "CLAUSE:IRPWM:CH_07:PARA_702", "rel": "REFERENCES", "rationale": "Text reference: 702", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_718"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_719", "to": "CLAUSE:IRPWM:CH_02:PARA_209", "rel": "REFERENCES", "rationale": "Text reference: 209(2)", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_719"]}
+{"from": "CLAUSE:IRPWM:CH_07:PARA_720", "to": "CHAPTER:IRPWM:CH_03", "rel": "REFERENCES", "rationale": "Text reference: Chapter No 3", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_720"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_721", "to": "CLAUSE:IRPWM:CH_07:PARA_702", "rel": "REFERENCES", "rationale": "Text reference: 702 (2)", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_721"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_721", "to": "CLAUSE:IRPWM:CH_07:PARA_709", "rel": "REFERENCES", "rationale": "Text reference: 709", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_721"]}
 {"from": "CLAUSE:IRPWM:CH_07:PARA_721", "to": "EVIDENCE:IRPWM:CH_07:P0390:01_230624cd", "rel": "REFERENCES", "rationale": "Text reference: Annexure - 7/1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:IRPWM:CH_07:PARA_721"]}
@@ -7029,8 +7032,11 @@
 {"from": "CLAUSE:TMM:CH_02:PARA_213", "to": "EVIDENCE:TMM:CH_02:P0103:01_5c4415c1", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.9", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_213"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_213", "to": "FIGURE:TMM:CH_02:P0064:01_d503ce75", "rel": "REFERENCES", "rationale": "Text reference: Fig. 2.23", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_213"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_213", "to": "FIGURE:TMM:CH_02:P0065:01_c02751a4", "rel": "REFERENCES", "rationale": "Text reference: Fig. 2.24", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_213"]}
+{"from": "CLAUSE:TMM:CH_02:PARA_214", "to": "EVIDENCE:TMM:CH_02:P0103:01_5c4415c1", "rel": "REFERENCES", "rationale": "Text reference: Annexure-2.9", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_214"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_214", "to": "FIGURE:TMM:CH_02:P0066:01_45996a78", "rel": "REFERENCES", "rationale": "Text reference: Fig. 2.25", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_214"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_214", "to": "FIGURE:TMM:CH_02:P0066:02_4615114e", "rel": "REFERENCES", "rationale": "Text reference: Fig. 2.26", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_214"]}
+{"from": "CLAUSE:TMM:CH_02:PARA_214", "to": "FIGURE:TMM:CH_02:P0068:01_40fcfa9a", "rel": "REFERENCES", "rationale": "Text reference: Fig. 2.27", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_214"]}
+{"from": "CLAUSE:TMM:CH_02:PARA_214", "to": "FIGURE:TMM:CH_02:P0068:02_9acab336", "rel": "REFERENCES", "rationale": "Text reference: Fig.2.28", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_214"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_215", "to": "EVIDENCE:TMM:CH_02:P0070:01_42cb38a1", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.12", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_215"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_216", "to": "CLAUSE:TMM:CH_02:PARA_213", "rel": "REFERENCES", "rationale": "Text reference: 213", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_216"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_216", "to": "CLAUSE:TMM:CH_02:PARA_215", "rel": "REFERENCES", "rationale": "Text reference: 215(2)", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_216"]}
@@ -7061,26 +7067,6 @@
 {"from": "CLAUSE:TMM:CH_02:PARA_225", "to": "FIGURE:TMM:CH_02:P0086:01_614d7b65", "rel": "REFERENCES", "rationale": "Text reference: Fig. 2.41", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_225"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_228", "to": "EVIDENCE:TMM:CH_02:P0119:01_d818cddf", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.18", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_228"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_228", "to": "TABLE:TMM:CH_02:P0088:01_ac8fb3e3", "rel": "REFERENCES", "rationale": "Text reference: Table 2.7", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_228"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "CLAUSE:TMM:CH_02:PARA_224", "rel": "REFERENCES", "rationale": "Text reference: 224 (1)", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "CLAUSE:TMM:CH_02:PARA_226", "rel": "REFERENCES", "rationale": "Text reference: 226", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0092:01_edc1a702", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0094:01_21914ca5", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0095:01_0d19a53e", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.3", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0096:01_36beb7a1", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.4", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0097:01_04823386", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.5", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0098:01_4c773d7f", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.6", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0099:01_5e58277c", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.7", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0101:01_45520a1f", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.8", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0103:01_5c4415c1", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.9", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0104:01_933ad83c", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.10", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0105:01_61516be1", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.11", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0106:01_dc750862", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.12", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0110:01_e7fdcc2a", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.13", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0113:01_c4a97cfb", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.14", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0114:01_d933616e", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.15", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0115:01_247964dc", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.16", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0118:01_ffe9043c", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.17", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
-{"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "EVIDENCE:TMM:CH_02:P0119:01_d818cddf", "rel": "REFERENCES", "rationale": "Text reference: Annexure 2.18", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
 {"from": "CLAUSE:TMM:CH_02:PARA_229", "to": "TABLE:TMM:CH_02:P0091:01_44b2fcf8", "rel": "REFERENCES", "rationale": "Text reference: Table 2.8", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_02:PARA_229"]}
 {"from": "CLAUSE:TMM:CH_03:PARA_302", "to": "FIGURE:TMM:CH_03:P0122:01_3304f092", "rel": "REFERENCES", "rationale": "Text reference: Fig. 3.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_302"]}
 {"from": "CLAUSE:TMM:CH_03:PARA_304", "to": "EVIDENCE:TMM:CH_03:P0146:01_4d7fb938", "rel": "REFERENCES", "rationale": "Text reference: Annexure-3.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_304"]}
@@ -7108,16 +7094,6 @@
 {"from": "CLAUSE:TMM:CH_03:PARA_315", "to": "FIGURE:TMM:CH_03:P0143:01_af7fe639", "rel": "REFERENCES", "rationale": "Text reference: Fig.3.18", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_315"]}
 {"from": "CLAUSE:TMM:CH_03:PARA_315", "to": "FIGURE:TMM:CH_03:P0143:02_ea9da8e5", "rel": "REFERENCES", "rationale": "Text reference: Fig. 3.19", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_315"]}
 {"from": "CLAUSE:TMM:CH_03:PARA_315", "to": "FIGURE:TMM:CH_03:P0144:01_f393d760", "rel": "REFERENCES", "rationale": "Text reference: Fig. 3.20", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_315"]}
-{"from": "CLAUSE:TMM:CH_03:PARA_316", "to": "EVIDENCE:TMM:CH_03:P0146:01_4d7fb938", "rel": "REFERENCES", "rationale": "Text reference: Annexure 3.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_316"]}
-{"from": "CLAUSE:TMM:CH_03:PARA_316", "to": "EVIDENCE:TMM:CH_03:P0147:01_1291aebe", "rel": "REFERENCES", "rationale": "Text reference: Annexure 3.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_316"]}
-{"from": "CLAUSE:TMM:CH_03:PARA_316", "to": "EVIDENCE:TMM:CH_03:P0148:01_46e965a7", "rel": "REFERENCES", "rationale": "Text reference: Annexure 3.3", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_316"]}
-{"from": "CLAUSE:TMM:CH_03:PARA_316", "to": "EVIDENCE:TMM:CH_03:P0149:01_725ce03a", "rel": "REFERENCES", "rationale": "Text reference: Annexure 3.4", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_316"]}
-{"from": "CLAUSE:TMM:CH_03:PARA_316", "to": "EVIDENCE:TMM:CH_03:P0150:01_5e363148", "rel": "REFERENCES", "rationale": "Text reference: Annexure 3.5", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_316"]}
-{"from": "CLAUSE:TMM:CH_03:PARA_316", "to": "EVIDENCE:TMM:CH_03:P0151:01_3478ea3a", "rel": "REFERENCES", "rationale": "Text reference: Annexure 3.6", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_316"]}
-{"from": "CLAUSE:TMM:CH_03:PARA_316", "to": "EVIDENCE:TMM:CH_03:P0152:01_f19932d6", "rel": "REFERENCES", "rationale": "Text reference: Annexure 3.7", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_316"]}
-{"from": "CLAUSE:TMM:CH_03:PARA_316", "to": "EVIDENCE:TMM:CH_03:P0153:01_c8eb1c54", "rel": "REFERENCES", "rationale": "Text reference: Annexure 3.8", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_316"]}
-{"from": "CLAUSE:TMM:CH_03:PARA_316", "to": "EVIDENCE:TMM:CH_03:P0154:01_6ff7fbb7", "rel": "REFERENCES", "rationale": "Text reference: Annexure 3.9", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_316"]}
-{"from": "CLAUSE:TMM:CH_03:PARA_316", "to": "EVIDENCE:TMM:CH_03:P0155:01_c4cd1f87", "rel": "REFERENCES", "rationale": "Text reference: Annexure-3.10", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_03:PARA_316"]}
 {"from": "CLAUSE:TMM:CH_04:PARA_403", "to": "FIGURE:TMM:CH_04:P0157:01_3ca2cc38", "rel": "REFERENCES", "rationale": "Text reference: Figure 4.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_04:PARA_403"]}
 {"from": "CLAUSE:TMM:CH_04:PARA_405", "to": "EVIDENCE:TMM:CH_04:P0179:01_cd893cde", "rel": "REFERENCES", "rationale": "Text reference: Annexure 4.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_04:PARA_405"]}
 {"from": "CLAUSE:TMM:CH_04:PARA_405", "to": "TABLE:TMM:CH_04:P0157:01_f1569e2f", "rel": "REFERENCES", "rationale": "Text reference: Table 4.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_04:PARA_405"]}
@@ -7141,14 +7117,12 @@
 {"from": "CLAUSE:TMM:CH_04:PARA_420", "to": "FIGURE:TMM:CH_04:P0174:01_34fecf20", "rel": "REFERENCES", "rationale": "Text reference: Fig 4.12", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_04:PARA_420"]}
 {"from": "CLAUSE:TMM:CH_04:PARA_420", "to": "FIGURE:TMM:CH_04:P0175:01_8649f06d", "rel": "REFERENCES", "rationale": "Text reference: Fig 4.13", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_04:PARA_420"]}
 {"from": "CLAUSE:TMM:CH_04:PARA_420", "to": "FIGURE:TMM:CH_04:P0175:02_c9a8f8cc", "rel": "REFERENCES", "rationale": "Text reference: Fig 4.14", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_04:PARA_420"]}
-{"from": "CLAUSE:TMM:CH_04:PARA_424", "to": "EVIDENCE:TMM:CH_04:P0179:01_cd893cde", "rel": "REFERENCES", "rationale": "Text reference: Annexure 4.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_04:PARA_424"]}
-{"from": "CLAUSE:TMM:CH_04:PARA_424", "to": "EVIDENCE:TMM:CH_04:P0180:01_e40f1d3a", "rel": "REFERENCES", "rationale": "Text reference: Annexure 4.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_04:PARA_424"]}
-{"from": "CLAUSE:TMM:CH_04:PARA_424", "to": "EVIDENCE:TMM:CH_04:P0181:01_5ea862c8", "rel": "REFERENCES", "rationale": "Text reference: Annexure 4.3", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_04:PARA_424"]}
 {"from": "CLAUSE:TMM:CH_05:PARA_502", "to": "EVIDENCE:TMM:CH_05:P0237:01_f935621d", "rel": "REFERENCES", "rationale": "Text reference: Annexure 5.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_502"]}
 {"from": "CLAUSE:TMM:CH_05:PARA_502", "to": "FIGURE:TMM:CH_05:P0183:01_4cacb61d", "rel": "REFERENCES", "rationale": "Text reference: Fig 5.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_502"]}
 {"from": "CLAUSE:TMM:CH_05:PARA_505", "to": "EVIDENCE:TMM:CH_05:P0239:01_359ba4ba", "rel": "REFERENCES", "rationale": "Text reference: Annexure 5.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_505"]}
 {"from": "CLAUSE:TMM:CH_05:PARA_505", "to": "FIGURE:TMM:CH_05:P0191:01_803e9213", "rel": "REFERENCES", "rationale": "Text reference: fig 5.5", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_505"]}
 {"from": "CLAUSE:TMM:CH_05:PARA_505", "to": "TABLE:TMM:CH_05:P0192:01_5984ee01", "rel": "REFERENCES", "rationale": "Text reference: Table 5.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_505"]}
+{"from": "CLAUSE:TMM:CH_05:PARA_505", "to": "TABLE:TMM:CH_05:P0193:02_bd036bb2", "rel": "REFERENCES", "rationale": "Text reference: Table 5.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_505"]}
 {"from": "CLAUSE:TMM:CH_05:PARA_507", "to": "EVIDENCE:TMM:CH_05:P0241:01_d128b265", "rel": "REFERENCES", "rationale": "Text reference: Annexure 5.3", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_507"]}
 {"from": "CLAUSE:TMM:CH_05:PARA_508", "to": "CLAUSE:IRPWM:CH_06:PARA_613", "rel": "REFERENCES", "rationale": "Text reference: 613 (6)", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_508"]}
 {"from": "CLAUSE:TMM:CH_05:PARA_508", "to": "EVIDENCE:TMM:CH_05:P0248:01_2f010a87", "rel": "REFERENCES", "rationale": "Text reference: Annexure 5.4", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_508"]}
@@ -7177,16 +7151,6 @@
 {"from": "CLAUSE:TMM:CH_05:PARA_517", "to": "EVIDENCE:TMM:CH_05:P0257:01_df8743f2", "rel": "REFERENCES", "rationale": "Text reference: Annexure 5.9", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_517"]}
 {"from": "CLAUSE:TMM:CH_05:PARA_517", "to": "TABLE:TMM:CH_05:P0225:01_34c2d402", "rel": "REFERENCES", "rationale": "Text reference: table 5.5", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_517"]}
 {"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "CLAUSE:TMM:CH_05:PARA_503", "rel": "REFERENCES", "rationale": "Text reference: 503", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
-{"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "EVIDENCE:TMM:CH_05:P0237:01_f935621d", "rel": "REFERENCES", "rationale": "Text reference: Annexure-5.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
-{"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "EVIDENCE:TMM:CH_05:P0239:01_359ba4ba", "rel": "REFERENCES", "rationale": "Text reference: Annexure-5.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
-{"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "EVIDENCE:TMM:CH_05:P0241:01_d128b265", "rel": "REFERENCES", "rationale": "Text reference: Annexure 5.3", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
-{"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "EVIDENCE:TMM:CH_05:P0248:01_2f010a87", "rel": "REFERENCES", "rationale": "Text reference: Annexure- 5.4", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
-{"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "EVIDENCE:TMM:CH_05:P0251:01_f59b7727", "rel": "REFERENCES", "rationale": "Text reference: Annexure 5.5", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
-{"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "EVIDENCE:TMM:CH_05:P0252:01_40f0566b", "rel": "REFERENCES", "rationale": "Text reference: Annexure 5.6", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
-{"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "EVIDENCE:TMM:CH_05:P0253:01_6f3bebd7", "rel": "REFERENCES", "rationale": "Text reference: Annexure 5.7", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
-{"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "EVIDENCE:TMM:CH_05:P0254:01_48e216ed", "rel": "REFERENCES", "rationale": "Text reference: Annexure 5.8", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
-{"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "EVIDENCE:TMM:CH_05:P0257:01_df8743f2", "rel": "REFERENCES", "rationale": "Text reference: Annexure-5.9", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
-{"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "EVIDENCE:TMM:CH_05:P0258:01_01e5e5c1", "rel": "REFERENCES", "rationale": "Text reference: ANNEXURE-5.10", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
 {"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "EVIDENCE:TMM:CH_05:P0259:01_e03fd14f", "rel": "REFERENCES", "rationale": "Text reference: Annexure 5.11", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
 {"from": "CLAUSE:TMM:CH_05:PARA_519", "to": "FIGURE:TMM:CH_05:P0233:01_045f61e6", "rel": "REFERENCES", "rationale": "Text reference: Fig. 5.25", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_05:PARA_519"]}
 {"from": "CLAUSE:TMM:CH_06:PARA_602", "to": "CLAUSE:IRPWM:CH_03:PARA_316", "rel": "REFERENCES", "rationale": "Text reference: 316", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_06:PARA_602"]}
@@ -7199,8 +7163,6 @@
 {"from": "CLAUSE:TMM:CH_07:PARA_705", "to": "EVIDENCE:TMM:CH_07:P0297:01_0314e01a", "rel": "REFERENCES", "rationale": "Text reference: Annexure 7.5", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_07:PARA_705"]}
 {"from": "CLAUSE:TMM:CH_07:PARA_705", "to": "EVIDENCE:TMM:CH_07:P0298:01_5fc8212e", "rel": "REFERENCES", "rationale": "Text reference: Annexure 7.6", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_07:PARA_705"]}
 {"from": "CLAUSE:TMM:CH_07:PARA_711", "to": "EVIDENCE:TMM:CH_07:P0284:01_a247a32c", "rel": "REFERENCES", "rationale": "Text reference: Annexure -7.7", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_07:PARA_711"]}
-{"from": "CLAUSE:TMM:CH_07:PARA_712", "to": "EVIDENCE:TMM:CH_07:P0287:01_c771fc9a", "rel": "REFERENCES", "rationale": "Text reference: Annexure 7.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_07:PARA_712"]}
-{"from": "CLAUSE:TMM:CH_07:PARA_712", "to": "EVIDENCE:TMM:CH_07:P0289:01_63e68e06", "rel": "REFERENCES", "rationale": "Text reference: Annexure 7.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_07:PARA_712"]}
 {"from": "CLAUSE:TMM:CH_08:PARA_804", "to": "EVIDENCE:TMM:CH_08:P0323:01_24c246e2", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.3", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_804"]}
 {"from": "CLAUSE:TMM:CH_08:PARA_804", "to": "EVIDENCE:TMM:CH_08:P0323:02_b5c612e1", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.6", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_804"]}
 {"from": "CLAUSE:TMM:CH_08:PARA_804", "to": "EVIDENCE:TMM:CH_08:P0323:03_bb96a1a9", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.7", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_804"]}
@@ -7215,31 +7177,16 @@
 {"from": "CLAUSE:TMM:CH_08:PARA_809", "to": "EVIDENCE:TMM:CH_08:P0334:01_e3f65c9e", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.4", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_809"]}
 {"from": "CLAUSE:TMM:CH_08:PARA_809", "to": "EVIDENCE:TMM:CH_08:P0355:01_da37506b", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.11", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_809"]}
 {"from": "CLAUSE:TMM:CH_08:PARA_809", "to": "EVIDENCE:TMM:CH_08:P0356:01_a832ea8d", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.12", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_809"]}
-{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "EVIDENCE:TMM:CH_08:P0323:01_24c246e2", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.3", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_810"]}
-{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "EVIDENCE:TMM:CH_08:P0323:02_b5c612e1", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.6", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_810"]}
-{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "EVIDENCE:TMM:CH_08:P0323:03_bb96a1a9", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.7", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_810"]}
 {"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "EVIDENCE:TMM:CH_08:P0327:01_cd03cca3", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.13", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_810"]}
-{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "EVIDENCE:TMM:CH_08:P0330:01_21990983", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_810"]}
-{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "EVIDENCE:TMM:CH_08:P0332:01_08117a76", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_810"]}
-{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "EVIDENCE:TMM:CH_08:P0334:01_e3f65c9e", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.4", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_810"]}
-{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "EVIDENCE:TMM:CH_08:P0344:01_555c1f75", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.5", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_810"]}
-{"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "EVIDENCE:TMM:CH_08:P0350:01_390d0f7a", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.8", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_810"]}
 {"from": "CLAUSE:TMM:CH_08:PARA_810", "to": "EVIDENCE:TMM:CH_08:P0362:01_9100dc9f", "rel": "REFERENCES", "rationale": "Text reference: Annexure 8.17", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_08:PARA_810"]}
 {"from": "CLAUSE:TMM:CH_09:PARA_902", "to": "CHAPTER:TMM:CH_08", "rel": "REFERENCES", "rationale": "Text reference: Chapter 8", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_09:PARA_902"]}
 {"from": "CLAUSE:TMM:CH_09:PARA_902", "to": "EVIDENCE:TMM:CH_09:P0367:01_8d77154c", "rel": "REFERENCES", "rationale": "Text reference: Annexure 9.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_09:PARA_902"]}
 {"from": "CLAUSE:TMM:CH_09:PARA_902", "to": "EVIDENCE:TMM:CH_09:P0372:01_7ab40b4d", "rel": "REFERENCES", "rationale": "Text reference: Annexure 9.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_09:PARA_902"]}
-{"from": "CLAUSE:TMM:CH_09:PARA_904", "to": "EVIDENCE:TMM:CH_09:P0367:01_8d77154c", "rel": "REFERENCES", "rationale": "Text reference: Annexure 9.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_09:PARA_904"]}
-{"from": "CLAUSE:TMM:CH_09:PARA_904", "to": "EVIDENCE:TMM:CH_09:P0372:01_7ab40b4d", "rel": "REFERENCES", "rationale": "Text reference: Annexure 9.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_09:PARA_904"]}
-{"from": "CLAUSE:TMM:CH_09:PARA_904", "to": "EVIDENCE:TMM:CH_09:P0373:01_e0230413", "rel": "REFERENCES", "rationale": "Text reference: Annexure 9.3", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_09:PARA_904"]}
-{"from": "CLAUSE:TMM:CH_09:PARA_904", "to": "EVIDENCE:TMM:CH_09:P0374:01_4180c317", "rel": "REFERENCES", "rationale": "Text reference: Annexure 9.4", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_09:PARA_904"]}
 {"from": "CLAUSE:TMM:CH_10:PARA_1009", "to": "CLAUSE:TMM:CH_10:PARA_1008", "rel": "REFERENCES", "rationale": "Text reference: 1008", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_10:PARA_1009"]}
 {"from": "CLAUSE:TMM:CH_11:PARA_1107", "to": "EVIDENCE:TMM:CH_11:P0393:01_a6c8f91a", "rel": "REFERENCES", "rationale": "Text reference: Annexure 11.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_11:PARA_1107"]}
 {"from": "CLAUSE:TMM:CH_11:PARA_1107", "to": "EVIDENCE:TMM:CH_11:P0394:01_3e64f4e2", "rel": "REFERENCES", "rationale": "Text reference: Annexure 11.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_11:PARA_1107"]}
-{"from": "CLAUSE:TMM:CH_11:PARA_1108", "to": "EVIDENCE:TMM:CH_11:P0393:01_a6c8f91a", "rel": "REFERENCES", "rationale": "Text reference: Annexure 11.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_11:PARA_1108"]}
-{"from": "CLAUSE:TMM:CH_11:PARA_1108", "to": "EVIDENCE:TMM:CH_11:P0394:01_3e64f4e2", "rel": "REFERENCES", "rationale": "Text reference: Annexure 11.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_11:PARA_1108"]}
 {"from": "CLAUSE:TMM:CH_11:PARA_1108", "to": "EVIDENCE:TMM:CH_11:P0398:01_b019e9bc", "rel": "REFERENCES", "rationale": "Text reference: Annexure 11.3", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_11:PARA_1108"]}
 {"from": "CLAUSE:TMM:CH_12:PARA_1215", "to": "EVIDENCE:TMM:CH_12:P0424:01_6de3b344", "rel": "REFERENCES", "rationale": "Text reference: Annexure 12.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_12:PARA_1215"]}
-{"from": "CLAUSE:TMM:CH_12:PARA_1216", "to": "EVIDENCE:TMM:CH_12:P0424:01_6de3b344", "rel": "REFERENCES", "rationale": "Text reference: Annexure-12.1", "source": null, "evidence_ids": ["ev:clause:CLAUSE:TMM:CH_12:PARA_1216"]}
 {"from": "CLAUSE:USFD:CH_01:PARA_1_2_2", "to": "CHAPTER:USFD:CH_08", "rel": "REFERENCES", "rationale": "Text reference: Chapters 8", "source": null, "evidence_ids": ["ev:clause:CLAUSE:USFD:CH_01:PARA_1_2_2"]}
 {"from": "CLAUSE:USFD:CH_01:PARA_1_3_1_3", "to": "CLAUSE:USFD:CH_01:PARA_1_3_1_2", "rel": "REFERENCES", "rationale": "Text reference: 1.3.1.2", "source": null, "evidence_ids": ["ev:clause:CLAUSE:USFD:CH_01:PARA_1_3_1_3"]}
 {"from": "CLAUSE:USFD:CH_01:PARA_1_4", "to": "FIGURE:USFD:CH_15:P0144:01_95510ded", "rel": "REFERENCES", "rationale": "Text reference: Figs. 31", "source": null, "evidence_ids": ["ev:clause:CLAUSE:USFD:CH_01:PARA_1_4"]}

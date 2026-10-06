@@ -1,13 +1,13 @@
 {
-  "edges": 7343,
-  "edges_with_evidence": 7331,
+  "edges": 7290,
+  "edges_with_evidence": 7278,
   "edges_without_evidence": 12,
-  "evidence": 4815,
+  "evidence": 4814,
   "evidence_status": {
-    "machine_extracted": 4815
+    "machine_extracted": 4814
   },
-  "evidence_with_page": 4778,
-  "evidence_with_region": 4690,
+  "evidence_with_page": 4777,
+  "evidence_with_region": 4689,
   "generated_by": "scripts/unify_manual_canonical.py",
   "manual_clauses": {
     "DOC:AT_WELD:2022": {
@@ -95,15 +95,15 @@
     "STANDARD": 2,
     "SUBSECTION": 1101,
     "TABLE": 57,
-    "TOLERANCE": 460,
+    "TOLERANCE": 459,
     "ZONE": 5
   },
-  "nodes": 4862,
-  "requirements": 1632,
+  "nodes": 4861,
+  "requirements": 1631,
   "reviews": 13,
   "verification_status": {
     "disputed": 1,
-    "machine_extracted": 4849,
+    "machine_extracted": 4848,
     "reviewed": 12
   }
 }
