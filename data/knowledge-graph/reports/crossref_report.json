@@ -1,28 +1,28 @@
 {
  "summary": {
-  "total": 1567,
+  "total": 1526,
   "by_status": {
    "AMBIGUOUS": 20,
-   "EXTERNAL": 234,
-   "NOT_FOUND": 141,
-   "RESOLVED": 1172
+   "EXTERNAL": 252,
+   "NOT_FOUND": 142,
+   "RESOLVED": 1112
   },
   "by_kind": {
    "annexure": {
     "EXTERNAL": 1,
     "NOT_FOUND": 9,
-    "RESOLVED": 335
+    "RESOLVED": 271
    },
    "chapter": {
-    "RESOLVED": 38
+    "RESOLVED": 39
    },
    "drawing": {
-    "EXTERNAL": 131
+    "EXTERNAL": 149
    },
    "figure": {
     "AMBIGUOUS": 8,
-    "NOT_FOUND": 113,
-    "RESOLVED": 183
+    "NOT_FOUND": 114,
+    "RESOLVED": 185
    },
    "para": {
     "EXTERNAL": 9,
@@ -35,7 +35,7 @@
    "table": {
     "AMBIGUOUS": 12,
     "NOT_FOUND": 10,
-    "RESOLVED": 68
+    "RESOLVED": 69
    }
   }
  },
@@ -770,6 +770,12 @@
    "source": "CLAUSE:TMM:CH_05:PARA_517",
    "raw": "Table 5.8",
    "kind": "table",
+   "scope": "TMM"
+  },
+  {
+   "source": "CLAUSE:TMM:CH_05:PARA_517",
+   "raw": "Fig 5.22",
+   "kind": "figure",
    "scope": "TMM"
   },
   {

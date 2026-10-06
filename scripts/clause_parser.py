@@ -34,7 +34,14 @@ import pymupdf
 # not a sentence that merely starts with the word.
 # Head titles that are really chapter/part banners ("145 CHAPTER - 4" = page number + banner)
 BANNER_TITLE_RE = re.compile(r"^(CHAPTER|PART)\b|^SECTION\s*[-–:]\s*[IVX\d]", re.I)
-BANNER_RE = re.compile(r"^((CHAPTER|PART|SECTION)\b.{0,50}|(ANNEXURE|APPENDIX)\b[^.,;]{0,45})$", re.I)
+# A banner names its division with a designator ("CHAPTER – 7", "PART – B", "SECTION – II: ..."). Without one, a bold row that only
+# starts with the word is a table header or a sentence ("Section | Category of track | Lateral wear", "Chapter No 3, Part D ...")
+# and must not end the paragraph (it cut IRPWM Para 702 at its lateral-wear table).
+BANNER_RE = re.compile(r"^((CHAPTER\s*[-–—:]?\s*(\d+|[IVXL]+)\b|PART\s*[-–—:]?\s*([A-Z]|[IVX]+)\b|SECTION\s*[-–—:]\s*[IVX]+\b).{0,50}"
+                       r"|(ANNEXURE|APPENDIX)\b[^.,;]{0,45})$", re.I)
+# TMM numbers its annexures with a dot ("Annexure 7.3", "ANNEXURE 8.17 [ACS-2]"), which the pattern above excludes. Such a line is a
+# banner only when the line before it does not run on into it ("... are given at / Annexure 2.4" is a reference, not a heading).
+ANNEX_DOTTED_RE = re.compile(r"^(ANNEXURE|APPENDIX)\s*[-–—:]?\s*\d+\.\d+\s*(\(?[A-Z]\)?)?\s*(\[[^\]]*\])?$", re.I)
 DELETED_RE = re.compile(r"^\(?\s*deleted\s*\)?\.?(\s*\(?\s*ACS\b[^)]*\)?)*\s*\.?$", re.I)  # "(Deleted) (ACS - 3)"
 PAGE_NO_RE = re.compile(r"^(\d{1,4}|[ivxlc]{1,6})$", re.I)
 
@@ -289,8 +296,12 @@ def parse_manual(pdf_path: str, doc_id: str, chapters: list[dict]) -> ParseResul
         end_row = heads[hi + 1].row if hi + 1 < len(heads) else len(rows)
         body: list[Row] = []
         skipping_title = False
+        prev_row = None
         for r in rows[h.row:end_row]:
-            is_banner = r.idx != h.row and BANNER_RE.match(r.text) and (r.bold or r.text.isupper())
+            runs_on = prev_row is not None and prev_row.page == r.page and re.search(r"[A-Za-z]$", prev_row.text)
+            is_banner = r.idx != h.row and (r.bold or r.text.isupper()) and (
+                BANNER_RE.match(r.text) or (ANNEX_DOTTED_RE.match(r.text) and not runs_on))
+            prev_row = r
             if is_banner and len(body) <= 1:
                 # A chapter banner printed between the paragraph number and its text (interleaved
                 # layout): not part of the clause, and not its end either.

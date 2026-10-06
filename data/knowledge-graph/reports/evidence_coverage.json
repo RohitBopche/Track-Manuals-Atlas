@@ -2,7 +2,7 @@
  "summary": {
   "clauses": 1172,
   "without_region": 0,
-  "prefix_only": 65,
+  "prefix_only": 57,
   "per_manual": {
    "AT_WELD": {
     "clauses": 73,
@@ -26,8 +26,8 @@
    },
    "TMM": {
     "clauses": 171,
-    "full_clause": 139,
-    "prefix": 32
+    "full_clause": 147,
+    "prefix": 24
    },
    "USFD": {
     "clauses": 192,
@@ -36,8 +36,8 @@
    }
   },
   "prefix_by_reason": {
-   "HAS_TABLE": 41,
-   "SPANS_PAGES": 23,
+   "HAS_TABLE": 34,
+   "SPANS_PAGES": 22,
    "WAIVED": 1
   }
  },
@@ -289,12 +289,6 @@
    "also_spans_pages": true
   },
   {
-   "clause": "CLAUSE:TMM:CH_02:PARA_229",
-   "page": 90,
-   "reason": "HAS_TABLE",
-   "also_spans_pages": true
-  },
-  {
    "clause": "CLAUSE:TMM:CH_03:PARA_305",
    "page": 125,
    "reason": "SPANS_PAGES",
@@ -303,12 +297,6 @@
   {
    "clause": "CLAUSE:TMM:CH_03:PARA_315",
    "page": 140,
-   "reason": "SPANS_PAGES",
-   "also_spans_pages": true
-  },
-  {
-   "clause": "CLAUSE:TMM:CH_03:PARA_316",
-   "page": 144,
    "reason": "SPANS_PAGES",
    "also_spans_pages": true
   },
@@ -325,8 +313,8 @@
    "also_spans_pages": true
   },
   {
-   "clause": "CLAUSE:TMM:CH_04:PARA_424",
-   "page": 178,
+   "clause": "CLAUSE:TMM:CH_05:PARA_505",
+   "page": 190,
    "reason": "SPANS_PAGES",
    "also_spans_pages": true
   },
@@ -349,30 +337,6 @@
    "also_spans_pages": true
   },
   {
-   "clause": "CLAUSE:TMM:CH_05:PARA_519",
-   "page": 233,
-   "reason": "HAS_TABLE",
-   "also_spans_pages": true
-  },
-  {
-   "clause": "CLAUSE:TMM:CH_07:PARA_712",
-   "page": 284,
-   "reason": "HAS_TABLE",
-   "also_spans_pages": true
-  },
-  {
-   "clause": "CLAUSE:TMM:CH_08:PARA_810",
-   "page": 327,
-   "reason": "HAS_TABLE",
-   "also_spans_pages": true
-  },
-  {
-   "clause": "CLAUSE:TMM:CH_09:PARA_904",
-   "page": 365,
-   "reason": "HAS_TABLE",
-   "also_spans_pages": true
-  },
-  {
    "clause": "CLAUSE:TMM:CH_10:PARA_1008",
    "page": 381,
    "reason": "HAS_TABLE",
@@ -385,22 +349,10 @@
    "also_spans_pages": true
   },
   {
-   "clause": "CLAUSE:TMM:CH_11:PARA_1108",
-   "page": 393,
-   "reason": "HAS_TABLE",
-   "also_spans_pages": true
-  },
-  {
    "clause": "CLAUSE:TMM:CH_12:PARA_1211",
    "page": 417,
    "reason": "HAS_TABLE",
    "also_spans_pages": false
-  },
-  {
-   "clause": "CLAUSE:TMM:CH_12:PARA_1216",
-   "page": 423,
-   "reason": "HAS_TABLE",
-   "also_spans_pages": true
   },
   {
    "clause": "CLAUSE:USFD:CH_02:PARA_2_1",

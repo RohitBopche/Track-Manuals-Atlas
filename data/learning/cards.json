@@ -17,7 +17,7 @@
    "20 minutes"
   ],
   "correct": 3,
-  "measurement": "MEAS:001878",
+  "measurement": "MEAS:001922",
   "start": 0,
   "end": 202
  },
@@ -39,7 +39,7 @@
    "37-38mm"
   ],
   "correct": 1,
-  "measurement": "MEAS:001859",
+  "measurement": "MEAS:001903",
   "start": 44,
   "end": 259
  },
@@ -61,7 +61,7 @@
    "12 minutes"
   ],
   "correct": 0,
-  "measurement": "MEAS:001873",
+  "measurement": "MEAS:001917",
   "start": 23,
   "end": 199
  },
@@ -83,7 +83,7 @@
    "2 to 2.4 mm"
   ],
   "correct": 1,
-  "measurement": "MEAS:001883",
+  "measurement": "MEAS:001927",
   "start": 284,
   "end": 361
  },
@@ -105,7 +105,7 @@
    "300-450mm"
   ],
   "correct": 3,
-  "measurement": "MEAS:001893",
+  "measurement": "MEAS:001937",
   "start": 409,
   "end": 565
  },
@@ -127,7 +127,7 @@
    "4 m"
   ],
   "correct": 0,
-  "measurement": "MEAS:001902",
+  "measurement": "MEAS:001946",
   "start": 0,
   "end": 113
  },
@@ -149,7 +149,7 @@
    "3mm"
   ],
   "correct": 2,
-  "measurement": "MEAS:001925",
+  "measurement": "MEAS:001969",
   "start": 23,
   "end": 163
  },
@@ -171,7 +171,7 @@
    "1.2mm"
   ],
   "correct": 2,
-  "measurement": "MEAS:001944",
+  "measurement": "MEAS:001988",
   "start": 402,
   "end": 522
  },
@@ -193,7 +193,7 @@
    "5 mm"
   ],
   "correct": 0,
-  "measurement": "MEAS:001948",
+  "measurement": "MEAS:001992",
   "start": 45,
   "end": 273
  },
@@ -391,7 +391,7 @@
    "70-75 minute"
   ],
   "correct": 3,
-  "measurement": "MEAS:000256",
+  "measurement": "MEAS:000285",
   "start": 230,
   "end": 432
  },
@@ -413,7 +413,7 @@
    "450 mm"
   ],
   "correct": 1,
-  "measurement": "MEAS:000258",
+  "measurement": "MEAS:000287",
   "start": 229,
   "end": 386
  },
@@ -435,7 +435,7 @@
    "0.7 mm"
   ],
   "correct": 1,
-  "measurement": "MEAS:000264",
+  "measurement": "MEAS:000293",
   "start": 305,
   "end": 384
  },
@@ -457,7 +457,7 @@
    "270 metres"
   ],
   "correct": 0,
-  "measurement": "MEAS:000359",
+  "measurement": "MEAS:000388",
   "start": 145,
   "end": 232
  },
@@ -479,7 +479,7 @@
    "260 m"
   ],
   "correct": 2,
-  "measurement": "MEAS:000377",
+  "measurement": "MEAS:000406",
   "start": 2431,
   "end": 2530
  },
@@ -501,7 +501,7 @@
    "3500 m"
   ],
   "correct": 3,
-  "measurement": "MEAS:000406",
+  "measurement": "MEAS:000435",
   "start": 791,
   "end": 973
  },
@@ -523,7 +523,7 @@
    "45 metres"
   ],
   "correct": 1,
-  "measurement": "MEAS:000453",
+  "measurement": "MEAS:000482",
   "start": 4265,
   "end": 4406
  },
@@ -545,7 +545,7 @@
    "8 minutes"
   ],
   "correct": 3,
-  "measurement": "MEAS:000460",
+  "measurement": "MEAS:000489",
   "start": 626,
   "end": 697
  },
@@ -567,7 +567,7 @@
    "5 years"
   ],
   "correct": 3,
-  "measurement": "MEAS:000463",
+  "measurement": "MEAS:000492",
   "start": 204,
   "end": 375
  },
@@ -589,7 +589,7 @@
    "30 minutes"
   ],
   "correct": 3,
-  "measurement": "MEAS:000527",
+  "measurement": "MEAS:000556",
   "start": 4941,
   "end": 5033
  },
@@ -611,7 +611,7 @@
    "15 minutes"
   ],
   "correct": 1,
-  "measurement": "MEAS:000542",
+  "measurement": "MEAS:000571",
   "start": 2361,
   "end": 2455
  },
@@ -633,7 +633,7 @@
    "50 mm"
   ],
   "correct": 3,
-  "measurement": "MEAS:000552",
+  "measurement": "MEAS:000581",
   "start": 2149,
   "end": 2424
  },
@@ -655,7 +655,7 @@
    "10°C"
   ],
   "correct": 3,
-  "measurement": "MEAS:000562",
+  "measurement": "MEAS:000591",
   "start": 1731,
   "end": 1919
  },
@@ -673,11 +673,11 @@
   "options": [
    "15 mm",
    "25 mm",
-   "30 mm",
+   "13 to 15 mm",
    "20 mm"
   ],
   "correct": 3,
-  "measurement": "MEAS:000564",
+  "measurement": "MEAS:000593",
   "start": 238,
   "end": 452
  },
@@ -699,7 +699,7 @@
    "3.78 m"
   ],
   "correct": 1,
-  "measurement": "MEAS:000569",
+  "measurement": "MEAS:000598",
   "start": 2144,
   "end": 2236
  },
@@ -721,7 +721,7 @@
    "50 metres"
   ],
   "correct": 3,
-  "measurement": "MEAS:000628",
+  "measurement": "MEAS:000657",
   "start": 6818,
   "end": 6973
  },
@@ -743,7 +743,7 @@
    "260 m"
   ],
   "correct": 2,
-  "measurement": "MEAS:000631",
+  "measurement": "MEAS:000660",
   "start": 1410,
   "end": 1544
  },
@@ -765,7 +765,7 @@
    "400 metres"
   ],
   "correct": 2,
-  "measurement": "MEAS:000634",
+  "measurement": "MEAS:000663",
   "start": 1526,
   "end": 1736
  },
@@ -787,7 +787,7 @@
    "65 Kmph"
   ],
   "correct": 3,
-  "measurement": "MEAS:000674",
+  "measurement": "MEAS:000703",
   "start": 536,
   "end": 761
  },
@@ -809,7 +809,7 @@
    "350 m"
   ],
   "correct": 2,
-  "measurement": "MEAS:000699",
+  "measurement": "MEAS:000728",
   "start": 147,
   "end": 298
  },
@@ -831,7 +831,7 @@
    "40 mm"
   ],
   "correct": 1,
-  "measurement": "MEAS:000724",
+  "measurement": "MEAS:000753",
   "start": 6042,
   "end": 6174
  },
@@ -853,7 +853,7 @@
    "2.8 mm"
   ],
   "correct": 0,
-  "measurement": "MEAS:000753",
+  "measurement": "MEAS:000782",
   "start": 642,
   "end": 840
  },
@@ -875,7 +875,7 @@
    "20 metres"
   ],
   "correct": 1,
-  "measurement": "MEAS:000771",
+  "measurement": "MEAS:000800",
   "start": 0,
   "end": 191
  },
@@ -897,7 +897,7 @@
    "85 Kmph"
   ],
   "correct": 1,
-  "measurement": "MEAS:000788",
+  "measurement": "MEAS:000817",
   "start": 151,
   "end": 335
  },
@@ -919,7 +919,7 @@
    "100 %"
   ],
   "correct": 2,
-  "measurement": "MEAS:000952",
+  "measurement": "MEAS:000982",
   "start": 2668,
   "end": 2777
  },
@@ -937,11 +937,11 @@
   "options": [
    "35 GMT",
    "50 GMT",
-   "5 GMT",
+   "05 GMT",
    "10 GMT"
   ],
   "correct": 3,
-  "measurement": "MEAS:000983",
+  "measurement": "MEAS:001013",
   "start": 3776,
   "end": 3900
  },
@@ -963,7 +963,7 @@
    "25 mm"
   ],
   "correct": 0,
-  "measurement": "MEAS:000995",
+  "measurement": "MEAS:001025",
   "start": 3565,
   "end": 3624
  },
@@ -985,7 +985,7 @@
    "3 to 5 years"
   ],
   "correct": 3,
-  "measurement": "MEAS:000996",
+  "measurement": "MEAS:001026",
   "start": 0,
   "end": 191
  },
@@ -1003,11 +1003,11 @@
   "options": [
    "10 GMT",
    "50 GMT",
-   "5 GMT",
+   "05 GMT",
    "35 GMT"
   ],
   "correct": 0,
-  "measurement": "MEAS:001007",
+  "measurement": "MEAS:001037",
   "start": 6482,
   "end": 6545
  },
@@ -1029,7 +1029,7 @@
    "13.3 m"
   ],
   "correct": 2,
-  "measurement": "MEAS:001009",
+  "measurement": "MEAS:001039",
   "start": 0,
   "end": 131
  },
@@ -1051,7 +1051,7 @@
    "41 to 45 mm"
   ],
   "correct": 1,
-  "measurement": "MEAS:001044",
+  "measurement": "MEAS:001074",
   "start": 609,
   "end": 731
  },
@@ -1073,7 +1073,7 @@
    "90 metres"
   ],
   "correct": 2,
-  "measurement": "MEAS:001060",
+  "measurement": "MEAS:001090",
   "start": 802,
   "end": 920
  },
@@ -1095,7 +1095,7 @@
    "150 mm"
   ],
   "correct": 3,
-  "measurement": "MEAS:001068",
+  "measurement": "MEAS:001098",
   "start": 1930,
   "end": 2016
  },
@@ -1117,7 +1117,7 @@
    "50 mm"
   ],
   "correct": 3,
-  "measurement": "MEAS:001087",
+  "measurement": "MEAS:001117",
   "start": 434,
   "end": 520
  },
@@ -1139,7 +1139,7 @@
    "30 cm"
   ],
   "correct": 3,
-  "measurement": "MEAS:001094",
+  "measurement": "MEAS:001124",
   "start": 162,
   "end": 239
  },
@@ -1161,7 +1161,7 @@
    "100 m"
   ],
   "correct": 3,
-  "measurement": "MEAS:001096",
+  "measurement": "MEAS:001126",
   "start": 540,
   "end": 645
  },
@@ -1183,9 +1183,31 @@
    "120 m"
   ],
   "correct": 1,
-  "measurement": "MEAS:001106",
+  "measurement": "MEAS:001136",
   "start": 876,
   "end": 978
+ },
+ {
+  "id": "CARD:IRPWM:CH_07:PARA_702",
+  "clause": "CLAUSE:IRPWM:CH_07:PARA_702",
+  "manual": "IRPWM",
+  "para": "702",
+  "page": 371,
+  "chapter": "Chapter 7 — Permanent Way Renewals",
+  "sentence": "Through sleeper renewal should be considered if the percentage of such sleepers exceeds 20% in a patch.",
+  "front": "Through sleeper renewal should be considered if the percentage of such sleepers exceeds _____ in a patch.",
+  "answer": "20%",
+  "unit": "%",
+  "options": [
+   "25%",
+   "20%",
+   "40%",
+   "10%"
+  ],
+  "correct": 1,
+  "measurement": "MEAS:001183",
+  "start": 5917,
+  "end": 6020
  },
  {
   "id": "CARD:IRPWM:CH_07:PARA_707",
@@ -1205,7 +1227,7 @@
    "24 hrs"
   ],
   "correct": 2,
-  "measurement": "MEAS:001141",
+  "measurement": "MEAS:001185",
   "start": 1144,
   "end": 1243
  },
@@ -1221,13 +1243,13 @@
   "answer": "3 months",
   "unit": "month",
   "options": [
-   "6 months",
+   "06 months",
    "3 months",
    "2 months",
    "4 months"
   ],
   "correct": 1,
-  "measurement": "MEAS:001181",
+  "measurement": "MEAS:001225",
   "start": 1567,
   "end": 1717
  },
@@ -1249,7 +1271,7 @@
    "225 metres"
   ],
   "correct": 1,
-  "measurement": "MEAS:001192",
+  "measurement": "MEAS:001236",
   "start": 546,
   "end": 685
  },
@@ -1271,7 +1293,7 @@
    "50 m"
   ],
   "correct": 0,
-  "measurement": "MEAS:001199",
+  "measurement": "MEAS:001243",
   "start": 620,
   "end": 813
  },
@@ -1293,7 +1315,7 @@
    "300-450 mm"
   ],
   "correct": 2,
-  "measurement": "MEAS:001205",
+  "measurement": "MEAS:001249",
   "start": 1698,
   "end": 1941
  },
@@ -1315,7 +1337,7 @@
    "875 m"
   ],
   "correct": 2,
-  "measurement": "MEAS:001218",
+  "measurement": "MEAS:001262",
   "start": 4917,
   "end": 5059
  },
@@ -1337,7 +1359,7 @@
    "8 minutes"
   ],
   "correct": 0,
-  "measurement": "MEAS:001221",
+  "measurement": "MEAS:001265",
   "start": 1926,
   "end": 2115
  },
@@ -1359,7 +1381,7 @@
    "40 Kmph"
   ],
   "correct": 2,
-  "measurement": "MEAS:001223",
+  "measurement": "MEAS:001267",
   "start": 99,
   "end": 278
  },
@@ -1381,7 +1403,7 @@
    "15 Kmph"
   ],
   "correct": 2,
-  "measurement": "MEAS:001226",
+  "measurement": "MEAS:001270",
   "start": 196,
   "end": 345
  },
@@ -1403,7 +1425,7 @@
    "8%"
   ],
   "correct": 0,
-  "measurement": "MEAS:001228",
+  "measurement": "MEAS:001272",
   "start": 147,
   "end": 370
  },
@@ -1425,7 +1447,7 @@
    "7 m"
   ],
   "correct": 0,
-  "measurement": "MEAS:001234",
+  "measurement": "MEAS:001278",
   "start": 4044,
   "end": 4248
  },
@@ -1447,7 +1469,7 @@
    "10 km"
   ],
   "correct": 2,
-  "measurement": "MEAS:001319",
+  "measurement": "MEAS:001363",
   "start": 1972,
   "end": 2062
  },
@@ -1469,7 +1491,7 @@
    "450 metres"
   ],
   "correct": 3,
-  "measurement": "MEAS:001337",
+  "measurement": "MEAS:001381",
   "start": 709,
   "end": 813
  },
@@ -1491,7 +1513,7 @@
    "15 Kmph"
   ],
   "correct": 1,
-  "measurement": "MEAS:001345",
+  "measurement": "MEAS:001389",
   "start": 128,
   "end": 229
  },
@@ -1513,7 +1535,7 @@
    "24 hours"
   ],
   "correct": 3,
-  "measurement": "MEAS:001349",
+  "measurement": "MEAS:001393",
   "start": 1965,
   "end": 2100
  },
@@ -1535,7 +1557,7 @@
    "0.7 mm"
   ],
   "correct": 0,
-  "measurement": "MEAS:001351",
+  "measurement": "MEAS:001395",
   "start": 0,
   "end": 208
  },
@@ -1557,7 +1579,7 @@
    "30%"
   ],
   "correct": 3,
-  "measurement": "MEAS:003008",
+  "measurement": "MEAS:002699",
   "start": 2157,
   "end": 2327
  },
@@ -1579,7 +1601,7 @@
    "0.3 mm"
   ],
   "correct": 0,
-  "measurement": "MEAS:003023",
+  "measurement": "MEAS:002714",
   "start": 380,
   "end": 443
  },
@@ -1601,7 +1623,7 @@
    "24 Hours"
   ],
   "correct": 1,
-  "measurement": "MEAS:003029",
+  "measurement": "MEAS:002720",
   "start": 1585,
   "end": 1689
  },
@@ -1623,7 +1645,7 @@
    "35 mm"
   ],
   "correct": 3,
-  "measurement": "MEAS:003045",
+  "measurement": "MEAS:002736",
   "start": 863,
   "end": 969
  },
@@ -1645,7 +1667,7 @@
    "60 Hrs"
   ],
   "correct": 0,
-  "measurement": "MEAS:003070",
+  "measurement": "MEAS:002761",
   "start": 1850,
   "end": 1953
  },
@@ -1667,7 +1689,7 @@
    "1minutes"
   ],
   "correct": 3,
-  "measurement": "MEAS:003099",
+  "measurement": "MEAS:002790",
   "start": 529,
   "end": 626
  },
@@ -1689,7 +1711,7 @@
    "24 Hours"
   ],
   "correct": 2,
-  "measurement": "MEAS:003102",
+  "measurement": "MEAS:002793",
   "start": 1829,
   "end": 1936
  },
@@ -1711,7 +1733,7 @@
    "6 hrs"
   ],
   "correct": 2,
-  "measurement": "MEAS:003128",
+  "measurement": "MEAS:002819",
   "start": 2063,
   "end": 2167
  },
@@ -1733,7 +1755,7 @@
    "24 Hours"
   ],
   "correct": 0,
-  "measurement": "MEAS:003152",
+  "measurement": "MEAS:002843",
   "start": 1268,
   "end": 1376
  },
@@ -1755,7 +1777,7 @@
    "60 Hrs"
   ],
   "correct": 1,
-  "measurement": "MEAS:003162",
+  "measurement": "MEAS:002853",
   "start": 1298,
   "end": 1404
  },
@@ -1777,7 +1799,7 @@
    "0.1 mm"
   ],
   "correct": 2,
-  "measurement": "MEAS:003198",
+  "measurement": "MEAS:002889",
   "start": 838,
   "end": 945
  },
@@ -1799,7 +1821,7 @@
    "200 mm"
   ],
   "correct": 0,
-  "measurement": "MEAS:003215",
+  "measurement": "MEAS:002906",
   "start": 1766,
   "end": 1903
  },
@@ -1821,7 +1843,7 @@
    "260 mm"
   ],
   "correct": 1,
-  "measurement": "MEAS:003218",
+  "measurement": "MEAS:002909",
   "start": 960,
   "end": 1061
  },
@@ -1843,7 +1865,7 @@
    "06 to 07 minutes"
   ],
   "correct": 0,
-  "measurement": "MEAS:003291",
+  "measurement": "MEAS:002982",
   "start": 147,
   "end": 218
  },
@@ -1865,7 +1887,7 @@
    "18months"
   ],
   "correct": 3,
-  "measurement": "MEAS:003298",
+  "measurement": "MEAS:002989",
   "start": 616,
   "end": 708
  },
@@ -1887,7 +1909,7 @@
    "36 months"
   ],
   "correct": 3,
-  "measurement": "MEAS:003301",
+  "measurement": "MEAS:002992",
   "start": 1109,
   "end": 1166
  },
@@ -1909,7 +1931,7 @@
    "1200 M"
   ],
   "correct": 0,
-  "measurement": "MEAS:003313",
+  "measurement": "MEAS:003004",
   "start": 756,
   "end": 952
  },
@@ -1931,7 +1953,7 @@
    "3 mm"
   ],
   "correct": 3,
-  "measurement": "MEAS:003322",
+  "measurement": "MEAS:003013",
   "start": 583,
   "end": 724
  },
@@ -1953,7 +1975,7 @@
    "30%"
   ],
   "correct": 2,
-  "measurement": "MEAS:003358",
+  "measurement": "MEAS:003049",
   "start": 1182,
   "end": 1403
  },
@@ -1975,7 +1997,7 @@
    "2 years"
   ],
   "correct": 0,
-  "measurement": "MEAS:003368",
+  "measurement": "MEAS:003059",
   "start": 513,
   "end": 625
  },
@@ -1997,7 +2019,7 @@
    "3 years"
   ],
   "correct": 1,
-  "measurement": "MEAS:003392",
+  "measurement": "MEAS:003083",
   "start": 1096,
   "end": 1246
  },
@@ -2013,37 +2035,15 @@
   "answer": "20%",
   "unit": "%",
   "options": [
-   "10-15%",
+   "12%",
    "33%",
    "20%",
    "22 – 23%"
   ],
   "correct": 2,
-  "measurement": "MEAS:002028",
+  "measurement": "MEAS:002072",
   "start": 4015,
   "end": 4093
- },
- {
-  "id": "CARD:TMM:CH_02:PARA_229",
-  "clause": "CLAUSE:TMM:CH_02:PARA_229",
-  "manual": "TMM",
-  "para": "229",
-  "page": 90,
-  "chapter": "Chapter 2 — Tamping Machines & Dynamic Track Stabilizer (DTS)",
-  "sentence": "In case of non-electrified section, permanent level pegs should be provided at every 5th station (50 m approx.).",
-  "front": "In case of non-electrified section, permanent level pegs should be provided at every 5th station (_____ approx.).",
-  "answer": "50 m",
-  "unit": "m",
-  "options": [
-   "43.3 metre",
-   "60 m",
-   "50 m",
-   "30 m"
-  ],
-  "correct": 2,
-  "measurement": "MEAS:002201",
-  "start": 33782,
-  "end": 33894
  },
  {
   "id": "CARD:TMM:CH_03:PARA_303",
@@ -2057,13 +2057,13 @@
   "answer": "1.8 to 4.0 meters",
   "unit": "m",
   "options": [
-   "4.5 m",
+   "3.5 meter",
    "1.8 to 4.0 meters",
    "3.6m",
    "4 m"
   ],
   "correct": 1,
-  "measurement": "MEAS:002219",
+  "measurement": "MEAS:002163",
   "start": 1620,
   "end": 1702
  },
@@ -2085,7 +2085,7 @@
    "3700mm"
   ],
   "correct": 1,
-  "measurement": "MEAS:002231",
+  "measurement": "MEAS:002175",
   "start": 1648,
   "end": 1812
  },
@@ -2107,7 +2107,7 @@
    "40 kmph"
   ],
   "correct": 2,
-  "measurement": "MEAS:002248",
+  "measurement": "MEAS:002192",
   "start": 8360,
   "end": 8479
  },
@@ -2129,7 +2129,7 @@
    "4150 mm"
   ],
   "correct": 3,
-  "measurement": "MEAS:002257",
+  "measurement": "MEAS:002201",
   "start": 234,
   "end": 341
  },
@@ -2151,7 +2151,7 @@
    "3.4m"
   ],
   "correct": 2,
-  "measurement": "MEAS:002260",
+  "measurement": "MEAS:002204",
   "start": 1990,
   "end": 2213
  },
@@ -2173,7 +2173,7 @@
    "12.60m"
   ],
   "correct": 2,
-  "measurement": "MEAS:002271",
+  "measurement": "MEAS:002206",
   "start": 579,
   "end": 746
  },
@@ -2190,12 +2190,12 @@
   "unit": "m",
   "options": [
    "3meters",
-   "2 meters",
-   "1.5 to 2.0 metres",
-   "1.5 m"
+   "2 m",
+   "1.5 meters",
+   "1.5 to 2.0 metres"
   ],
-  "correct": 2,
-  "measurement": "MEAS:002320",
+  "correct": 3,
+  "measurement": "MEAS:002255",
   "start": 1509,
   "end": 1641
  },
@@ -2217,7 +2217,7 @@
    "15.2 m"
   ],
   "correct": 2,
-  "measurement": "MEAS:002330",
+  "measurement": "MEAS:002265",
   "start": 685,
   "end": 741
  },
@@ -2233,13 +2233,13 @@
   "answer": "1 meter",
   "unit": "m",
   "options": [
+   "1.5 to 2.0 metres",
    "0.75m",
    "0.5m",
-   "1.5 m",
    "1 meter"
   ],
   "correct": 3,
-  "measurement": "MEAS:002337",
+  "measurement": "MEAS:002272",
   "start": 1373,
   "end": 1477
  },
@@ -2261,7 +2261,7 @@
    "50kmph"
   ],
   "correct": 3,
-  "measurement": "MEAS:002341",
+  "measurement": "MEAS:002276",
   "start": 565,
   "end": 679
  },
@@ -2277,13 +2277,13 @@
   "answer": "30t",
   "unit": "t",
   "options": [
+   "15.0 t",
    "15 tonne",
-   "50 tonne",
    "30t",
-   "50 tonnes"
+   "62t"
   ],
   "correct": 2,
-  "measurement": "MEAS:002345",
+  "measurement": "MEAS:002280",
   "start": 698,
   "end": 818
  },
@@ -2305,7 +2305,7 @@
    "30 tonnes"
   ],
   "correct": 2,
-  "measurement": "MEAS:002369",
+  "measurement": "MEAS:002304",
   "start": 3413,
   "end": 3653
  },
@@ -2323,11 +2323,11 @@
   "options": [
    "45 degrees",
    "1.25 degree",
-   "15 Degree",
-   "5 degrees"
+   "5 degrees",
+   "70 degrees"
   ],
-  "correct": 3,
-  "measurement": "MEAS:002375",
+  "correct": 2,
+  "measurement": "MEAS:002310",
   "start": 406,
   "end": 489
  },
@@ -2343,13 +2343,13 @@
   "answer": "25 kmph",
   "unit": "kmph",
   "options": [
+   "22 kmph",
    "20 kmph",
    "25 kmph",
-   "2–16 kmph",
    "30 kmph"
   ],
-  "correct": 1,
-  "measurement": "MEAS:002407",
+  "correct": 2,
+  "measurement": "MEAS:002336",
   "start": 1743,
   "end": 1810
  },
@@ -2366,12 +2366,12 @@
   "unit": "deg",
   "options": [
    "45 degrees",
-   "15 Degree",
    "1.25 degree",
-   "5 degrees"
+   "5 degrees",
+   "70 degrees"
   ],
-  "correct": 2,
-  "measurement": "MEAS:002416",
+  "correct": 1,
+  "measurement": "MEAS:002345",
   "start": 1566,
   "end": 1699
  },
@@ -2387,13 +2387,13 @@
   "answer": "10 km",
   "unit": "km",
   "options": [
-   "8 Km",
    "2 km",
    "30-50 km",
-   "10 km"
+   "10 km",
+   "500 km"
   ],
-  "correct": 3,
-  "measurement": "MEAS:002436",
+  "correct": 2,
+  "measurement": "MEAS:002379",
   "start": 901,
   "end": 977
  },
@@ -2411,11 +2411,11 @@
   "options": [
    "10 km",
    "30-50 km",
-   "500 km",
-   "8 Km"
+   "2 km",
+   "500 km"
   ],
   "correct": 1,
-  "measurement": "MEAS:002445",
+  "measurement": "MEAS:002388",
   "start": 0,
   "end": 138
  },
@@ -2432,12 +2432,12 @@
   "unit": "day",
   "options": [
    "7 days",
+   "15 days",
    "6 days",
-   "04 Days",
-   "10 days"
+   "60 days"
   ],
   "correct": 0,
-  "measurement": "MEAS:002452",
+  "measurement": "MEAS:002395",
   "start": 3567,
   "end": 3653
  },
@@ -2459,7 +2459,7 @@
    "8 Kmph"
   ],
   "correct": 2,
-  "measurement": "MEAS:002505",
+  "measurement": "MEAS:002448",
   "start": 18078,
   "end": 18193
  },
@@ -2477,11 +2477,11 @@
   "options": [
    "3%",
    "12%",
-   "10-15%",
-   "7%"
+   "7%",
+   "20%"
   ],
   "correct": 0,
-  "measurement": "MEAS:002519",
+  "measurement": "MEAS:002462",
   "start": 10268,
   "end": 10343
  },
@@ -2503,7 +2503,7 @@
    "15 m"
   ],
   "correct": 2,
-  "measurement": "MEAS:002571",
+  "measurement": "MEAS:002514",
   "start": 2317,
   "end": 2363
  },
@@ -2519,13 +2519,13 @@
   "answer": "15 days",
   "unit": "day",
   "options": [
-   "07 days",
    "6 days",
-   "10 days",
-   "15 days"
+   "15 days",
+   "7 days",
+   "60 days"
   ],
-  "correct": 3,
-  "measurement": "MEAS:002632",
+  "correct": 1,
+  "measurement": "MEAS:002546",
   "start": 2864,
   "end": 2974
  },
@@ -2547,7 +2547,7 @@
    "22 Kmph"
   ],
   "correct": 1,
-  "measurement": "MEAS:002719",
+  "measurement": "MEAS:002633",
   "start": 1124,
   "end": 1303
  },
@@ -2569,7 +2569,7 @@
    "30 to 50 kmph"
   ],
   "correct": 1,
-  "measurement": "MEAS:002725",
+  "measurement": "MEAS:002639",
   "start": 2302,
   "end": 2539
  },
@@ -2585,13 +2585,13 @@
   "answer": "12 hours",
   "unit": "hour",
   "options": [
-   "10 Hours",
-   "08 Hours",
-   "24 hour",
+   "5 hours",
+   "36 hours",
+   "6 hours",
    "12 hours"
   ],
   "correct": 3,
-  "measurement": "MEAS:002874",
+  "measurement": "MEAS:002657",
   "start": 1132,
   "end": 1204
  },
@@ -2613,7 +2613,7 @@
    "2 years"
   ],
   "correct": 2,
-  "measurement": "MEAS:002882",
+  "measurement": "MEAS:002659",
   "start": 621,
   "end": 733
  },
@@ -2635,7 +2635,7 @@
    "15-20 mm"
   ],
   "correct": 3,
-  "measurement": "MEAS:001356",
+  "measurement": "MEAS:001400",
   "start": 2409,
   "end": 2524
  },
@@ -2657,7 +2657,7 @@
    "95 mm"
   ],
   "correct": 2,
-  "measurement": "MEAS:001358",
+  "measurement": "MEAS:001402",
   "start": 812,
   "end": 957
  },
@@ -2679,7 +2679,7 @@
    "5 years"
   ],
   "correct": 2,
-  "measurement": "MEAS:001476",
+  "measurement": "MEAS:001520",
   "start": 371,
   "end": 515
  },
@@ -2701,7 +2701,7 @@
    "500 mm"
   ],
   "correct": 0,
-  "measurement": "MEAS:001633",
+  "measurement": "MEAS:001677",
   "start": 0,
   "end": 259
  },
@@ -2723,7 +2723,7 @@
    "60%"
   ],
   "correct": 2,
-  "measurement": "MEAS:001571",
+  "measurement": "MEAS:001615",
   "start": 662,
   "end": 752
  },
@@ -2745,7 +2745,7 @@
    "30 mm"
   ],
   "correct": 1,
-  "measurement": "MEAS:001606",
+  "measurement": "MEAS:001650",
   "start": 322,
   "end": 401
  },
@@ -2767,7 +2767,7 @@
    "165 mm"
   ],
   "correct": 2,
-  "measurement": "MEAS:001628",
+  "measurement": "MEAS:001672",
   "start": 22,
   "end": 194
  },
@@ -2789,7 +2789,7 @@
    "100%"
   ],
   "correct": 2,
-  "measurement": "MEAS:001632",
+  "measurement": "MEAS:001676",
   "start": 273,
   "end": 365
  },
@@ -2811,7 +2811,7 @@
    "110 mm"
   ],
   "correct": 2,
-  "measurement": "MEAS:001713",
+  "measurement": "MEAS:001757",
   "start": 321,
   "end": 519
  },
@@ -2833,7 +2833,7 @@
    "3 mm"
   ],
   "correct": 1,
-  "measurement": "MEAS:001807",
+  "measurement": "MEAS:001851",
   "start": 183,
   "end": 292
  },
@@ -2855,7 +2855,7 @@
    "145 mm"
   ],
   "correct": 0,
-  "measurement": "MEAS:001823",
+  "measurement": "MEAS:001867",
   "start": 192,
   "end": 374
  }

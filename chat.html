@@ -248,6 +248,9 @@
       } else {
         h += '<ul>' + r.points.map(function (p) { return '<li>' + hl(p.text, q) + '</li>'; }).join('') + '</ul>';
       }
+      (r.alsoSee || []).filter(function (p) { return p.annexure; }).forEach(function (p) {
+        h += '<div class="muted" style="margin-top:6px">The same item in ' + esc(p.cite.label) + '</div><ul><li>' + hl(p.text, q) + ' ' + citeBtn(p.cite) + '</li></ul>';
+      });
       (r.ownedTables || []).forEach(function (O) {
         h += '<div class="muted" style="margin-top:6px">Table in this paragraph (page ' + esc(O.page) + ')' + (O.context ? ': <b>' + esc(O.context) + '</b>' : '') + '</div><table class="tb"><thead><tr>' + O.columns.map(function (c) { return '<th>' + esc(c) + '</th>'; }).join('') + '</tr></thead><tbody>' +
              O.rows.map(function (row) { return '<tr>' + row.cells.map(function (c, i) { return '<td' + (row.hit[i] ? ' class="hit"' : '') + '>' + esc(c) + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
@@ -258,7 +261,8 @@
            '<button type="button" data-fb="up" title="Helpful">👍</button><button type="button" data-fb="down" title="Not helpful">👎</button><span class="fbnote"></span></div>';
       var more = '';
       if (r.values && r.values.length) more += '<div class="muted">Values in those sentences (machine-extracted)</div><ul class="vals">' + r.values.map(function (v) { return '<li>' + (v.quantity ? '<b>' + esc(v.quantity) + '</b>: ' : '') + esc(v.text) + '</li>'; }).join('') + '</ul>';
-      if (r.alsoSee && r.alsoSee.length) more += '<div class="muted" style="margin-top:6px">Also relevant</div><ul>' + r.alsoSee.map(function (p) { return '<li>' + hl(p.text, q) + ' ' + citeBtn(p.cite) + '</li>'; }).join('') + '</ul>';
+      var also = (r.alsoSee || []).filter(function (p) { return !p.annexure; });
+      if (also.length) more += '<div class="muted" style="margin-top:6px">Also relevant</div><ul>' + also.map(function (p) { return '<li>' + hl(p.text, q) + ' ' + citeBtn(p.cite) + '</li>'; }).join('') + '</ul>';
       if (r.subparas && r.subparas.length) more += '<div class="muted" style="margin-top:6px">This paragraph continues in its sub-paragraphs</div><div class="chips">' + r.subparas.map(function (s) { return chip(s.para, 'What does ' + r.primary.alias + ' Para ' + s.para + ' say?'); }).join('') + '</div>';
       if (r.drawings && r.drawings.length) more += '<div class="muted" style="margin-top:6px">Drawings cited here that are in this collection: ' + r.drawings.map(function (d) { return '<a href="' + esc(encodeURI(d.file)) + '" target="_blank" rel="noopener">T-' + esc(d.number) + '</a>'; }).join(' ') + '</div>';
       if (r.caveat) more += '<div class="caveat" style="margin-top:6px">' + esc(r.caveat) + '</div>';

@@ -29,13 +29,13 @@
  },
  "IRPWM": {
   "paragraphs": 421,
-  "cards": 61,
+  "cards": 62,
   "chapters": 15,
   "chapters_without_cards": [
    "CH_13",
    "CH_14"
   ],
-  "share_of_paragraphs_with_a_card": 0.145
+  "share_of_paragraphs_with_a_card": 0.147
  },
  "STMM": {
   "paragraphs": 258,
@@ -57,7 +57,7 @@
  },
  "TMM": {
   "paragraphs": 171,
-  "cards": 28,
+  "cards": 27,
   "chapters": 12,
   "chapters_without_cards": [
    "CH_01",
@@ -65,7 +65,7 @@
    "CH_11",
    "CH_12"
   ],
-  "share_of_paragraphs_with_a_card": 0.164
+  "share_of_paragraphs_with_a_card": 0.158
  },
  "USFD": {
   "paragraphs": 192,

@@ -769,3 +769,44 @@ Checks: a dialogue test for the utility vehicle question, a sweep over the table
 - One grader (Claude), and the question set is the one the fixes were made for.
 - The heading rule finds only short lines ending in ":". A heading printed as a sentence, or placed below its table, is not picked up.
 - The across-cases rule is triggered by keywords.
+
+### 37.50 Paragraph boundaries and form items: R3 and R11 — 2026-10-06
+
+**Why.** The two answers still partial after §37.49 had different causes.
+- **R3:** the text "Lateral wear is to be measured at 13 to 15 mm below the rail top table" was missing from IRPWM Para 702. The paragraph parser (`scripts/clause_parser.py`) ended a paragraph at any bold line starting with "Section", "Part" or "Chapter". The bold table header "Section | Category of track | Lateral wear" therefore cut Para 702 at page 372.
+  - Its tail (pages 373–374) was lost from the paragraph and survived only as three "loose text" units: sub-paras (c) to (f) and part (2), Criteria for Renewal of Sleepers.
+  - The same false break cut 8 other paragraphs: IRPWM 229, 516 and 720; TMM 214, 505 and 517 (all lost their tails), plus TMM 712 and 810 (cut short by accident).
+- **R11:** where to mark station '0' is not in Para 429 at all. It is in the paragraph's inspection form, IRPWM Annexure 4/3, item 19 "Track behind Crossing on Turnout side", which the chat never consulted.
+
+**What changed.**
+- **Banner rule:** a banner now needs a designator, as in "CHAPTER – 7", "PART – B" or "SECTION – II". Twelve false banners in IRPWM, TMM and AT Weld no longer end paragraphs.
+- **TMM annexure headings:** headings numbered with a dot ("Annexure 7.3", "ANNEXURE 8.17 [ACS-2]") now also end a paragraph. Before, the old pattern rejected them because of the dot. The heading counts only when the line before it does not run on into it: "… given at / Annexure 2.4" is a reference, not a heading.
+- **Effect on paragraphs:**
+  - 7 paragraphs got their tails back: IRPWM 229, 516, 702 and 720; TMM 214, 505 and 517.
+  - 10 TMM paragraphs stopped absorbing their annexures, which are already separate units: 229, 316, 424, 519, 712, 810, 904, 1108 and 1216. For example, Para 1216 went from 35,317 to 1,144 characters.
+  - The 14 loose-text units that held the lost tails are gone. No new ones appeared.
+- **Chat (`lib/rdso_chat.js`, new `annexItem`):** when a question shares 5 or more consecutive words with an annexure of the same manual, the chat shows the numbered item holding them, verbatim and cited to the annexure. The item must also contain 2 more of the question's words, and contents lists and front matter are excluded.
+  - It fires on R11 and on none of the 379 evaluation questions. An earlier 4-word version fired on 20, all noise.
+  - `chat.html` and `index.html` show the item in the answer, under "The same item in IRPWM Annexure 4/3".
+  - `engine.clauseText` now also joins annexure passages.
+
+**Measured.**
+- 20 real questions: **20 correct, 0 partial, 0 wrong** (§37.49: 18/2/0). All 20 answers were diffed before and after. R2 is still correct but now also shows three unrelated GMT service-life lines from the now complete Para 702. R10 lost an unrelated line.
+- Gate Y: 368 answered, 41 refused (was 367/42), 0 violations.
+- pytest: 285 passed, including 5 new tests in `tests/test_paragraph_tails.py`. Gates A to AA all pass. Browser suites: 18/18. Rebuild is reproducible.
+- **Measurements, 5,576 → 5,267.**
+  - The about 380 values that disappeared were all printed in TMM Annexures 7.x, 8.x and 12.x but cited as paragraph values; for example, 130 were cited as "TMM Para 810".
+  - The repaired paragraphs gained 67 values.
+  - Gate S's floor moved from 5,500 to 5,200, with the reason in `validate_measurements.py`.
+  - Annexure values are not extracted as measurements yet.
+- **Retrieval baseline re-written (`eval_retrieval.py --write`).**
+  - The old baseline predated earlier improvements: test wrong refusals had already fallen from 7 to 3, and dev recall@5 had risen from 0.962 to 0.976.
+  - The one drop from this change is test Q0049 (four strokes of a diesel engine). TMM Paras 1203 and 1204 now score the same (34.08), and the tie falls the other way, so the expected paragraph is 2nd. Test nl MRR goes from 0.925 to 0.913.
+  - Q0050 and Q0339 each moved up one place.
+- Graph: 4,862 → 4,861 nodes (one tolerance node) and 7,343 → 7,290 edges. The lost edges are tolerance links from the shrunk TMM paragraphs. Para 702 gains links to Paras 717 and 721.
+
+**Limits.**
+- The form-item rule has one known positive (R11) and was written for it. It is a narrow, keyword-free rule, but a reviewer should watch it on new questions.
+- The form-item citation gives the annexure's first page (230); item 19 is on page 233.
+- The paragraph's legacy tolerance list still keeps only 5 values.
+- One grader (Claude).
