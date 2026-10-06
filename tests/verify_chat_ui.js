@@ -214,12 +214,12 @@ async function main() {
 
     console.log("\n--- TEST 7d: concept questions: kinds and parts of a concept, where it is named ---");
     const t7d = await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); const res = {};
-      for (const [k, q] of [['types', 'What are the types of sleepers?'], ['where', 'Which paragraphs mention fish plates?']]) {
+      for (const [k, q] of [['types', 'What are the types of sleepers?'], ['where', 'Which paragraphs mention fish plates?'], ['detect', 'How is a flaw detected?']]) {
         const i = document.getElementById('q'); i.value = q; document.getElementById('f').dispatchEvent(new Event('submit', { cancelable: true })); await w(400);
         const bots = document.querySelectorAll('.msg.bot'); const last = bots[bots.length - 1]; res[k] = { items: last.querySelectorAll('ol.rel li').length, quote: (last.querySelector('ol.rel .muted') || {}).innerText || '', lead: (last.querySelector('.lead') || {}).innerText || '', note: /curated/.test(last.innerText), cites: last.querySelectorAll('ol.rel .cite, ol.rel button').length }; }
       return res; })()`);
     console.log(t7d);
-    if (t7d.types.items < 3 || !/Sleeper has \d+ kinds/.test(t7d.types.lead) || !/“.+”/.test(t7d.types.quote) || !t7d.types.note || t7d.where.items < 3 || !/Fish plate is named \d+ times/.test(t7d.where.lead)) throw new Error('Test 7d failed ' + JSON.stringify(t7d));
+    if (t7d.types.items < 3 || !/Sleeper has \d+ kinds/.test(t7d.types.lead) || !/“.+”/.test(t7d.types.quote) || !t7d.types.note || t7d.where.items < 3 || !/Fish plate is named \d+ times/.test(t7d.where.lead) || t7d.detect.items < 2 || !/ways? to detect/.test(t7d.detect.lead)) throw new Error('Test 7d failed ' + JSON.stringify(t7d));
 
     console.log("\n--- TEST 8: history, saved answers, copy, keyboard ---");
     const t8 = await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); const out = {};

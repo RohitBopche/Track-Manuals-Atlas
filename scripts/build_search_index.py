@@ -207,8 +207,19 @@ def main() -> int:
         if r["type"] == "DISCUSSED_WITH":
             related.append([r["from"][4:], r["to"][4:], r["support"], r["from_paragraphs"], r["to_paragraphs"], [[sx[e["source"]], e["sentence"][0], e["sentence"][0] + 1] for e in r["examples"]]])
     taxo = [[r["type"], r["from"][4:], r["to"][4:]] for r in rels if r["basis"] == "curated"]
+    typed_rows = ld("entity_typed_relations.jsonl")
+    for r in typed_rows:
+        if r["source"] not in sx:
+            sx[r["source"]] = len(srcs); srcs.append(r["source"])
+    agg: dict[tuple, list] = {}
+    for r in sorted(typed_rows, key=lambda r: (r["type"], r["from"], r["to"], not r["source"].startswith("CLAUSE:"), r["source"], r["sentence"][0])):
+        a = agg.setdefault((r["type"], r["from"][4:], r["to"][4:]), [r["type"], r["from"][4:], r["to"][4:], 0, []])
+        a[3] += 1
+        if len(a[4]) < 4:
+            a[4].append([sx[r["source"]], r["from_span"][0], r["from_span"][1]])
+    typed = sorted(agg.values(), key=lambda a: (a[0], a[1], a[2]))
     ent_js = {"s": srcs, "c": {e["id"][4:]: {"l": e["label"], "k": e["class"], "a": e["aliases"], "n": e["mentions"], "p": e["paragraphs"], "m": e["by_manual"]} for e in ents},
-              "occ": occ, "limits": limits, "rel": related, "tax": taxo}
+              "occ": occ, "limits": limits, "rel": related, "tax": taxo, "typed": typed}
     (ROOT / "data" / "search" / "entities.js").write_text("(typeof window!=='undefined'?window:globalThis).RDSO_ENTITIES=" + json.dumps(ent_js, separators=(",", ":"), sort_keys=True, ensure_ascii=False) + ";\n", encoding="utf-8")
     return 0
 

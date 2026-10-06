@@ -50,5 +50,14 @@ entities.ids().forEach(id => { const name = globalThis.RDSO_ENTITIES.c[id].a[0];
     const r = C.create(engine, { extras: globalThis.RDSO_CLAUSE_EXTRAS, xrefs: globalThis.RDSO_CROSSREFS, tables: globalThis.RDSO_TABLES, editions: globalThis.RDSO_EDITIONS, entities, graph }).ask(q);
     if (r.kind !== 'relation' || r.mode !== 'concept') { if (i === 0) out.violations.push({ q, what: 'concept', why: 'not understood as a concept question: ' + r.kind }); return; }
     out.concepts++; (r.rows || []).forEach(x => { out.fragments++; check(q, 'concept quote', String(x.quote).replace(/^\u2026/, ''), x.at && x.at.clause); }); }); });
+// typed relations: every relation read from sentences is asked about both ways; the answer must come back as a concept answer whose rows quote their paragraph and name the other concept
+out.typed = 0;
+const asked = {}, nm = id => globalThis.RDSO_ENTITIES.c[id].a[0], FORMS = { DETECTED_BY: [t => 'How is ' + nm(t[1]) + ' detected?', t => 'What can ' + nm(t[2]) + ' detect?'], RESPONSIBLE_FOR: [t => 'Who is responsible for ' + nm(t[2]) + '?', t => 'What is ' + nm(t[1]) + ' responsible for?'],
+  PERFORMED_WITH: [t => 'What machine is used for ' + nm(t[1]) + '?', t => 'What is the ' + nm(t[2]) + ' used for?'], CAUSES: [t => 'What causes ' + nm(t[2]) + '?', t => 'What does ' + nm(t[1]) + ' cause?'] };
+globalThis.RDSO_ENTITIES.typed.forEach(t => FORMS[t[0]].forEach((f, i) => { const q = f(t); if (asked[q]) return; asked[q] = 1;
+  const r = C.create(engine, { extras: globalThis.RDSO_CLAUSE_EXTRAS, xrefs: globalThis.RDSO_CROSSREFS, tables: globalThis.RDSO_TABLES, editions: globalThis.RDSO_EDITIONS, entities, graph }).ask(q);
+  if (r.kind !== 'relation' || r.mode !== 'concept' || !(r.rows || []).length) { out.violations.push({ q, what: 'typed', why: 'not answered as a typed relation: ' + r.kind + ' ' + (r.mode || '') }); return; }
+  out.typed++; const want = i === 0 ? t[2 - 0 + (t[0] === 'DETECTED_BY' || t[0] === 'PERFORMED_WITH' ? 0 : -1) + 0] : null;
+  r.rows.forEach(x => { out.fragments++; check(q, 'typed quote', String(x.quote).replace(/^\u2026/, ''), x.at && x.at.clause); }); }));
 if (process.env.RDSO_SEED_BAD) { check('seeded', 'seeded', 'The maximum permissible speed on every curve is 999 Kmph.', 'CLAUSE:IRPWM:CH_06:PARA_616'); check('seeded', 'seeded', 'Casual rail renewal shall be done for replacement of defective rail', 'CLAUSE:IRPWM:CH_06:PARA_616'); }   // self-test: a fabricated sentence must be caught, a real one not
 console.log(JSON.stringify(out));

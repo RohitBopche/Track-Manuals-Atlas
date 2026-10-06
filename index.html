@@ -274,6 +274,10 @@
         (pt.up.length ? '<div class="sub">' + pt.up.map(function (u) { return (u.type === 'IS_A' ? 'A kind of ' : 'A part of ') + '<button type="button" class="chip" data-focus="ENT:' + esc(u.id) + '">' + esc(u.label) + '</button>'; }).join(' ') + '</div>' : '') +
         (pt.kinds.length ? '<div class="sub">Kinds: ' + pt.kinds.map(function (x) { return cc(x); }).join('') + '</div>' : '') +
         (pt.parts.length ? '<div class="sub">Parts: ' + pt.parts.map(function (x) { return cc(x); }).join('') + '</div>' : '') +
+        [['DETECTED_BY', 'from', 'Detected by'], ['DETECTED_BY', 'to', 'Detects'], ['RESPONSIBLE_FOR', 'from', 'Responsible for'], ['RESPONSIBLE_FOR', 'to', 'Done by'], ['PERFORMED_WITH', 'from', 'Done with'], ['PERFORMED_WITH', 'to', 'Used for'], ['CAUSES', 'from', 'Causes'], ['CAUSES', 'to', 'Caused by']].map(function (q) {
+          var T = EI.typed(n.cid, q[0], q[1]); if (!T.rows.length) return '';
+          T.rows.forEach(function (x) { hot['ENT:' + x.id] = 1; clinks.push([n.id, 'ENT:' + x.id, true]); });
+          return '<div class="sub"><b>' + q[2] + ':</b> ' + T.rows.slice(0, 6).map(function (x) { return cc(x, ' · ' + x.count); }).join('') + '</div>'; }).join('') +
         (rel.rows.length ? '<div class="sub">Named in the same sentence as: ' + rel.rows.map(function (x) { return cc(x, ' · ' + x.support); }).join('') + '</div>' : '') +
         '<div class="acts"><button class="iconbtn" data-showwhere="' + esc(n.cid) + '">Show the ' + paras.length + ' paragraphs in the graph</button><button class="iconbtn" data-ask="' + esc('Which paragraphs mention ' + c2.a[0] + '?') + '">Ask where it is mentioned</button></div>' +
         '<div class="sub" style="margin-top:6px">Concepts are a curated list; where a manual names one is found in its text. Kinds and parts are curated, not taken from the manuals.</div>';

@@ -1,0 +1,1950 @@
+{
+ "about": "Hand audit of typed relations (scripts/build_typed_relations.py), one reviewer who is also the author of the extractor, so not independent. precision: every extracted relation was read in context and judged (correct = the sentence states that relation between those two concepts). The first version extracted 88 relations of which 71 were correct (80.7%); the patterns were then tightened using exactly those errors, so the figure after tightening is optimistic: it was measured on the same sentences it was tuned on. recall: 66 sentences drawn at random from the sentences that name a fitting pair of concepts (22 for each of three relation types; CAUSES had no candidate sentences under the pair definition used), judged for whether a relation of that type is stated, then checked against what was extracted. The sample is small; treat the recall as rough.",
+ "first_version": {
+  "extracted": 88,
+  "correct": 71
+ },
+ "precision_after_tightening": {
+  "extracted": 65,
+  "correct": 63,
+  "by_type": {
+   "CAUSES": {
+    "extracted": 6,
+    "correct": 5
+   },
+   "DETECTED_BY": {
+    "extracted": 14,
+    "correct": 14
+   },
+   "PERFORMED_WITH": {
+    "extracted": 17,
+    "correct": 16
+   },
+   "RESPONSIBLE_FOR": {
+    "extracted": 28,
+    "correct": 28
+   }
+  }
+ },
+ "recall_sample": {
+  "sentences": 66,
+  "relation_stated": 18,
+  "stated_and_extracted": 5,
+  "by_type": {
+   "DETECTED_BY": {
+    "stated": 12,
+    "extracted": 5
+   },
+   "RESPONSIBLE_FOR": {
+    "stated": 4,
+    "extracted": 0
+   },
+   "PERFORMED_WITH": {
+    "stated": 2,
+    "extracted": 0
+   }
+  }
+ },
+ "extracted_rows": [
+  {
+   "type": "CAUSES",
+   "from": "ENT:fastening",
+   "to": "ENT:buckling",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_116",
+   "sentence": [
+    2560,
+    2678
+   ],
+   "from_span": [
+    2605,
+    2614
+   ],
+   "to_span": [
+    2635,
+    2643
+   ],
+   "correct": true
+  },
+  {
+   "type": "CAUSES",
+   "from": "ENT:fastening",
+   "to": "ENT:creep",
+   "source": "CLAUSE:IRPWM:CH_03:PARA_351",
+   "sentence": [
+    412,
+    532
+   ],
+   "from_span": [
+    457,
+    467
+   ],
+   "to_span": [
+    489,
+    494
+   ],
+   "correct": false
+  },
+  {
+   "type": "CAUSES",
+   "from": "ENT:liner",
+   "to": "ENT:rail_fracture",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_613",
+   "sentence": [
+    3777,
+    4172
+   ],
+   "from_span": [
+    4047,
+    4052
+   ],
+   "to_span": [
+    4011,
+    4020
+   ],
+   "correct": true
+  },
+  {
+   "type": "CAUSES",
+   "from": "ENT:skid",
+   "to": "ENT:rail_fracture",
+   "source": "CLAUSE:USFD:CH_13:PARA_13_1_1",
+   "sentence": [
+    0,
+    525
+   ],
+   "from_span": [
+    176,
+    185
+   ],
+   "to_span": [
+    151,
+    160
+   ],
+   "correct": true
+  },
+  {
+   "type": "CAUSES",
+   "from": "ENT:weld_failure",
+   "to": "ENT:skid",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_617",
+   "sentence": [
+    4678,
+    5058
+   ],
+   "from_span": [
+    4884,
+    4896
+   ],
+   "to_span": [
+    4927,
+    4935
+   ],
+   "correct": true
+  },
+  {
+   "type": "CAUSES",
+   "from": "ENT:weld_failure",
+   "to": "ENT:skid",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_617",
+   "sentence": [
+    5366,
+    5467
+   ],
+   "from_span": [
+    5387,
+    5399
+   ],
+   "to_span": [
+    5430,
+    5438
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:probe",
+   "source": "CLAUSE:USFD:CH_09:PARA_9_5_1_2",
+   "sentence": [
+    233,
+    340
+   ],
+   "from_span": [
+    246,
+    251
+   ],
+   "to_span": [
+    333,
+    338
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:probe",
+   "source": "CLAUSE:USFD:CH_11:PARA_11_2",
+   "sentence": [
+    139,
+    350
+   ],
+   "from_span": [
+    338,
+    343
+   ],
+   "to_span": [
+    286,
+    292
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:FBW:CH_05:PARA_5_6_4_5",
+   "sentence": [
+    25,
+    169
+   ],
+   "from_span": [
+    109,
+    125
+   ],
+   "to_span": [
+    64,
+    82
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:FBW:CH_08:PARA_8_3",
+   "sentence": [
+    4444,
+    4551
+   ],
+   "from_span": [
+    4521,
+    4537
+   ],
+   "to_span": [
+    4476,
+    4494
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:IRPWM:CH_03:PARA_316",
+   "sentence": [
+    2730,
+    2902
+   ],
+   "from_span": [
+    2895,
+    2900
+   ],
+   "to_span": [
+    2839,
+    2857
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:IRPWM:CH_03:PARA_316",
+   "sentence": [
+    2902,
+    3106
+   ],
+   "from_span": [
+    3076,
+    3092
+   ],
+   "to_span": [
+    3024,
+    3042
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_615",
+   "sentence": [
+    0,
+    320
+   ],
+   "from_span": [
+    17,
+    32
+   ],
+   "to_span": [
+    55,
+    59
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:IRPWM:CH_15:PARA_1515",
+   "sentence": [
+    160,
+    318
+   ],
+   "from_span": [
+    285,
+    301
+   ],
+   "to_span": [
+    256,
+    260
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:IRPWM:CH_15:PARA_1515",
+   "sentence": [
+    318,
+    572
+   ],
+   "from_span": [
+    465,
+    481
+   ],
+   "to_span": [
+    391,
+    416
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:USFD:CH_01:PARA_1_2_1",
+   "sentence": [
+    376,
+    414
+   ],
+   "from_span": [
+    404,
+    409
+   ],
+   "to_span": [
+    376,
+    380
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:USFD:CH_01:PARA_1_2_1",
+   "sentence": [
+    1149,
+    1188
+   ],
+   "from_span": [
+    1178,
+    1183
+   ],
+   "to_span": [
+    1149,
+    1153
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:USFD:CH_01:PARA_1_2_2_2",
+   "sentence": [
+    490,
+    524
+   ],
+   "from_span": [
+    518,
+    523
+   ],
+   "to_span": [
+    490,
+    494
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:USFD:CH_14:PARA_14_1_1",
+   "sentence": [
+    452,
+    635
+   ],
+   "from_span": [
+    628,
+    633
+   ],
+   "to_span": [
+    572,
+    590
+   ],
+   "correct": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "from": "ENT:flaw",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:USFD:CH_14:PARA_14_1_1",
+   "sentence": [
+    697,
+    874
+   ],
+   "from_span": [
+    849,
+    865
+   ],
+   "to_span": [
+    797,
+    815
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:deep_screening",
+   "to": "ENT:ballast_cleaning_machine",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_637",
+   "sentence": [
+    5610,
+    6452
+   ],
+   "from_span": [
+    6304,
+    6318
+   ],
+   "to_span": [
+    6324,
+    6327
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:deep_screening",
+   "to": "ENT:ballast_cleaning_machine",
+   "source": "CLAUSE:TMM:CH_03:PARA_305",
+   "sentence": [
+    4645,
+    4851
+   ],
+   "from_span": [
+    4689,
+    4703
+   ],
+   "to_span": [
+    4742,
+    4745
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:fb_welding",
+   "to": "ENT:welding_plant",
+   "source": "CLAUSE:IRPWM:CH_03:PARA_312",
+   "sentence": [
+    157,
+    282
+   ],
+   "from_span": [
+    177,
+    195
+   ],
+   "to_span": [
+    218,
+    242
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:fb_welding",
+   "to": "ENT:welding_plant",
+   "source": "CLAUSE:IRPWM:CH_03:PARA_313",
+   "sentence": [
+    0,
+    155
+   ],
+   "from_span": [
+    109,
+    127
+   ],
+   "to_span": [
+    31,
+    55
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:rail_grinding",
+   "to": "ENT:grinding_machine",
+   "source": "CLAUSE:IRPWM:CH_04:PARA_433",
+   "sentence": [
+    0,
+    238
+   ],
+   "from_span": [
+    62,
+    70
+   ],
+   "to_span": [
+    16,
+    32
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:stabilisation",
+   "to": "ENT:dynamic_stabiliser",
+   "source": "CLAUSE:IRPWM:CH_07:PARA_708",
+   "sentence": [
+    769,
+    1063
+   ],
+   "from_span": [
+    810,
+    823
+   ],
+   "to_span": [
+    830,
+    833
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:stabilisation",
+   "to": "ENT:dynamic_stabiliser",
+   "source": "CLAUSE:IRPWM:CH_07:PARA_708",
+   "sentence": [
+    1429,
+    1880
+   ],
+   "from_span": [
+    1570,
+    1583
+   ],
+   "to_span": [
+    1590,
+    1593
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:stabilisation",
+   "to": "ENT:dynamic_stabiliser",
+   "source": "CLAUSE:IRPWM:CH_07:PARA_708",
+   "sentence": [
+    2239,
+    2816
+   ],
+   "from_span": [
+    2379,
+    2392
+   ],
+   "to_span": [
+    2399,
+    2402
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:stabilisation",
+   "to": "ENT:tamping_machine",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_637",
+   "sentence": [
+    6452,
+    6615
+   ],
+   "from_span": [
+    6512,
+    6525
+   ],
+   "to_span": [
+    6549,
+    6564
+   ],
+   "correct": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:tamping",
+   "to": "ENT:tamping_machine",
+   "source": "CLAUSE:TMM:CH_10:PARA_1009",
+   "sentence": [
+    2183,
+    2275
+   ],
+   "from_span": [
+    2209,
+    2216
+   ],
+   "to_span": [
+    2225,
+    2228
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:tamping",
+   "to": "ENT:tamping_machine",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_604",
+   "sentence": [
+    1891,
+    1994
+   ],
+   "from_span": [
+    1914,
+    1921
+   ],
+   "to_span": [
+    1953,
+    1960
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:tamping",
+   "to": "ENT:tamping_machine",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_623",
+   "sentence": [
+    1912,
+    2189
+   ],
+   "from_span": [
+    2085,
+    2092
+   ],
+   "to_span": [
+    2109,
+    2115
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:tamping",
+   "to": "ENT:tamping_machine",
+   "source": "CLAUSE:STMM:CH_20:PARA_2001",
+   "sentence": [
+    10,
+    245
+   ],
+   "from_span": [
+    155,
+    162
+   ],
+   "to_span": [
+    183,
+    198
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:tamping",
+   "to": "ENT:tamping_machine",
+   "source": "CLAUSE:TMM:CH_03:PARA_306",
+   "sentence": [
+    10376,
+    10588
+   ],
+   "from_span": [
+    10393,
+    10400
+   ],
+   "to_span": [
+    10415,
+    10421
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:tamping",
+   "to": "ENT:tamping_machine",
+   "source": "CLAUSE:TMM:CH_03:PARA_306",
+   "sentence": [
+    10730,
+    10790
+   ],
+   "from_span": [
+    10781,
+    10788
+   ],
+   "to_span": [
+    10755,
+    10761
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:tamping",
+   "to": "ENT:tamping_machine",
+   "source": "CLAUSE:TMM:CH_04:PARA_423",
+   "sentence": [
+    160,
+    226
+   ],
+   "from_span": [
+    186,
+    192
+   ],
+   "to_span": [
+    210,
+    216
+   ],
+   "correct": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "from": "ENT:welding",
+   "to": "ENT:welding_plant",
+   "source": "CLAUSE:FBW:CH_08:PARA_8_3",
+   "sentence": [
+    0,
+    150
+   ],
+   "from_span": [
+    23,
+    30
+   ],
+   "to_span": [
+    36,
+    67
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:aen",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_103",
+   "sentence": [
+    6917,
+    7021
+   ],
+   "from_span": [
+    6921,
+    6925
+   ],
+   "to_span": [
+    6939,
+    6949
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:aen",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_09:PARA_913",
+   "sentence": [
+    2996,
+    3175
+   ],
+   "from_span": [
+    3014,
+    3018
+   ],
+   "to_span": [
+    3026,
+    3033
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:aen",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_11:PARA_1127",
+   "sentence": [
+    1262,
+    1458
+   ],
+   "from_span": [
+    1266,
+    1270
+   ],
+   "to_span": [
+    1285,
+    1292
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:aen",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:STMM:CH_01:PARA_107",
+   "sentence": [
+    276,
+    378
+   ],
+   "from_span": [
+    280,
+    284
+   ],
+   "to_span": [
+    302,
+    312
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:aen",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:TMM:CH_01:PARA_113",
+   "sentence": [
+    288,
+    1136
+   ],
+   "from_span": [
+    934,
+    937
+   ],
+   "to_span": [
+    952,
+    959
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:aen",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:TMM:CH_01:PARA_114",
+   "sentence": [
+    632,
+    982
+   ],
+   "from_span": [
+    644,
+    648
+   ],
+   "to_span": [
+    655,
+    662
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:gang",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_114",
+   "sentence": [
+    4433,
+    4601
+   ],
+   "from_span": [
+    4506,
+    4515
+   ],
+   "to_span": [
+    4532,
+    4542
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:gang",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_114",
+   "sentence": [
+    5304,
+    5417
+   ],
+   "from_span": [
+    5357,
+    5366
+   ],
+   "to_span": [
+    5373,
+    5380
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:gang",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_114",
+   "sentence": [
+    8751,
+    9015
+   ],
+   "from_span": [
+    8766,
+    8775
+   ],
+   "to_span": [
+    8783,
+    8790
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:gang",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_115",
+   "sentence": [
+    47,
+    229
+   ],
+   "from_span": [
+    51,
+    57
+   ],
+   "to_span": [
+    64,
+    71
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:gang",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_10:PARA_1003",
+   "sentence": [
+    464,
+    580
+   ],
+   "from_span": [
+    491,
+    500
+   ],
+   "to_span": [
+    508,
+    515
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:gang",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_10:PARA_1004",
+   "sentence": [
+    4322,
+    4473
+   ],
+   "from_span": [
+    4326,
+    4335
+   ],
+   "to_span": [
+    4347,
+    4353
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:rdso",
+   "to": "ENT:welding",
+   "source": "CLAUSE:FBW:CH_05:PARA_5_6_1",
+   "sentence": [
+    0,
+    218
+   ],
+   "from_span": [
+    68,
+    72
+   ],
+   "to_span": [
+    25,
+    32
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_je",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_109",
+   "sentence": [
+    9520,
+    10014
+   ],
+   "from_span": [
+    9520,
+    9523
+   ],
+   "to_span": [
+    9540,
+    9547
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_je",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_604",
+   "sentence": [
+    5983,
+    6067
+   ],
+   "from_span": [
+    5993,
+    5999
+   ],
+   "to_span": [
+    6013,
+    6020
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_je",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_622",
+   "sentence": [
+    566,
+    707
+   ],
+   "from_span": [
+    586,
+    589
+   ],
+   "to_span": [
+    624,
+    634
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_je",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:TMM:CH_01:PARA_115",
+   "sentence": [
+    1478,
+    1522
+   ],
+   "from_span": [
+    1478,
+    1484
+   ],
+   "to_span": [
+    1497,
+    1504
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_je",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:TMM:CH_07:PARA_702",
+   "sentence": [
+    2335,
+    3068
+   ],
+   "from_span": [
+    2689,
+    2695
+   ],
+   "to_span": [
+    2718,
+    2725
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_way",
+   "to": "ENT:gauging",
+   "source": "CLAUSE:IRPWM:CH_07:PARA_717",
+   "sentence": [
+    2160,
+    2315
+   ],
+   "from_span": [
+    2167,
+    2176
+   ],
+   "to_span": [
+    2213,
+    2220
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_way",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_106",
+   "sentence": [
+    138,
+    396
+   ],
+   "from_span": [
+    138,
+    147
+   ],
+   "to_span": [
+    174,
+    184
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_way",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_106",
+   "sentence": [
+    14731,
+    15007
+   ],
+   "from_span": [
+    14829,
+    14838
+   ],
+   "to_span": [
+    14858,
+    14865
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_way",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_109",
+   "sentence": [
+    140,
+    355
+   ],
+   "from_span": [
+    143,
+    152
+   ],
+   "to_span": [
+    179,
+    189
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_way",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_109",
+   "sentence": [
+    9034,
+    9180
+   ],
+   "from_span": [
+    9096,
+    9105
+   ],
+   "to_span": [
+    9123,
+    9130
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_way",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_109",
+   "sentence": [
+    9343,
+    9465
+   ],
+   "from_span": [
+    9346,
+    9355
+   ],
+   "to_span": [
+    9374,
+    9381
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_way",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_109",
+   "sentence": [
+    9465,
+    9520
+   ],
+   "from_span": [
+    9468,
+    9477
+   ],
+   "to_span": [
+    9496,
+    9503
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_way",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_604",
+   "sentence": [
+    5577,
+    5657
+   ],
+   "from_span": [
+    5577,
+    5586
+   ],
+   "to_span": [
+    5605,
+    5612
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_way",
+   "to": "ENT:inspection",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_635",
+   "sentence": [
+    263,
+    474
+   ],
+   "from_span": [
+    270,
+    279
+   ],
+   "to_span": [
+    287,
+    294
+   ],
+   "correct": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "from": "ENT:sse_way",
+   "to": "ENT:usfd",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_106",
+   "sentence": [
+    9319,
+    9465
+   ],
+   "from_span": [
+    9319,
+    9328
+   ],
+   "to_span": [
+    9363,
+    9367
+   ],
+   "correct": true
+  }
+ ],
+ "recall_rows": [
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:IRPWM:CH_03:PARA_316",
+   "sentence": [
+    2730,
+    2902
+   ],
+   "extracted": true,
+   "stated": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_09:PARA_9_6_4",
+   "sentence": [
+    288,
+    439
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:IRPWM:CH_03:PARA_349",
+   "sentence": [
+    268,
+    771
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_09:PARA_9_5_1_2",
+   "sentence": [
+    616,
+    737
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_07:PARA_7_1",
+   "sentence": [
+    2898,
+    3398
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_04:PARA_4_1_1",
+   "sentence": [
+    5125,
+    5257
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_01:PARA_1_2_2",
+   "sentence": [
+    416,
+    571
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_08:PARA_8_14",
+   "sentence": [
+    783,
+    954
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_08:PARA_8_5_4",
+   "sentence": [
+    278,
+    368
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_04:PARA_4_1_2",
+   "sentence": [
+    1942,
+    1998
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:AT_WELD:CH_03:PARA_3_2",
+   "sentence": [
+    1887,
+    2064
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_03:PARA_3_2",
+   "sentence": [
+    485,
+    642
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:AT_WELD:CH_03:PARA_3_2",
+   "sentence": [
+    2239,
+    2355
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:IRPWM:CH_15:PARA_1515",
+   "sentence": [
+    160,
+    318
+   ],
+   "extracted": true,
+   "stated": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_07:PARA_7_0",
+   "sentence": [
+    171,
+    348
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_01:PARA_1_2_1",
+   "sentence": [
+    1149,
+    1188
+   ],
+   "extracted": true,
+   "stated": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:IRPWM:CH_03:PARA_316",
+   "sentence": [
+    2902,
+    3106
+   ],
+   "extracted": true,
+   "stated": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_10:PARA_10_2",
+   "sentence": [
+    12,
+    216
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_14:PARA_14_1_1",
+   "sentence": [
+    452,
+    635
+   ],
+   "extracted": true,
+   "stated": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_08:PARA_8_16",
+   "sentence": [
+    1046,
+    1312
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_08:PARA_8_7_1_4",
+   "sentence": [
+    51,
+    169
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "DETECTED_BY",
+   "source": "CLAUSE:USFD:CH_08:PARA_8_5_4",
+   "sentence": [
+    32,
+    274
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_106",
+   "sentence": [
+    15963,
+    16184
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_07:PARA_704",
+   "sentence": [
+    765,
+    1102
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_07:PARA_704",
+   "sentence": [
+    209,
+    358
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_10:PARA_1005",
+   "sentence": [
+    5910,
+    6044
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_06:PARA_637",
+   "sentence": [
+    741,
+    964
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_11:PARA_1122",
+   "sentence": [
+    222,
+    453
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_103",
+   "sentence": [
+    3057,
+    3215
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_106",
+   "sentence": [
+    7855,
+    8412
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:AT_WELD:CH_09:PARA_9",
+   "sentence": [
+    2399,
+    2659
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_111",
+   "sentence": [
+    2265,
+    2458
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:USFD:CH_06:PARA_6_4",
+   "sentence": [
+    729,
+    895
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_03:PARA_309",
+   "sentence": [
+    862,
+    1118
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_10:PARA_1004",
+   "sentence": [
+    7759,
+    8221
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:USFD:CH_11:PARA_11_4_1",
+   "sentence": [
+    18,
+    76
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_11:PARA_1124",
+   "sentence": [
+    3229,
+    3463
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:USFD:CH_07:PARA_7_1",
+   "sentence": [
+    1367,
+    1587
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_109",
+   "sentence": [
+    12860,
+    12911
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:STMM:CH_05:PARA_503",
+   "sentence": [
+    1584,
+    1795
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:IRPWM:CH_05:PARA_505",
+   "sentence": [
+    263,
+    368
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:USFD:CH_08:PARA_8_15_2",
+   "sentence": [
+    1541,
+    1696
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:USFD:CH_08:PARA_8_16",
+   "sentence": [
+    703,
+    892
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "RESPONSIBLE_FOR",
+   "source": "CLAUSE:STMM:CH_01:PARA_104",
+   "sentence": [
+    733,
+    790
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_02:PARA_213",
+   "sentence": [
+    599,
+    1036
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:STMM:CH_04:PARA_406",
+   "sentence": [
+    2149,
+    2189
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_03:PARA_305",
+   "sentence": [
+    0,
+    215
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_05:PARA_518",
+   "sentence": [
+    710,
+    1228
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_12:PARA_1216",
+   "sentence": [
+    16236,
+    16435
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:STMM:CH_04:PARA_406",
+   "sentence": [
+    1357,
+    1530
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_12:PARA_1216",
+   "sentence": [
+    6367,
+    6462
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_05:PARA_519",
+   "sentence": [
+    2424,
+    2785
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_12:PARA_1216",
+   "sentence": [
+    4707,
+    4907
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:IRPWM:CH_01:PARA_103",
+   "sentence": [
+    9511,
+    9725
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_10:PARA_1008",
+   "sentence": [
+    139,
+    261
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_03:PARA_304",
+   "sentence": [
+    657,
+    888
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_03:PARA_301",
+   "sentence": [
+    413,
+    643
+   ],
+   "extracted": false,
+   "stated": true
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_10:PARA_1008",
+   "sentence": [
+    305,
+    355
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_02:PARA_229",
+   "sentence": [
+    4699,
+    4937
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_11:PARA_1101",
+   "sentence": [
+    1498,
+    1584
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_12:PARA_1208",
+   "sentence": [
+    1982,
+    2027
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_02:PARA_203",
+   "sentence": [
+    3883,
+    4033
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:IRPWM:CH_07:PARA_708",
+   "sentence": [
+    4783,
+    4999
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_08:PARA_802",
+   "sentence": [
+    3709,
+    3998
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_01:PARA_115",
+   "sentence": [
+    2730,
+    3031
+   ],
+   "extracted": false,
+   "stated": false
+  },
+  {
+   "type": "PERFORMED_WITH",
+   "source": "CLAUSE:TMM:CH_06:PARA_602",
+   "sentence": [
+    1450,
+    1845
+   ],
+   "extracted": false,
+   "stated": false
+  }
+ ],
+ "notes_after": [
+  "alias CSM moved from the ballast cleaning machine concept to the tamping machine concept (it names a continuous tamping machine in the POH table and in 'Tamping Done by CSM'); one audited row was updated accordingly"
+ ]
+}

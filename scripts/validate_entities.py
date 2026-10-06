@@ -2,7 +2,7 @@
 """Gate AA: the entity layer is consistent with the manual text.
 
 Checks: lexicon valid; every mention span reads as an alias of its concept; counts add up; every relation endpoint exists;
-every co-mention example sentence holds both concepts; every limit sits in a sentence that names its concept; coverage floors per manual."""
+every co-mention example sentence holds both concepts; every limit sits in a sentence that names its concept; every typed relation has both concepts and its cue words inside one sentence and equals the set read by hand in eval/typed_relation_audit.json; coverage floors per manual."""
 from __future__ import annotations
 
 import json
@@ -81,12 +81,29 @@ def main() -> int:
         a, b = l["sentence"]
         if not (a <= at[0] < b) or l["entity"] not in {x[2] for x in ment_in[l["source"]] if a <= x[0] < b}:
             errs.append(f"limit {l['measurement']}: concept {l['entity']} not in the value's sentence")
+    typed = load("entity_typed_relations.jsonl")
+    allowed = {"DETECTED_BY", "RESPONSIBLE_FOR", "PERFORMED_WITH", "CAUSES"}
+    for r in typed:
+        t = text.get(r["source"])
+        if t is None or r["type"] not in allowed or r["from"] not in ids or r["to"] not in ids:
+            errs.append(f"typed relation with unknown type, source or concept: {r['type']} {r['source']}"); continue
+        a, b = r["sentence"]
+        for who, span in (("from", r["from_span"]), ("to", r["to_span"])):
+            if not (a <= span[0] < span[1] <= b) or (span[0], span[1], r[who]) not in set(ment_in[r["source"]]):
+                errs.append(f"typed {r['type']} {r['source']}: {who} concept is not a mention inside the sentence")
+        if not (a <= r["cue"][0] < r["cue"][1] <= b) or not t[r["cue"][0]:r["cue"][1]].strip():
+            errs.append(f"typed {r['type']} {r['source']}: cue words are not inside the sentence")
+    audit = json.loads((ROOT / "eval" / "typed_relation_audit.json").read_text(encoding="utf-8"))
+    audited = {(x["type"], x["from"], x["to"], x["source"], x["sentence"][0], x["from_span"][0], x["to_span"][0]) for x in audit["extracted_rows"]}
+    current = {(x["type"], x["from"], x["to"], x["source"], x["sentence"][0], x["from_span"][0], x["to_span"][0]) for x in typed}
+    if audited != current:
+        errs.append(f"typed relations changed since the hand audit: {len(current - audited)} new, {len(audited - current)} gone; read the new ones, update eval/typed_relation_audit.json")
     for man in ("IRPWM", "TMM", "STMM", "USFD", "AT_WELD", "FBW"):
         if len(per[man]) < MIN_CONCEPTS_PER_MANUAL:
             errs.append(f"{man}: only {len(per[man])} concepts found (floor {MIN_CONCEPTS_PER_MANUAL})")
     if errs:
         print("\n".join(errs[:25])); print(f"[FAIL] {len(errs)} problem(s)"); return 1
-    print(f"[PASS] {len(ents)} concepts, {len(mentions)} mentions, {len(rels)} relations, {len(limits)} limits; concepts per manual: " + ", ".join(f"{k} {len(v)}" for k, v in sorted(per.items())))
+    print(f"[PASS] {len(ents)} concepts, {len(mentions)} mentions, {len(rels)} relations, {len(limits)} limits, {len(typed)} typed relations; concepts per manual: " + ", ".join(f"{k} {len(v)}" for k, v in sorted(per.items())))
     return 0
 
 
