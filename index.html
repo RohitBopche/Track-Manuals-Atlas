@@ -19,7 +19,8 @@
   .title{font-weight:650;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:5px 12px;box-shadow:var(--shadow)}
   .iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:5px 10px;cursor:pointer;min-height:34px;box-shadow:var(--shadow);text-decoration:none;color:var(--ink);display:inline-block;font-size:.9rem}
   .iconbtn:hover,.iconbtn:focus-visible{background:var(--surface2)}
-  .legend{position:fixed;left:12px;top:54px;z-index:4;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:.78rem;color:var(--muted);box-shadow:var(--shadow);max-width:46vw}
+  .stack{position:fixed;left:12px;top:54px;z-index:4;display:flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:46vw}   /* legend and toggles never overlap, however the legend wraps */
+  .legend{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:.78rem;color:var(--muted);box-shadow:var(--shadow)}
   .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 8px;vertical-align:baseline}.legend i:first-child{margin-left:0}
   /* node card */
   #card{position:fixed;right:12px;top:56px;width:min(360px,92vw);max-height:calc(100dvh - 190px);overflow:auto;z-index:6;background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:12px 14px}
@@ -46,16 +47,18 @@
   #go:disabled{opacity:.5}
   .hint{text-align:center;color:var(--muted);font-size:.78rem;margin-top:-2px}
   #tip{position:fixed;z-index:8;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-size:.8rem;box-shadow:var(--shadow);display:none;max-width:280px}
-  @media (max-width:640px){.legend{display:none}#refsBox,#conBox{display:none}#card{top:50px}}
+  @media (max-width:640px){.stack{display:none}.corner.r{top:52px}#card{top:96px}}   /* phones: buttons go below the title instead of over it */
 </style>
 </head>
 <body>
 <canvas id="g" aria-label="Knowledge graph of the six railway manuals: manuals, chapters and paragraphs" role="img"></canvas>
 <div class="corner l"><span class="title">Track Manuals Atlas</span></div>
 <div class="corner r"><button class="iconbtn" id="fit" title="Show the whole graph">Reset view</button><span id="hostSettings"></span><a class="iconbtn" href="learn.html" title="Practice cards from the manuals">Learn</a><a class="iconbtn" href="expert.html" title="The full expert workbench (drawings, revisions, 3D)">Expert view</a></div>
+<div class="stack">
 <div class="legend" id="legend"></div>
-<label class="legend" id="refsBox" style="top:92px;cursor:pointer"><input type="checkbox" id="refs"> Show all cross-references between paragraphs</label>
-<label class="legend" id="conBox" style="top:128px;cursor:pointer"><input type="checkbox" id="concepts" checked> Show concepts (◆ at the centre, grouped by kind)</label>
+<label class="legend" id="refsBox" style="cursor:pointer"><input type="checkbox" id="refs"> Show all cross-references between paragraphs</label>
+<label class="legend" id="conBox" style="cursor:pointer"><input type="checkbox" id="concepts" checked> Show concepts (◆ on a ring at the centre, grouped by kind)</label>
+</div>
 <aside id="card" hidden aria-live="polite"></aside>
 <div id="tip"></div>
 <div id="dock">
@@ -95,14 +98,15 @@
   var nodes = [], byId = {}, edges = [];
   function add(n) { nodes.push(n); byId[n.id] = n; return n; }
   var M = model.manuals.length;
+  var FLAT = 0.7;   // the world is a slightly flattened disc: a wide screen has more room across than up and down
   function fib(i, n) { var y = n > 1 ? 1 - 2 * i / (n - 1) : 0, r = Math.sqrt(Math.max(0, 1 - y * y)), t = i * 2.39996323; return [Math.cos(t) * r, y, Math.sin(t) * r]; }   // point on a unit sphere
   model.manuals.forEach(function (m, mi) {
-    var a = mi / M * Math.PI * 2 - Math.PI / 2, R = 1000, my = (mi % 2 ? 1 : -1) * 170;
+    var a = mi / M * Math.PI * 2 - Math.PI / 2, R = 1450, my = (mi % 2 ? 1 : -1) * 140;   // wide ring: room for the concept cluster at the centre
     var mn = add({ id: 'M:' + m.alias, kind: 'manual', label: m.alias.replace('_', ' '), sub: m.name, x: Math.cos(a) * R, y: my, z: Math.sin(a) * R, r: 15, color: COLORS[mi], alias: m.alias });
     var nc = m.chapters.length;
     m.chapters.forEach(function (ch, ci) {
       var d = fib(ci, nc), CR = 300 + 90 * Math.sqrt(nc / 15);
-      var cn = add({ id: 'H:' + m.alias + ':' + ch.num, kind: 'chapter', label: 'Ch. ' + ch.num, sub: ch.title, x: mn.x + d[0] * CR, y: mn.y + d[1] * CR, z: mn.z + d[2] * CR, r: 7.5, color: COLORS[mi], alias: m.alias });
+      var cn = add({ id: 'H:' + m.alias + ':' + ch.num, kind: 'chapter', label: 'Ch. ' + ch.num, sub: ch.title, x: mn.x + d[0] * CR, y: mn.y + d[1] * CR * FLAT, z: mn.z + d[2] * CR, r: 7.5, color: COLORS[mi], alias: m.alias });
       edges.push([mn.id, cn.id, 0]);
       var n = ch.clauses.length, rr = 18 + 9 * Math.cbrt(n);
       ch.clauses.forEach(function (c, k) {
@@ -120,13 +124,16 @@
     'Welding': '#ea580c', 'Maintenance activity': '#15803d', 'Machine': '#475569', 'Role': '#7e22ce', 'Location': '#0f766e', 'Safety': '#ca8a04' };
   (function () {
     var classes = {}; Object.keys(ENT.c).sort().forEach(function (id) { (classes[ENT.c[id].k] = classes[ENT.c[id].k] || []).push(id); });
-    var names = Object.keys(classes).sort(), K = names.length;
+    // The kinds sit on a ring round the centre, heights alternating up and down, related kinds side by side: on a ring no two groups
+    // line up one behind the other however the graph is turned, which a ball of groups could not avoid.
+    var RING = ['Component', 'Track structure', 'Material', 'Welding', 'Defect', 'Test method', 'Geometry', 'Parameter', 'Maintenance activity', 'Machine', 'Role', 'Safety', 'Location'];
+    var names = RING.filter(function (k) { return classes[k]; }).concat(Object.keys(classes).sort().filter(function (k) { return RING.indexOf(k) < 0; })), K = names.length;
     names.forEach(function (k, ki) {
-      var d = fib(ki, K), cx = d[0] * 320, cy = d[1] * 240, cz = d[2] * 320, ids = classes[k], rr = 38 + 10 * Math.sqrt(ids.length), col = CLASS_COLORS[k] || '#888';
+      var a = ki / K * Math.PI * 2 + 0.24, cx = Math.cos(a) * 620, cy = (ki % 2 ? 1 : -1) * 120, cz = Math.sin(a) * 620, ids = classes[k], rr = 50 + 13 * Math.sqrt(ids.length), col = CLASS_COLORS[k] || '#888';
       cnodes.push({ id: 'CLS:' + k, kind: 'class', label: k, sub: '', x: cx, y: cy, z: cz, r: 0, color: col });
       ids.forEach(function (id, i) {
         var e = fib(i, ids.length), c = ENT.c[id];
-        cnodes.push({ id: 'ENT:' + id, kind: 'concept', cid: id, label: c.l, sub: k + ' · named ' + c.n + ' times', x: cx + e[0] * rr, y: cy + e[1] * rr, z: cz + e[2] * rr, r: 3 + Math.min(5, Math.log(1 + c.n) * 0.75), color: col });
+        cnodes.push({ id: 'ENT:' + id, kind: 'concept', cid: id, label: c.l, sub: k + ' · named ' + c.n + ' times', x: cx + e[0] * rr, y: cy + e[1] * rr * 0.85, z: cz + e[2] * rr, r: 3 + Math.min(5, Math.log(1 + c.n) * 0.75), color: col });
       });
     });
     cnodes.forEach(function (n) { byId[n.id] = n; });
@@ -139,8 +146,8 @@
 
   /* ---- 3D camera on a 2D canvas: yaw/pitch rotation, perspective, depth ordering, smooth moves ---- */
   var cv = $('g'), ctx = cv.getContext('2d'), W = 0, H = 0, dpr = 1, sel = null, hot = {}, dirty = true;
-  var showRefs = false, cam = { yaw: 0.6, pitch: 0.38, zoom: 0.45, tx: 0, ty: 0, tz: 0 }, goal = null, spin = true, lastTouch = 0, P = {}, order = [];
-  var DIST = 2600, TAU = 6.2832;
+  var showRefs = false, cam = { yaw: 0.6, pitch: 0.3, zoom: 0.45, tx: 0, ty: 0, tz: 0, oy: 0 }, goal = null, spin = true, lastTouch = 0, P = {}, order = [];
+  var DIST = 6000, TAU = 6.2832;   // camera distance, about 3 x the graph's radius: depth still reads, near nodes are not blown up
   function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
   function resize() { dpr = window.devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; dirty = true; }
   function bounds(list) {
@@ -148,12 +155,28 @@
     list.forEach(function (n) { r = Math.max(r, Math.hypot(n.x - c[0], n.y - c[1], n.z - c[2])); }); return { c: c, r: r };
   }
   function flyTo(list, keepAngles) {
-    var b = bounds(list), extent = Math.max(90, b.r + 70), avail = Math.min(W * 0.7, H - 400) / 2;
-    goal = { tx: b.c[0], ty: b.c[1], tz: b.c[2], zoom: Math.max(0.12, Math.min(8, avail / extent)) };
+    var b = bounds(list), extent = Math.max(90, b.r + 70), avail = Math.min(W * 0.34, (H - 230) / 2);   // room left by the card and the chat box
+    goal = { tx: b.c[0], ty: b.c[1], tz: b.c[2], oy: 0, zoom: Math.max(0.12, Math.min(8, avail / extent)) };
     if (!keepAngles) { goal.yaw = cam.yaw; goal.pitch = cam.pitch; }
     dirty = true;
   }
-  function fit() { spin = true; flyTo(nodes, true); goal.zoom = Math.min(W * 0.46, H * 0.4) / 1500 * 1.0; }
+  /* Fill the screen but keep the whole graph on it while it turns: over 24 yaw angles at the current pitch, take the widest projected
+     half-width and the highest and lowest projected points (perspective included); the zoom fits them between the screen edges and
+     between the top bar and the chat box, and a vertical screen offset centres them there (perspective pushes the near side down). */
+  function fitView(c) {
+    var top = W <= 640 ? 96 : 64, bottom = H - 118, side = W / 2 - 20, xmax = 1, ymin = -1, ymax = 1, cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
+    for (var a = 0; a < 24; a++) {
+      var yw = a / 24 * TAU, cy = Math.cos(yw), sy = Math.sin(yw);
+      drawNodes().forEach(function (n) {
+        if (n.kind === 'class') return;
+        var x = n.x - c[0], y = n.y - c[1], zz = n.z - c[2], x1 = x * cy - zz * sy, z1 = x * sy + zz * cy, f = DIST / (DIST + y * sp + z1 * cp), y1 = (y * cp - z1 * sp) * f;
+        xmax = Math.max(xmax, Math.abs(x1 * f)); ymin = Math.min(ymin, y1); ymax = Math.max(ymax, y1);
+      });
+    }
+    var z = Math.max(0.1, Math.min(side / xmax, (bottom - top) / (ymax - ymin)));
+    return { zoom: z, oy: (top + bottom) / 2 - ((H - 130) / 2 + 40) - z * (ymax + ymin) / 2 };
+  }
+  function fit() { spin = true; flyTo(nodes, true); var v = fitView([goal.tx, goal.ty, goal.tz]); goal.zoom = v.zoom; goal.oy = v.oy; }
   function project() {
     var cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
     order.length = 0;
@@ -161,11 +184,11 @@
       var x = n.x - cam.tx, y = n.y - cam.ty, z = n.z - cam.tz;
       var x1 = x * cy - z * sy, z1 = x * sy + z * cy, y1 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
       var f = DIST / (DIST + z2), k = cam.zoom * f, q = P[n.id] || (P[n.id] = {});
-      q.x = W / 2 + x1 * k; q.y = (H - 130) / 2 + 40 + y1 * k; q.f = f; q.z = z2; q.k = k; order.push(n);
+      q.x = W / 2 + x1 * k; q.y = (H - 130) / 2 + 40 + cam.oy + y1 * k; q.f = f; q.z = z2; q.k = k; order.push(n);
     });
     order.sort(function (a, b) { return P[b.id].z - P[a.id].z; });
   }
-  function depthA(q) { return Math.max(0.22, Math.min(1, 1.12 - (q.z + 1500) / 3200)); }
+  function depthA(q) { return Math.max(0.22, Math.min(1, 1.12 - (q.z + 2000) / 4300)); }
   function draw() {
     dirty = false; project();
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0); ctx.clearRect(0, 0, W, H);
@@ -210,19 +233,32 @@
     });
     ctx.globalAlpha = 1; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
     var hotN = Object.keys(hot).length;   // a concept named in hundreds of paragraphs lights them all but labels none
+    // Labels never overlap: candidates are placed in priority order (selected, manuals, lit nodes, concept groups, chapters, concepts,
+    // paragraphs; nearer first within a rank) and a label whose box touches one already placed is left out.
+    var cand = [];
     order.forEach(function (n) {
-      var q = P[n.id], zoomed = cam.zoom * q.f;
-      var show = n.kind === 'class' ? zoomed < 1.4 : n.kind === 'concept' ? (zoomed > 0.9 || hot[n.id] || (sel && sel.id === n.id)) : n.kind === 'manual' || (n.kind === 'chapter' && zoomed > 0.5) || (n.kind === 'clause' && (zoomed > 2.4 || (hotN <= 40 && hot[n.id]) || (sel && sel.id === n.id)));
+      var q = P[n.id], zoomed = cam.zoom * q.f, isSel = sel && sel.id === n.id;
+      var show = n.kind === 'class' ? zoomed < 1.4 : n.kind === 'concept' ? (zoomed > 0.6 || hot[n.id] || isSel) : n.kind === 'manual' || (n.kind === 'chapter' && zoomed > 0.35) || (n.kind === 'clause' && (zoomed > 2.4 || (hotN <= 40 && hot[n.id]) || isSel));
       if (!show || q.x < 0 || q.y < 0 || q.x > W || q.y > H) return;
+      var rank = isSel ? 0 : n.kind === 'manual' ? 1 : hot[n.id] ? 2 : n.kind === 'class' ? 3 : n.kind === 'chapter' ? 4 : n.kind === 'concept' ? 5 : 6;
+      cand.push({ n: n, q: q, rank: rank });
+    });
+    cand.sort(function (a, b) { return a.rank - b.rank || a.q.z - b.q.z; });
+    var placed = [];
+    cand.forEach(function (c) {
+      var n = c.n, q = c.q;
       var fs = (n.kind === 'manual' ? 15 : n.kind === 'class' ? 10 : 11) * Math.max(0.8, Math.min(1.25, q.f)); ctx.font = (n.kind === 'manual' ? '700 ' : n.kind === 'class' ? 'italic 600 ' : '500 ') + fs.toFixed(1) + 'px system-ui,sans-serif';
       var dy = (n.kind === 'class' ? 0 : n.kind === 'manual' ? n.r * q.k * 1.15 * Math.pow(cam.zoom, -0.25) + 12 : 14);
+      var w = ctx.measureText(n.label).width + 6, h = fs + 4, box = [q.x - w / 2, q.y + dy - h / 2, q.x + w / 2, q.y + dy + h / 2];
+      if (c.rank > 0 && placed.some(function (b) { return box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1]; })) return;
+      placed.push(box);
       ctx.globalAlpha = Math.max(0.5, depthA(q)); ctx.lineWidth = 3; ctx.strokeStyle = bg; ctx.strokeText(n.label, q.x, q.y + dy); ctx.fillStyle = ink; ctx.fillText(n.label, q.x, q.y + dy); ctx.globalAlpha = 1;
     });
   }
   function step() {
     if (goal) {   // ease the camera toward its goal
       var done = true;
-      ['tx', 'ty', 'tz', 'zoom'].forEach(function (k) { var d = goal[k] - cam[k]; if (Math.abs(d) > (k === 'zoom' ? 0.002 : 0.6)) { cam[k] += d * 0.14; done = false; } else cam[k] = goal[k]; });
+      ['tx', 'ty', 'tz', 'zoom', 'oy'].forEach(function (k) { if (goal[k] == null) return; var d = goal[k] - cam[k]; if (Math.abs(d) > (k === 'zoom' ? 0.002 : 0.6)) { cam[k] += d * 0.14; done = false; } else cam[k] = goal[k]; });
       if (done) goal = null; dirty = true;
     } else if (spin && !drag && !sel && !Object.keys(hot).length && !document.hidden) { cam.yaw += 0.0016; dirty = true; }
   }
@@ -350,8 +386,8 @@
     else if (e.key === 'Escape') { $('card').hidden = true; $('ans').hidden = true; sel = null; hot = {}; dirty = true; }
   });
   new MutationObserver(function () { dirty = true; }).observe(document.documentElement, { attributes: true });
-  window.addEventListener('resize', function () { resize(); });
-  resize(); fit(); cam.zoom = goal.zoom; cam.tx = goal.tx; cam.ty = goal.ty; cam.tz = goal.tz; goal = null; loop();
+  window.addEventListener('resize', function () { resize(); if (spin && !sel && !goal) fit(); });   // still the overview: refit to the new window
+  resize(); fit(); cam.zoom = goal.zoom; cam.tx = goal.tx; cam.ty = goal.ty; cam.tz = goal.tz; cam.oy = goal.oy; goal = null; loop();
   setScope(''); $('q').disabled = $('go').disabled = false;
   var qs = new URLSearchParams(location.search); if (qs.get('manual') && RDSOChat.MANUALS[qs.get('manual')]) setScope(qs.get('manual'));
   if (qs.get('q')) ask(qs.get('q'));
