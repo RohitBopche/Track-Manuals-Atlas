@@ -2244,7 +2244,9 @@ Checks: a dialogue test for the utility vehicle question, a sweep over the table
 - The taxonomy and the choice of concepts come from my reading of track engineering, not from the manuals; only the mentions are from the text.
 - DISCUSSED_WITH means "named in the same sentence", not that one causes, requires or limits the other. A value found beside a concept is not always a limit on it.
 - There are still no typed domain relations such as "defect is detected by method" or "role is responsible for activity" extracted from sentences; that needs sentence-level extraction with its own labelled test set. The synonym question about PWI and JE/SSE/P.Way is still open: the lexicon groups them under one Role concept.
-- The 3D graph view does not yet show concepts.
+- The typed domain relations above are still not extracted. The 3D graph shows the concepts (below).
+
+**3D graph.** The 130 concepts are drawn as diamonds in a cluster at the centre of the home-page graph, grouped by kind (13 groups, labelled), coloured by kind, sized by how often they are named, with the curated is-a / part-of links dashed. Clicking a concept opens a card (kind, count per manual, other names, kinds, parts, concepts named in the same sentence) and lights the paragraphs that name it, with faint lines to them and bold lines to related concepts; "Show the N paragraphs" flies to them, "Ask where it is mentioned" asks the chat. A concept answer in the chat highlights its concept in the graph. A checkbox hides the concepts. Labels of lit paragraphs are shown only when 40 or fewer are lit. Browser test 1b checks counts, card, navigation between concepts and the toggle.
 
 ## 38. Plan for Remaining Work (post P0-R.1/R.2)
 
