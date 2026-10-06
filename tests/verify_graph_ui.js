@@ -120,6 +120,22 @@ async function main() {
     console.log(t1);
     await client.captureScreenshot('graph_home.png');
     if (!t1.ready || t1.nodes < 1250 || t1.links < 400 || t1.disabled || t1.dockBottom > 30 || Math.abs(t1.dockCentre) > 2 || t1.panels !== 0) throw new Error('Test 1 failed ' + JSON.stringify(t1));
+    console.log("\n--- TEST 1b: concepts are in the graph as diamonds grouped by kind; selecting one shows its paragraphs, related concepts and parts ---");
+    const t1b = await ev(`(async () => { const w = ms => new Promise(r => setTimeout(r, ms)); const g = window.rdsoGraph, out = {};
+      out.concepts = g.concepts.filter(n => n.kind === 'concept').length; out.classes = g.concepts.filter(n => n.kind === 'class').length;
+      g.select('ENT:sleeper'); await w(300); const card = document.getElementById('card');
+      out.title = (card.querySelector('h2') || {}).innerText || ''; out.kinds = /Kinds:/.test(card.innerText) && card.querySelectorAll('[data-focus^="ENT:"]').length; out.hot = g.state().hot.length; out.sel = g.state().sel;
+      out.where = !!card.querySelector('[data-showwhere="sleeper"]'); out.note = /curated/.test(card.innerText);
+      card.querySelector('[data-focus="ENT:psc_sleeper"]').click(); await w(300); out.next = g.state().sel;
+      document.getElementById('concepts').click(); await w(150); out.offSel = g.state().sel; out.offCard = document.getElementById('card').hidden;
+      document.getElementById('concepts').click(); await w(150); return out; })()`);
+    console.log(t1b);
+    if (t1b.concepts < 100 || t1b.classes !== 13 || !/Sleeper/.test(t1b.title) || t1b.sel !== 'ENT:sleeper' || t1b.kinds < 3 || t1b.hot < 50 || !t1b.where || !t1b.note || t1b.next !== 'ENT:psc_sleeper') throw new Error('Test 1b failed ' + JSON.stringify(t1b));
+    await client.captureScreenshot('graph_concepts.png');
+    await ev(`window.rdsoGraph.select('ENT:sleeper')`); await sleep(500);
+    await client.captureScreenshot('graph_concept_selected.png');
+    await ev(`document.getElementById('cardX').click()`);
+
     console.log("\n--- TEST 2: a question answers in the dock and highlights its paragraph in the graph ---");
     const t2 = await ev(`(async () => { const i = document.getElementById('q'); i.value = 'How is casual renewal of a defective or fractured rail carried out?';
       document.getElementById('f').dispatchEvent(new Event('submit', { cancelable: true })); await new Promise(r => setTimeout(r, 500));

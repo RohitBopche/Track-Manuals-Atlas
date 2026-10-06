@@ -46,7 +46,7 @@
   #go:disabled{opacity:.5}
   .hint{text-align:center;color:var(--muted);font-size:.78rem;margin-top:-2px}
   #tip{position:fixed;z-index:8;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-size:.8rem;box-shadow:var(--shadow);display:none;max-width:280px}
-  @media (max-width:640px){.legend{display:none}#refsBox{display:none}#card{top:50px}}
+  @media (max-width:640px){.legend{display:none}#refsBox,#conBox{display:none}#card{top:50px}}
 </style>
 </head>
 <body>
@@ -55,6 +55,7 @@
 <div class="corner r"><button class="iconbtn" id="fit" title="Show the whole graph">Reset view</button><span id="hostSettings"></span><a class="iconbtn" href="learn.html" title="Practice cards from the manuals">Learn</a><a class="iconbtn" href="expert.html" title="The full expert workbench (drawings, revisions, 3D)">Expert view</a></div>
 <div class="legend" id="legend"></div>
 <label class="legend" id="refsBox" style="top:92px;cursor:pointer"><input type="checkbox" id="refs"> Show all cross-references between paragraphs</label>
+<label class="legend" id="conBox" style="top:128px;cursor:pointer"><input type="checkbox" id="concepts" checked> Show concepts (◆ at the centre, grouped by kind)</label>
 <aside id="card" hidden aria-live="polite"></aside>
 <div id="tip"></div>
 <div id="dock">
@@ -113,7 +114,28 @@
   });
   var links = [];     // resolved paragraph-to-paragraph references
   Object.keys(xr.out).forEach(function (src) { var seen = {}; xr.out[src].forEach(function (e) { if (e[2] === 'RESOLVED') e[3].forEach(function (t) { if (byId[src] && byId[t] && t !== src && !seen[t]) { seen[t] = 1; links.push([src, t]); } }); }); });
-  $('legend').innerHTML = model.manuals.map(function (m, i) { return '<i style="background:' + COLORS[i] + '"></i>' + esc(m.alias.replace('_', ' ')); }).join('') + ' · big dot = manual, medium = chapter, small = paragraph';
+  /* ---- concepts: the entity layer, drawn as diamonds in a cluster at the centre, grouped by kind of thing ---- */
+  var ENT = window.RDSO_ENTITIES, EI = window.RDSOEntities.create(ENT), cnodes = [], cedges = [], conceptsOn = true, clinks = [];
+  var CLASS_COLORS = { 'Component': '#8b5cf6', 'Material': '#a16207', 'Track structure': '#0e7490', 'Geometry': '#be185d', 'Parameter': '#4d7c0f', 'Defect': '#dc2626', 'Test method': '#0369a1',
+    'Welding': '#ea580c', 'Maintenance activity': '#15803d', 'Machine': '#475569', 'Role': '#7e22ce', 'Location': '#0f766e', 'Safety': '#ca8a04' };
+  (function () {
+    var classes = {}; Object.keys(ENT.c).sort().forEach(function (id) { (classes[ENT.c[id].k] = classes[ENT.c[id].k] || []).push(id); });
+    var names = Object.keys(classes).sort(), K = names.length;
+    names.forEach(function (k, ki) {
+      var d = fib(ki, K), cx = d[0] * 320, cy = d[1] * 240, cz = d[2] * 320, ids = classes[k], rr = 38 + 10 * Math.sqrt(ids.length), col = CLASS_COLORS[k] || '#888';
+      cnodes.push({ id: 'CLS:' + k, kind: 'class', label: k, sub: '', x: cx, y: cy, z: cz, r: 0, color: col });
+      ids.forEach(function (id, i) {
+        var e = fib(i, ids.length), c = ENT.c[id];
+        cnodes.push({ id: 'ENT:' + id, kind: 'concept', cid: id, label: c.l, sub: k + ' · named ' + c.n + ' times', x: cx + e[0] * rr, y: cy + e[1] * rr, z: cz + e[2] * rr, r: 3 + Math.min(5, Math.log(1 + c.n) * 0.75), color: col });
+      });
+    });
+    cnodes.forEach(function (n) { byId[n.id] = n; });
+    (ENT.tax || []).forEach(function (t) { cedges.push(['ENT:' + t[1], 'ENT:' + t[2]]); });
+  })();
+  var allNodes = nodes.concat(cnodes);
+  function drawNodes() { return conceptsOn ? allNodes : nodes; }
+  function mentionedParas(cid) { var seen = {}, out = []; (ENT.occ[cid] || []).forEach(function (o) { var id = ENT.s[o[0]]; if (id.indexOf('CLAUSE:') === 0 && byId[id] && !seen[id]) { seen[id] = 1; out.push(id); } }); return out; }
+  $('legend').innerHTML = model.manuals.map(function (m, i) { return '<i style="background:' + COLORS[i] + '"></i>' + esc(m.alias.replace('_', ' ')); }).join('') + ' · big dot = manual, medium = chapter, small = paragraph, ◆ = concept';
 
   /* ---- 3D camera on a 2D canvas: yaw/pitch rotation, perspective, depth ordering, smooth moves ---- */
   var cv = $('g'), ctx = cv.getContext('2d'), W = 0, H = 0, dpr = 1, sel = null, hot = {}, dirty = true;
@@ -135,7 +157,7 @@
   function project() {
     var cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
     order.length = 0;
-    nodes.forEach(function (n) {
+    drawNodes().forEach(function (n) {
       var x = n.x - cam.tx, y = n.y - cam.ty, z = n.z - cam.tz;
       var x1 = x * cy - z * sy, z1 = x * sy + z * cy, y1 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
       var f = DIST / (DIST + z2), k = cam.zoom * f, q = P[n.id] || (P[n.id] = {});
@@ -158,6 +180,17 @@
       links.forEach(function (l) { var a = P[l[0]], b = P[l[1]]; ctx.moveTo(a.x, a.y); ctx.quadraticCurveTo((a.x + b.x) / 2 + (b.y - a.y) * 0.14, (a.y + b.y) / 2 - (b.x - a.x) * 0.14, b.x, b.y); });
       ctx.stroke(); ctx.globalAlpha = 1;
     }
+    if (conceptsOn) {   // curated is-a / part-of links between concepts (dashed), and, for a selected concept, its related concepts and the paragraphs that name it
+      ctx.strokeStyle = ink; ctx.lineWidth = 0.8; ctx.globalAlpha = 0.3; ctx.setLineDash([3, 3]); ctx.beginPath();
+      cedges.forEach(function (e) { var a = P[e[0]], b = P[e[1]]; if (a && b) { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); } });
+      ctx.stroke(); ctx.setLineDash([]);
+      [[false, 0.7, 0.28], [true, 1.8, 0.9]].forEach(function (pass) {
+        ctx.strokeStyle = accent; ctx.lineWidth = pass[1]; ctx.globalAlpha = pass[2]; ctx.beginPath();
+        if (sel && sel.kind === 'concept') clinks.forEach(function (l) { if (l[2] === pass[0]) { var a = P[l[0]], b = P[l[1]]; if (a && b) { ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); } } });
+        ctx.stroke();
+      });
+      ctx.globalAlpha = 1;
+    }
     var focus = sel ? [sel.id] : Object.keys(hot);
     ctx.strokeStyle = accent; ctx.lineWidth = 1.6; ctx.globalAlpha = 0.85; ctx.beginPath();
     links.forEach(function (l) { if (focus.indexOf(l[0]) >= 0 || focus.indexOf(l[1]) >= 0) { var a = P[l[0]], b = P[l[1]];
@@ -165,20 +198,24 @@
     ctx.stroke(); ctx.globalAlpha = 1;
     var anyHot = Object.keys(hot).length > 0;
     order.forEach(function (n) {   // far to near
+      if (n.kind === 'class') return;
       var q = P[n.id]; if (q.x < -30 || q.y < -30 || q.x > W + 30 || q.y > H + 30) return;
       var isHot = hot[n.id] || (sel && sel.id === n.id), r = Math.max(n.kind === 'clause' ? 1.5 : 3, n.r * q.k * 1.15 * Math.pow(cam.zoom, -0.25));
       ctx.globalAlpha = (anyHot && !isHot && n.kind === 'clause' ? 0.2 : 1) * depthA(q);
-      ctx.fillStyle = n.color; ctx.beginPath(); ctx.arc(q.x, q.y, isHot ? r + 3 : r, 0, TAU); ctx.fill();
-      if (r > 3.2) { ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(q.x - r * 0.3, q.y - r * 0.33, r * 0.38, 0, TAU); ctx.fill(); }
+      ctx.fillStyle = n.color; ctx.beginPath();
+      if (n.kind === 'concept') { var d = (isHot ? r + 3 : r) * 1.3; ctx.moveTo(q.x, q.y - d); ctx.lineTo(q.x + d, q.y); ctx.lineTo(q.x, q.y + d); ctx.lineTo(q.x - d, q.y); ctx.closePath(); ctx.fill(); ctx.lineWidth = 1; ctx.strokeStyle = bg; ctx.stroke(); }
+      else { ctx.arc(q.x, q.y, isHot ? r + 3 : r, 0, TAU); ctx.fill(); }
+      if (r > 3.2 && n.kind !== 'concept') { ctx.fillStyle = 'rgba(255,255,255,0.4)'; ctx.beginPath(); ctx.arc(q.x - r * 0.3, q.y - r * 0.33, r * 0.38, 0, TAU); ctx.fill(); }
       if (isHot) { ctx.lineWidth = 2.5; ctx.strokeStyle = ink; ctx.beginPath(); ctx.arc(q.x, q.y, r + 3, 0, TAU); ctx.stroke(); }
     });
     ctx.globalAlpha = 1; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    var hotN = Object.keys(hot).length;   // a concept named in hundreds of paragraphs lights them all but labels none
     order.forEach(function (n) {
       var q = P[n.id], zoomed = cam.zoom * q.f;
-      var show = n.kind === 'manual' || (n.kind === 'chapter' && zoomed > 0.5) || (n.kind === 'clause' && (zoomed > 2.4 || hot[n.id] || (sel && sel.id === n.id)));
+      var show = n.kind === 'class' ? zoomed < 1.4 : n.kind === 'concept' ? (zoomed > 0.9 || hot[n.id] || (sel && sel.id === n.id)) : n.kind === 'manual' || (n.kind === 'chapter' && zoomed > 0.5) || (n.kind === 'clause' && (zoomed > 2.4 || (hotN <= 40 && hot[n.id]) || (sel && sel.id === n.id)));
       if (!show || q.x < 0 || q.y < 0 || q.x > W || q.y > H) return;
-      var fs = (n.kind === 'manual' ? 15 : 11) * Math.max(0.8, Math.min(1.25, q.f)); ctx.font = (n.kind === 'manual' ? '700 ' : '500 ') + fs.toFixed(1) + 'px system-ui,sans-serif';
-      var dy = (n.kind === 'manual' ? n.r * q.k * 1.15 * Math.pow(cam.zoom, -0.25) + 12 : 14);
+      var fs = (n.kind === 'manual' ? 15 : n.kind === 'class' ? 10 : 11) * Math.max(0.8, Math.min(1.25, q.f)); ctx.font = (n.kind === 'manual' ? '700 ' : n.kind === 'class' ? 'italic 600 ' : '500 ') + fs.toFixed(1) + 'px system-ui,sans-serif';
+      var dy = (n.kind === 'class' ? 0 : n.kind === 'manual' ? n.r * q.k * 1.15 * Math.pow(cam.zoom, -0.25) + 12 : 14);
       ctx.globalAlpha = Math.max(0.5, depthA(q)); ctx.lineWidth = 3; ctx.strokeStyle = bg; ctx.strokeText(n.label, q.x, q.y + dy); ctx.fillStyle = ink; ctx.fillText(n.label, q.x, q.y + dy); ctx.globalAlpha = 1;
     });
   }
@@ -192,7 +229,7 @@
   function loop() { step(); if (dirty) draw(); requestAnimationFrame(loop); }
   function pick(px, py) {
     var best = null, bz = 1e9;
-    nodes.forEach(function (n) { var q = P[n.id]; if (!q) return; var dx = q.x - px, dy = q.y - py, rr = Math.max(6, n.r * q.k * 1.15 * Math.pow(cam.zoom, -0.25) + 3);
+    drawNodes().forEach(function (n) { if (n.kind === 'class') return; var q = P[n.id]; if (!q) return; var dx = q.x - px, dy = q.y - py, rr = Math.max(6, n.r * q.k * 1.15 * Math.pow(cam.zoom, -0.25) + 3);
       if (dx * dx + dy * dy < rr * rr && q.z < bz && (n.kind !== 'clause' || cam.zoom * q.f > 0.3)) { bz = q.z; best = n; } });
     return best;
   }
@@ -218,13 +255,29 @@
 
   /* ---- node card ---- */
   function select(n, zoom) {
-    sel = n; hot = {}; dirty = true;
+    sel = n; hot = {}; clinks = []; dirty = true;
     var c = model.byId[n.id], card = $('card'), h = '<button class="x" aria-label="Close" id="cardX">✕</button>';
     if (n.kind === 'clause' && c) {
       var out = (xr.out[n.id] || []).reduce(function (a, e) { return a + (e[2] === 'RESOLVED' ? e[3].filter(function (t) { return byId[t]; }).length : 0); }, 0), inn = (xr.in[n.id] || []).filter(function (t) { return byId[t]; }).length;
       h += '<h2>' + esc(n.label) + '</h2><div class="sub">' + esc(n.sub) + ' · page ' + esc(c.page) + ' · refers to ' + out + ', referred to by ' + inn + ' (drawn in blue)</div><div class="txt">' + esc(c.text.slice(0, 1500)) + (c.text.length > 1500 ? '\n…' : '') + '</div>' +
         '<div class="acts"><button class="iconbtn" data-ask="' + esc('Explain ' + n.label) + '">Ask about this</button><a class="iconbtn" href="browse.html#' + encodeURIComponent(n.id) + '">Read in context</a><a class="iconbtn" target="_blank" rel="noopener" href="' + esc(encodeURI(PDF[c.alias] || '') + '#page=' + (c.page || 1)) + '">Open page ↗</a></div>';
       if (zoom) focusOn([n.id].concat((xr.out[n.id] || []).reduce(function (a, e) { return e[2] === 'RESOLVED' ? a.concat(e[3]) : a; }, [])).concat(xr.in[n.id] || []).filter(function (i) { return byId[i]; }).slice(0, 12));
+    } else if (n.kind === 'concept') {
+      var c2 = ENT.c[n.cid], paras = mentionedParas(n.cid), rel = EI.related(n.cid, 8), pt = EI.parts(n.cid), by = Object.keys(c2.m).map(function (k) { return esc(k.replace('_', ' ')) + ' ' + c2.m[k]; }).join(', ');
+      hot = {}; clinks = [];
+      paras.slice(0, 500).forEach(function (id, i) { hot[id] = 1; if (i < 120) clinks.push([n.id, id, false]); });
+      rel.rows.forEach(function (x) { hot['ENT:' + x.id] = 1; clinks.push([n.id, 'ENT:' + x.id, true]); });
+      pt.kinds.concat(pt.parts).forEach(function (x) { hot['ENT:' + x.id] = 1; clinks.push([n.id, 'ENT:' + x.id, true]); });
+      function cc(x, extra) { return '<button type="button" class="chip" data-focus="ENT:' + esc(x.id) + '">' + esc(x.label) + (extra || '') + '</button>'; }
+      h += '<h2>◆ ' + esc(c2.l) + '</h2><div class="sub">' + esc(c2.k) + ' · named ' + c2.n + ' times in ' + c2.p + ' paragraphs and annexures (' + by + ')</div>' +
+        '<div class="sub">Also written: ' + esc(c2.a.slice(0, 8).join(', ')) + (c2.a.length > 8 ? ', …' : '') + '</div>' +
+        (pt.up.length ? '<div class="sub">' + pt.up.map(function (u) { return (u.type === 'IS_A' ? 'A kind of ' : 'A part of ') + '<button type="button" class="chip" data-focus="ENT:' + esc(u.id) + '">' + esc(u.label) + '</button>'; }).join(' ') + '</div>' : '') +
+        (pt.kinds.length ? '<div class="sub">Kinds: ' + pt.kinds.map(function (x) { return cc(x); }).join('') + '</div>' : '') +
+        (pt.parts.length ? '<div class="sub">Parts: ' + pt.parts.map(function (x) { return cc(x); }).join('') + '</div>' : '') +
+        (rel.rows.length ? '<div class="sub">Named in the same sentence as: ' + rel.rows.map(function (x) { return cc(x, ' · ' + x.support); }).join('') + '</div>' : '') +
+        '<div class="acts"><button class="iconbtn" data-showwhere="' + esc(n.cid) + '">Show the ' + paras.length + ' paragraphs in the graph</button><button class="iconbtn" data-ask="' + esc('Which paragraphs mention ' + c2.a[0] + '?') + '">Ask where it is mentioned</button></div>' +
+        '<div class="sub" style="margin-top:6px">Concepts are a curated list; where a manual names one is found in its text. Kinds and parts are curated, not taken from the manuals.</div>';
+      if (zoom) focusOn([n.id].concat(rel.rows.map(function (x) { return 'ENT:' + x.id; })).concat(pt.kinds.concat(pt.parts).map(function (x) { return 'ENT:' + x.id; })));
     } else if (n.kind === 'chapter') {
       var m = model.manuals.filter(function (x) { return x.alias === n.alias; })[0], ch = m.chapters.filter(function (x) { return 'H:' + n.alias + ':' + x.num === n.id; })[0];
       h += '<h2>' + esc(n.alias.replace('_', ' ')) + ' · ' + esc(n.label) + '</h2><div class="sub">' + esc(n.sub) + ' · ' + ch.clauses.length + ' paragraphs</div><div class="acts"><button class="iconbtn" data-scope="' + n.alias + '" data-chapter="' + parseInt(n.id.split(':')[2], 10) + '">Ask only this chapter</button><button class="iconbtn" data-ask="' + esc('What does ' + n.alias.replace('_', ' ') + ' ' + n.label + ' cover?') + '">Ask about this chapter</button><a class="iconbtn" href="browse.html#' + encodeURIComponent(ch.clauses[0].id) + '">Read</a></div>';
@@ -274,7 +327,7 @@
     if (r.primary) ids.push(r.primary.clause);
     (r.related || []).forEach(function (x) { if (x.clause) ids.push(x.clause); });
     (r.alsoSee || []).forEach(function (x) { if (x.cite) ids.push(x.cite.clause); });
-    if (r.kind === 'relation') (r.nodes || []).forEach(function (i) { ids.push(i); });
+    if (r.kind === 'relation') { (r.nodes || []).forEach(function (i) { ids.push(i); }); if (r.concept) ids.push('ENT:' + r.concept); }
     hot = {}; ids.forEach(function (i) { if (byId[i]) hot[i] = 1; });
     sel = null; $('card').hidden = true;
     if (ids.length) focusOn(ids.filter(function (i) { return byId[i]; })); dirty = true;
@@ -283,11 +336,13 @@
   $('f').addEventListener('submit', function (e) { e.preventDefault(); ask($('q').value); });
   document.addEventListener('click', function (e) {
     var a = e.target.closest('[data-ask]'); if (a) { ask(a.dataset.ask); return; }
+    var sw = e.target.closest('[data-showwhere]'); if (sw) { var ps = mentionedParas(sw.dataset.showwhere); if (ps.length) { spin = false; flyTo(ps.map(function (i) { return byId[i]; }), false); } return; }
     var s = e.target.closest('[data-scope]'); if (s) { setScope(s.dataset.scope, s.dataset.chapter); $('q').focus(); return; }
     var f = e.target.closest('[data-focus]'); if (f && !(e.ctrlKey || e.metaKey)) { e.preventDefault(); var n = byId[f.dataset.focus]; if (n) select(n, true); return; }
     if (e.target.id === 'ansX') { $('ans').hidden = true; hot = {}; dirty = true; }
     if (e.target.id === 'cardX') { $('card').hidden = true; sel = null; dirty = true; }
   });
+  $('concepts').addEventListener('change', function () { conceptsOn = this.checked; if (!conceptsOn && sel && sel.kind === 'concept') { sel = null; hot = {}; clinks = []; $('card').hidden = true; } dirty = true; });
   $('refs').addEventListener('change', function () { showRefs = this.checked; dirty = true; });
   $('fit').addEventListener('click', function () { sel = null; hot = {}; $('card').hidden = true; $('ans').hidden = true; setScope(''); cam.yaw = 0.6; cam.pitch = 0.38; fit(); });
   document.addEventListener('keydown', function (e) {
@@ -300,7 +355,7 @@
   setScope(''); $('q').disabled = $('go').disabled = false;
   var qs = new URLSearchParams(location.search); if (qs.get('manual') && RDSOChat.MANUALS[qs.get('manual')]) setScope(qs.get('manual'));
   if (qs.get('q')) ask(qs.get('q'));
-  window.__graphReady = true; window.rdsoGraph = { nodes: nodes, links: links, edges: edges, ask: ask, select: function (id) { select(byId[id], true); }, state: function () { return { refs: showRefs, zoom: cam.zoom, yaw: cam.yaw, pitch: cam.pitch, sel: sel && sel.id, hot: Object.keys(hot) }; } };
+  window.__graphReady = true; window.rdsoGraph = { concepts: cnodes, nodes: nodes, links: links, edges: edges, ask: ask, select: function (id) { select(byId[id], true); }, state: function () { return { refs: showRefs, zoom: cam.zoom, yaw: cam.yaw, pitch: cam.pitch, sel: sel && sel.id, hot: Object.keys(hot) }; } };
 })();
 </script>
 </body>
