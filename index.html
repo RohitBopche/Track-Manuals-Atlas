@@ -20,6 +20,7 @@
   .iconbtn{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:5px 10px;cursor:pointer;min-height:34px;box-shadow:var(--shadow);text-decoration:none;color:var(--ink);display:inline-block;font-size:.9rem}
   .iconbtn:hover,.iconbtn:focus-visible{background:var(--surface2)}
   .stack{position:fixed;left:12px;top:54px;z-index:4;display:flex;flex-direction:column;align-items:flex-start;gap:6px;max-width:46vw}   /* legend and toggles never overlap, however the legend wraps */
+  .stack .row{display:flex;gap:6px;flex-wrap:wrap}
   .legend{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 10px;font-size:.78rem;color:var(--muted);box-shadow:var(--shadow)}
   .legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin:0 4px 0 8px;vertical-align:baseline}.legend i:first-child{margin-left:0}
   /* node card */
@@ -47,7 +48,8 @@
   #go:disabled{opacity:.5}
   .hint{text-align:center;color:var(--muted);font-size:.78rem;margin-top:-2px}
   #tip{position:fixed;z-index:8;pointer-events:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-size:.8rem;box-shadow:var(--shadow);display:none;max-width:280px}
-  @media (max-width:640px){.stack{display:none}.corner.r{top:52px}#card{top:96px}}   /* phones: buttons go below the title instead of over it */
+  @media (max-width:640px){.stack{display:none}.corner.r{top:52px;flex-wrap:wrap;justify-content:flex-end;left:12px}}   /* phones: buttons go below the title instead of over it */
+  @media (max-height:520px){.stack{display:none}}   /* phone held sideways: no room for the legend and toggles over the graph */
 </style>
 </head>
 <body>
@@ -56,8 +58,8 @@
 <div class="corner r"><button class="iconbtn" id="fit" title="Show the whole graph">Reset view</button><span id="hostSettings"></span><a class="iconbtn" href="learn.html" title="Practice cards from the manuals">Learn</a><a class="iconbtn" href="expert.html" title="The full expert workbench (drawings, revisions, 3D)">Expert view</a></div>
 <div class="stack">
 <div class="legend" id="legend"></div>
-<label class="legend" id="refsBox" style="cursor:pointer"><input type="checkbox" id="refs"> Show all cross-references between paragraphs</label>
-<label class="legend" id="conBox" style="cursor:pointer"><input type="checkbox" id="concepts" checked> Show concepts (◆ on a ring at the centre, grouped by kind)</label>
+<div class="row"><label class="legend" id="refsBox" style="cursor:pointer"><input type="checkbox" id="refs"> All cross-references</label>
+<label class="legend" id="conBox" style="cursor:pointer" title="Concepts are drawn as diamonds on a ring at the centre, grouped by kind"><input type="checkbox" id="concepts" checked> Concepts ◆</label></div>
 </div>
 <aside id="card" hidden aria-live="polite"></aside>
 <div id="tip"></div>
@@ -124,12 +126,12 @@
     'Welding': '#ea580c', 'Maintenance activity': '#15803d', 'Machine': '#475569', 'Role': '#7e22ce', 'Location': '#0f766e', 'Safety': '#ca8a04' };
   (function () {
     var classes = {}; Object.keys(ENT.c).sort().forEach(function (id) { (classes[ENT.c[id].k] = classes[ENT.c[id].k] || []).push(id); });
-    // The kinds sit on a ring round the centre, heights alternating up and down, related kinds side by side: on a ring no two groups
-    // line up one behind the other however the graph is turned, which a ball of groups could not avoid.
+    // The kinds sit on one flat ring round the centre, related kinds side by side. A ring keeps groups from lining up one behind the
+    // other; a sweep over a whole turn found a flat ring of radius 780 overlaps least (alternating heights made pairs cancel out).
     var RING = ['Component', 'Track structure', 'Material', 'Welding', 'Defect', 'Test method', 'Geometry', 'Parameter', 'Maintenance activity', 'Machine', 'Role', 'Safety', 'Location'];
     var names = RING.filter(function (k) { return classes[k]; }).concat(Object.keys(classes).sort().filter(function (k) { return RING.indexOf(k) < 0; })), K = names.length;
     names.forEach(function (k, ki) {
-      var a = ki / K * Math.PI * 2 + 0.24, cx = Math.cos(a) * 620, cy = (ki % 2 ? 1 : -1) * 120, cz = Math.sin(a) * 620, ids = classes[k], rr = 50 + 13 * Math.sqrt(ids.length), col = CLASS_COLORS[k] || '#888';
+      var a = ki / K * Math.PI * 2 + 0.24, cx = Math.cos(a) * 780, cy = 0, cz = Math.sin(a) * 780, ids = classes[k], rr = 40 + 11 * Math.sqrt(ids.length), col = CLASS_COLORS[k] || '#888';
       cnodes.push({ id: 'CLS:' + k, kind: 'class', label: k, sub: '', x: cx, y: cy, z: cz, r: 0, color: col });
       ids.forEach(function (id, i) {
         var e = fib(i, ids.length), c = ENT.c[id];
@@ -142,41 +144,56 @@
   var allNodes = nodes.concat(cnodes);
   function drawNodes() { return conceptsOn ? allNodes : nodes; }
   function mentionedParas(cid) { var seen = {}, out = []; (ENT.occ[cid] || []).forEach(function (o) { var id = ENT.s[o[0]]; if (id.indexOf('CLAUSE:') === 0 && byId[id] && !seen[id]) { seen[id] = 1; out.push(id); } }); return out; }
-  $('legend').innerHTML = model.manuals.map(function (m, i) { return '<i style="background:' + COLORS[i] + '"></i>' + esc(m.alias.replace('_', ' ')); }).join('') + ' · big dot = manual, medium = chapter, small = paragraph, ◆ = concept';
+  $('legend').innerHTML = model.manuals.map(function (m, i) { return '<i style="background:' + COLORS[i] + '"></i>' + esc(m.alias.replace('_', ' ')); }).join('') + ' · dots: manual › chapter › paragraph · ◆ concept';
 
   /* ---- 3D camera on a 2D canvas: yaw/pitch rotation, perspective, depth ordering, smooth moves ---- */
   var cv = $('g'), ctx = cv.getContext('2d'), W = 0, H = 0, dpr = 1, sel = null, hot = {}, dirty = true;
-  var showRefs = false, cam = { yaw: 0.6, pitch: 0.3, zoom: 0.45, tx: 0, ty: 0, tz: 0, oy: 0 }, goal = null, spin = true, lastTouch = 0, P = {}, order = [];
+  var YAW0 = 0.6, PITCH0 = 0.3, ZMIN = 0.02, ZFOCUS = 1.4;   // rest pose; zoom limits (a single node is never blown up past ZFOCUS)
+  var showRefs = false, userView = false, cam = { yaw: YAW0, pitch: PITCH0, zoom: 0.45, tx: 0, ty: 0, tz: 0, ox: 0, oy: 0 }, goal = null, spin = true, lastTouch = 0, P = {}, order = [];
   var DIST = 6000, TAU = 6.2832;   // camera distance, about 3 x the graph's radius: depth still reads, near nodes are not blown up
   function css(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
   function resize() { dpr = window.devicePixelRatio || 1; W = innerWidth; H = innerHeight; cv.width = W * dpr; cv.height = H * dpr; dirty = true; }
+  function box(el) { if (!el || el.hidden) return null; var b = el.getBoundingClientRect(); return b.width && b.height ? b : null; }   // null when not shown (fixed elements have no offsetParent)
+  function freeArea(withCard) {
+    var top = 0; document.querySelectorAll('.corner, .stack').forEach(function (el) { var b = box(el); if (b && b.height) top = Math.max(top, b.bottom); });
+    var dock = box($('dock')), card = withCard ? box($('card')) : null;
+    var wide = card && card.width >= W * 0.7;   // a phone-width card covers the top of the screen instead of the right side
+    return { top: (wide ? Math.max(top, card.bottom) : top) + 10, bottom: (dock ? dock.top : H - 110) - 10, left: 16, right: (card && !wide ? card.left : W) - 16 };
+  }
+  // where each node lands on screen, before zoom and offsets, if the camera looked at c with the current angles
+  function spread(list, c, yaw) {
+    var cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch), e = { x0: 0, x1: 0, y0: 0, y1: 0 };
+    list.forEach(function (n) {
+      if (n.kind === 'class') return;
+      var x = n.x - c[0], y = n.y - c[1], zz = n.z - c[2], xr = x * cy - zz * sy, z1 = x * sy + zz * cy, f = DIST / (DIST + y * sp + z1 * cp), px = xr * f, py = (y * cp - z1 * sp) * f;
+      e.x0 = Math.min(e.x0, px); e.x1 = Math.max(e.x1, px); e.y0 = Math.min(e.y0, py); e.y1 = Math.max(e.y1, py);
+    });
+    return e;
+  }
+  // zoom and screen offsets that put extent e (pad px of margin) in area a
+  function frameIn(e, a, pad, zmax) {
+    var z = Math.max(ZMIN, Math.min(zmax, (a.right - a.left - 2 * pad) / Math.max(1, e.x1 - e.x0), (a.bottom - a.top - 2 * pad) / Math.max(1, e.y1 - e.y0)));
+    return { zoom: z, ox: (a.left + a.right) / 2 - W / 2 - z * (e.x0 + e.x1) / 2, oy: (a.top + a.bottom) / 2 - ((H - 130) / 2 + 40) - z * (e.y0 + e.y1) / 2 };
+  }
   function bounds(list) {
     var c = [0, 0, 0], r = 0; list.forEach(function (n) { c[0] += n.x; c[1] += n.y; c[2] += n.z; }); c = c.map(function (v) { return v / list.length; });
     list.forEach(function (n) { r = Math.max(r, Math.hypot(n.x - c[0], n.y - c[1], n.z - c[2])); }); return { c: c, r: r };
   }
-  function flyTo(list, keepAngles) {
-    var b = bounds(list), extent = Math.max(90, b.r + 70), avail = Math.min(W * 0.34, (H - 230) / 2);   // room left by the card and the chat box
-    goal = { tx: b.c[0], ty: b.c[1], tz: b.c[2], oy: 0, zoom: Math.max(0.12, Math.min(8, avail / extent)) };
-    if (!keepAngles) { goal.yaw = cam.yaw; goal.pitch = cam.pitch; }
+  function flyTo(list, withCard) {
+    var b = bounds(list), v = frameIn(spread(list, b.c, cam.yaw), freeArea(withCard), 40, ZFOCUS);
+    goal = { tx: b.c[0], ty: b.c[1], tz: b.c[2], zoom: v.zoom, ox: v.ox, oy: v.oy };
     dirty = true;
   }
   /* Fill the screen but keep the whole graph on it while it turns: over 24 yaw angles at the current pitch, take the widest projected
      half-width and the highest and lowest projected points (perspective included); the zoom fits them between the screen edges and
      between the top bar and the chat box, and a vertical screen offset centres them there (perspective pushes the near side down). */
-  function fitView(c) {
-    var top = W <= 640 ? 96 : 64, bottom = H - 118, side = W / 2 - 20, xmax = 1, ymin = -1, ymax = 1, cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
-    for (var a = 0; a < 24; a++) {
-      var yw = a / 24 * TAU, cy = Math.cos(yw), sy = Math.sin(yw);
-      drawNodes().forEach(function (n) {
-        if (n.kind === 'class') return;
-        var x = n.x - c[0], y = n.y - c[1], zz = n.z - c[2], x1 = x * cy - zz * sy, z1 = x * sy + zz * cy, f = DIST / (DIST + y * sp + z1 * cp), y1 = (y * cp - z1 * sp) * f;
-        xmax = Math.max(xmax, Math.abs(x1 * f)); ymin = Math.min(ymin, y1); ymax = Math.max(ymax, y1);
-      });
-    }
-    var z = Math.max(0.1, Math.min(side / xmax, (bottom - top) / (ymax - ymin)));
-    return { zoom: z, oy: (top + bottom) / 2 - ((H - 130) / 2 + 40) - z * (ymax + ymin) / 2 };
+  function fitView() {
+    var e = { x0: 0, x1: 0, y0: 0, y1: 0 }, list = drawNodes();
+    for (var a = 0; a < 24; a++) { var s1 = spread(list, [0, 0, 0], a / 24 * TAU); e.x0 = Math.min(e.x0, s1.x0); e.x1 = Math.max(e.x1, s1.x1); e.y0 = Math.min(e.y0, s1.y0); e.y1 = Math.max(e.y1, s1.y1); }
+    return frameIn(e, freeArea(false), 4, 14);
   }
-  function fit() { spin = true; flyTo(nodes, true); var v = fitView([goal.tx, goal.ty, goal.tz]); goal.zoom = v.zoom; goal.oy = v.oy; }
+  // the overview: rest pose, turning about the ring centre (the manuals are spread evenly round it), whole graph in view
+  function fit() { spin = true; userView = false; var v = fitView(); goal = { tx: 0, ty: 0, tz: 0, zoom: v.zoom, ox: v.ox, oy: v.oy }; dirty = true; }
   function project() {
     var cy = Math.cos(cam.yaw), sy = Math.sin(cam.yaw), cp = Math.cos(cam.pitch), sp = Math.sin(cam.pitch);
     order.length = 0;
@@ -184,7 +201,7 @@
       var x = n.x - cam.tx, y = n.y - cam.ty, z = n.z - cam.tz;
       var x1 = x * cy - z * sy, z1 = x * sy + z * cy, y1 = y * cp - z1 * sp, z2 = y * sp + z1 * cp;
       var f = DIST / (DIST + z2), k = cam.zoom * f, q = P[n.id] || (P[n.id] = {});
-      q.x = W / 2 + x1 * k; q.y = (H - 130) / 2 + 40 + cam.oy + y1 * k; q.f = f; q.z = z2; q.k = k; order.push(n);
+      q.x = W / 2 + cam.ox + x1 * k; q.y = (H - 130) / 2 + 40 + cam.oy + y1 * k; q.f = f; q.z = z2; q.k = k; order.push(n);
     });
     order.sort(function (a, b) { return P[b.id].z - P[a.id].z; });
   }
@@ -237,8 +254,9 @@
     // paragraphs; nearer first within a rank) and a label whose box touches one already placed is left out.
     var cand = [];
     order.forEach(function (n) {
-      var q = P[n.id], zoomed = cam.zoom * q.f, isSel = sel && sel.id === n.id;
-      var show = n.kind === 'class' ? zoomed < 1.4 : n.kind === 'concept' ? (zoomed > 0.6 || hot[n.id] || isSel) : n.kind === 'manual' || (n.kind === 'chapter' && zoomed > 0.35) || (n.kind === 'clause' && (zoomed > 2.4 || (hotN <= 40 && hot[n.id]) || isSel));
+      var q = P[n.id], zoomed = cam.zoom * q.f, isSel = (sel && sel.id === n.id) || n.id === anchor;
+      // while something is lit, other paragraphs are not labelled: the names on screen are the ones that answer the question
+      var show = n.kind === 'class' ? zoomed < 1.4 : n.kind === 'concept' ? (zoomed > 0.6 || hot[n.id] || isSel) : n.kind === 'manual' || (n.kind === 'chapter' && zoomed > 0.35) || (n.kind === 'clause' && ((zoomed > 2.4 && !hotN) || (hot[n.id] && (hotN <= 40 || zoomed > 1.2)) || isSel));
       if (!show || q.x < 0 || q.y < 0 || q.x > W || q.y > H) return;
       var rank = isSel ? 0 : n.kind === 'manual' ? 1 : hot[n.id] ? 2 : n.kind === 'class' ? 3 : n.kind === 'chapter' ? 4 : n.kind === 'concept' ? 5 : 6;
       cand.push({ n: n, q: q, rank: rank });
@@ -247,18 +265,18 @@
     var placed = [];
     cand.forEach(function (c) {
       var n = c.n, q = c.q;
-      var fs = (n.kind === 'manual' ? 15 : n.kind === 'class' ? 10 : 11) * Math.max(0.8, Math.min(1.25, q.f)); ctx.font = (n.kind === 'manual' ? '700 ' : n.kind === 'class' ? 'italic 600 ' : '500 ') + fs.toFixed(1) + 'px system-ui,sans-serif';
+      var fs = (n.kind === 'manual' ? 15 : n.kind === 'class' ? 10 : c.rank === 0 ? 12.5 : 11) * Math.max(0.8, Math.min(1.25, q.f)); ctx.font = (n.kind === 'manual' || c.rank === 0 ? '700 ' : n.kind === 'class' ? 'italic 600 ' : '500 ') + fs.toFixed(1) + 'px system-ui,sans-serif';
       var dy = (n.kind === 'class' ? 0 : n.kind === 'manual' ? n.r * q.k * 1.15 * Math.pow(cam.zoom, -0.25) + 12 : 14);
-      var w = ctx.measureText(n.label).width + 6, h = fs + 4, box = [q.x - w / 2, q.y + dy - h / 2, q.x + w / 2, q.y + dy + h / 2];
-      if (c.rank > 0 && placed.some(function (b) { return box[0] < b[2] && box[2] > b[0] && box[1] < b[3] && box[3] > b[1]; })) return;
-      placed.push(box);
-      ctx.globalAlpha = Math.max(0.5, depthA(q)); ctx.lineWidth = 3; ctx.strokeStyle = bg; ctx.strokeText(n.label, q.x, q.y + dy); ctx.fillStyle = ink; ctx.fillText(n.label, q.x, q.y + dy); ctx.globalAlpha = 1;
+      var w = ctx.measureText(n.label).width + 6, h = fs + 4, lb = [q.x - w / 2, q.y + dy - h / 2, q.x + w / 2, q.y + dy + h / 2];
+      if (c.rank > 1 && placed.some(function (b) { return lb[0] < b[2] && lb[2] > b[0] && lb[1] < b[3] && lb[3] > b[1]; })) return;   // selected, cited and manual names always shown
+      placed.push(lb);
+      ctx.globalAlpha = c.rank === 0 ? 1 : Math.max(0.5, depthA(q)); ctx.lineWidth = 3; ctx.strokeStyle = bg; ctx.strokeText(n.label, q.x, q.y + dy); ctx.fillStyle = ink; ctx.fillText(n.label, q.x, q.y + dy); ctx.globalAlpha = 1;
     });
   }
   function step() {
     if (goal) {   // ease the camera toward its goal
       var done = true;
-      ['tx', 'ty', 'tz', 'zoom', 'oy'].forEach(function (k) { if (goal[k] == null) return; var d = goal[k] - cam[k]; if (Math.abs(d) > (k === 'zoom' ? 0.002 : 0.6)) { cam[k] += d * 0.14; done = false; } else cam[k] = goal[k]; });
+      ['tx', 'ty', 'tz', 'zoom', 'ox', 'oy'].forEach(function (k) { if (goal[k] == null) return; var d = goal[k] - cam[k]; if (Math.abs(d) > (k === 'zoom' ? 0.002 : 0.6)) { cam[k] += d * 0.14; done = false; } else cam[k] = goal[k]; });
       if (done) goal = null; dirty = true;
     } else if (spin && !drag && !sel && !Object.keys(hot).length && !document.hidden) { cam.yaw += 0.0016; dirty = true; }
   }
@@ -279,25 +297,30 @@
         var k = 1 / cam.zoom, cy = Math.cos(drag.yaw), sy = Math.sin(drag.yaw), cp = Math.cos(drag.pitch), sp = Math.sin(drag.pitch);
         cam.tx = drag.tx - (dx * cy - dy * sp * sy) * k; cam.ty = drag.ty - dy * cp * k; cam.tz = drag.tz - (-dx * sy - dy * sp * cy) * k;
       } else { cam.yaw = drag.yaw + dx * 0.006; cam.pitch = Math.max(-1.45, Math.min(1.45, drag.pitch + dy * 0.006)); }
-      dirty = true; return;
+      if (moved > 5) userView = true; dirty = true; return;
     }
     var n = pick(e.clientX, e.clientY), tip = $('tip');
     if (n) { tip.style.display = 'block'; tip.style.left = Math.min(e.clientX + 14, W - 290) + 'px'; tip.style.top = e.clientY + 14 + 'px'; tip.innerHTML = '<b>' + esc(n.label) + '</b>' + (n.sub ? '<br>' + esc(String(n.sub).slice(0, 90)) : ''); } else tip.style.display = 'none';
   });
   cv.addEventListener('pointerup', function (e) { cv.classList.remove('drag'); if (drag && moved < 5) { project(); var n = pick(e.clientX, e.clientY); if (n) select(n, true); else { sel = null; $('card').hidden = true; dirty = true; } } drag = null; });
   cv.addEventListener('pointerleave', function () { $('tip').style.display = 'none'; });
-  cv.addEventListener('wheel', function (e) { e.preventDefault(); goal = null; cam.zoom = Math.max(0.1, Math.min(14, cam.zoom * Math.exp(-e.deltaY * 0.0015))); dirty = true; }, { passive: false });
-  function focusOn(ids) { var ns = ids.map(function (i) { return byId[i]; }).filter(Boolean); if (ns.length) { spin = false; flyTo(ns, false); } }
+  cv.addEventListener('wheel', function (e) {   // zoom about the cursor: the point under it stays put (perspective does not depend on zoom)
+    e.preventDefault(); goal = null; userView = true;
+    var z = Math.max(ZMIN, Math.min(14, cam.zoom * Math.exp(-e.deltaY * 0.0015))), r = z / cam.zoom, cx = W / 2, cy = (H - 130) / 2 + 40;
+    cam.ox = e.clientX - cx - (e.clientX - cx - cam.ox) * r; cam.oy = e.clientY - cy - (e.clientY - cy - cam.oy) * r; cam.zoom = z; dirty = true;
+  }, { passive: false });
+  function focusOn(ids, withCard) { var ns = ids.map(function (i) { return byId[i]; }).filter(Boolean); if (ns.length) { spin = false; flyTo(ns, withCard); } }
 
   /* ---- node card ---- */
   function select(n, zoom) {
-    sel = n; hot = {}; clinks = []; dirty = true;
+    sel = n; hot = {}; clinks = []; dirty = true; userView = false;
+    var focus = null;
     var c = model.byId[n.id], card = $('card'), h = '<button class="x" aria-label="Close" id="cardX">✕</button>';
     if (n.kind === 'clause' && c) {
       var out = (xr.out[n.id] || []).reduce(function (a, e) { return a + (e[2] === 'RESOLVED' ? e[3].filter(function (t) { return byId[t]; }).length : 0); }, 0), inn = (xr.in[n.id] || []).filter(function (t) { return byId[t]; }).length;
       h += '<h2>' + esc(n.label) + '</h2><div class="sub">' + esc(n.sub) + ' · page ' + esc(c.page) + ' · refers to ' + out + ', referred to by ' + inn + ' (drawn in blue)</div><div class="txt">' + esc(c.text.slice(0, 1500)) + (c.text.length > 1500 ? '\n…' : '') + '</div>' +
         '<div class="acts"><button class="iconbtn" data-ask="' + esc('Explain ' + n.label) + '">Ask about this</button><a class="iconbtn" href="browse.html#' + encodeURIComponent(n.id) + '">Read in context</a><a class="iconbtn" target="_blank" rel="noopener" href="' + esc(encodeURI(PDF[c.alias] || '') + '#page=' + (c.page || 1)) + '">Open page ↗</a></div>';
-      if (zoom) focusOn([n.id].concat((xr.out[n.id] || []).reduce(function (a, e) { return e[2] === 'RESOLVED' ? a.concat(e[3]) : a; }, [])).concat(xr.in[n.id] || []).filter(function (i) { return byId[i]; }).slice(0, 12));
+      focus = [n.id].concat((xr.out[n.id] || []).reduce(function (a, e) { return e[2] === 'RESOLVED' ? a.concat(e[3]) : a; }, [])).concat(xr.in[n.id] || []).filter(function (i) { return byId[i]; }).slice(0, 12);
     } else if (n.kind === 'concept') {
       var c2 = ENT.c[n.cid], paras = mentionedParas(n.cid), rel = EI.related(n.cid, 8), pt = EI.parts(n.cid), by = Object.keys(c2.m).map(function (k) { return esc(k.replace('_', ' ')) + ' ' + c2.m[k]; }).join(', ');
       hot = {}; clinks = [];
@@ -313,21 +336,23 @@
         (rel.rows.length ? '<div class="sub">Named in the same sentence as: ' + rel.rows.map(function (x) { return cc(x, ' · ' + x.support); }).join('') + '</div>' : '') +
         '<div class="acts"><button class="iconbtn" data-showwhere="' + esc(n.cid) + '">Show the ' + paras.length + ' paragraphs in the graph</button><button class="iconbtn" data-ask="' + esc('Which paragraphs mention ' + c2.a[0] + '?') + '">Ask where it is mentioned</button></div>' +
         '<div class="sub" style="margin-top:6px">Concepts are a curated list; where a manual names one is found in its text. Kinds and parts are curated, not taken from the manuals.</div>';
-      if (zoom) focusOn([n.id].concat(rel.rows.map(function (x) { return 'ENT:' + x.id; })).concat(pt.kinds.concat(pt.parts).map(function (x) { return 'ENT:' + x.id; })));
+      focus = cnodes.filter(function (x) { return x.kind === 'concept' && ENT.c[x.cid].k === c2.k; }).map(function (x) { return x.id; });
     } else if (n.kind === 'chapter') {
       var m = model.manuals.filter(function (x) { return x.alias === n.alias; })[0], ch = m.chapters.filter(function (x) { return 'H:' + n.alias + ':' + x.num === n.id; })[0];
       h += '<h2>' + esc(n.alias.replace('_', ' ')) + ' · ' + esc(n.label) + '</h2><div class="sub">' + esc(n.sub) + ' · ' + ch.clauses.length + ' paragraphs</div><div class="acts"><button class="iconbtn" data-scope="' + n.alias + '" data-chapter="' + parseInt(n.id.split(':')[2], 10) + '">Ask only this chapter</button><button class="iconbtn" data-ask="' + esc('What does ' + n.alias.replace('_', ' ') + ' ' + n.label + ' cover?') + '">Ask about this chapter</button><a class="iconbtn" href="browse.html#' + encodeURIComponent(ch.clauses[0].id) + '">Read</a></div>';
-      if (zoom) focusOn(['H:' + n.alias + ':' + ch.num].concat(ch.clauses.map(function (c) { return c.id; })));
+      focus = ['H:' + n.alias + ':' + ch.num].concat(ch.clauses.map(function (c) { return c.id; }));
+      ch.clauses.forEach(function (c) { if (byId[c.id]) hot[c.id] = 1; });
     } else {
       var mm = model.manuals.filter(function (x) { return x.alias === n.alias; })[0];
       h += '<h2>' + esc(mm.name) + '</h2><div class="sub">' + mm.chapters.length + ' chapters · ' + mm.count + ' paragraphs</div><div class="acts"><button class="iconbtn" data-scope="' + n.alias + '">Ask only this manual</button><a class="iconbtn" href="browse.html#' + encodeURIComponent(mm.chapters[0].clauses[0].id) + '">Read</a></div>';
-      if (zoom) focusOn(nodes.filter(function (x) { return x.alias === n.alias; }).map(function (x) { return x.id; }));
+      focus = nodes.filter(function (x) { return x.alias === n.alias; }).map(function (x) { return x.id; });
     }
-    card.innerHTML = h; card.hidden = false;
+    card.innerHTML = h; card.hidden = false; placeChrome();
+    if (zoom && focus) focusOn(focus, true);
   }
 
   /* ---- chat ---- */
-  var lastQ = '', scope = '';
+  var lastQ = '', scope = '', anchor = null;   // anchor: the paragraph an answer cites first
   function hl(text, q) {
     var words = (String(q).toLowerCase().match(/[a-z0-9]{4,}/g) || []).filter(function (w, i, a) { return a.indexOf(w) === i; }), out = esc(text);
     return words.length ? out.replace(new RegExp('\\b((?:' + words.join('|') + ')(?:s|es|ed|ing|ly)?)\\b', 'gi'), '<mark>$1</mark>') : out;
@@ -365,29 +390,35 @@
     (r.alsoSee || []).forEach(function (x) { if (x.cite) ids.push(x.cite.clause); });
     if (r.kind === 'relation') { (r.nodes || []).forEach(function (i) { ids.push(i); }); if (r.concept) ids.push('ENT:' + r.concept); }
     hot = {}; ids.forEach(function (i) { if (byId[i]) hot[i] = 1; });
-    sel = null; $('card').hidden = true;
-    if (ids.length) focusOn(ids.filter(function (i) { return byId[i]; })); dirty = true;
+    sel = null; $('card').hidden = true; anchor = r.primary && byId[r.primary.clause] ? r.primary.clause : null; userView = false;
+    if (ids.length) focusOn(ids.filter(function (i) { return byId[i]; }), false); dirty = true;
   }
   function setScope(a, chapter) { scope = a || ''; chat.setScope(scope, chapter); var where = scope.replace('_', ' ') + (chapter ? ', chapter ' + chapter : ''); $('q').placeholder = scope ? 'Ask a question about ' + where + ' only…' : 'Ask a question about the manuals…'; $('status').textContent = scope ? 'Searching only in ' + where + ' (Reset view clears this)' : 'Nothing leaves this computer. Click a dot to read it; drag to rotate, scroll to zoom, Shift+drag to move.'; }
   $('f').addEventListener('submit', function (e) { e.preventDefault(); ask($('q').value); });
   document.addEventListener('click', function (e) {
     var a = e.target.closest('[data-ask]'); if (a) { ask(a.dataset.ask); return; }
-    var sw = e.target.closest('[data-showwhere]'); if (sw) { var ps = mentionedParas(sw.dataset.showwhere); if (ps.length) { spin = false; flyTo(ps.map(function (i) { return byId[i]; }), false); } return; }
+    var sw = e.target.closest('[data-showwhere]'); if (sw) { var ps = mentionedParas(sw.dataset.showwhere); if (ps.length) focusOn(ps, true); return; }
     var s = e.target.closest('[data-scope]'); if (s) { setScope(s.dataset.scope, s.dataset.chapter); $('q').focus(); return; }
     var f = e.target.closest('[data-focus]'); if (f && !(e.ctrlKey || e.metaKey)) { e.preventDefault(); var n = byId[f.dataset.focus]; if (n) select(n, true); return; }
-    if (e.target.id === 'ansX') { $('ans').hidden = true; hot = {}; dirty = true; }
+    if (e.target.id === 'ansX') { $('ans').hidden = true; hot = {}; anchor = null; dirty = true; }
     if (e.target.id === 'cardX') { $('card').hidden = true; sel = null; dirty = true; }
   });
   $('concepts').addEventListener('change', function () { conceptsOn = this.checked; if (!conceptsOn && sel && sel.kind === 'concept') { sel = null; hot = {}; clinks = []; $('card').hidden = true; } dirty = true; });
   $('refs').addEventListener('change', function () { showRefs = this.checked; dirty = true; });
-  $('fit').addEventListener('click', function () { sel = null; hot = {}; $('card').hidden = true; $('ans').hidden = true; setScope(''); cam.yaw = 0.6; cam.pitch = 0.38; fit(); });
+  $('fit').addEventListener('click', function () { sel = null; hot = {}; anchor = null; $('card').hidden = true; $('ans').hidden = true; setScope(''); cam.yaw = YAW0; cam.pitch = PITCH0; fit(); });
   document.addEventListener('keydown', function (e) {
     if (e.key === '/' && document.activeElement !== $('q')) { e.preventDefault(); $('q').focus(); }
-    else if (e.key === 'Escape') { $('card').hidden = true; $('ans').hidden = true; sel = null; hot = {}; dirty = true; }
+    else if (e.key === 'Escape') { $('card').hidden = true; $('ans').hidden = true; sel = null; hot = {}; anchor = null; dirty = true; }
   });
   new MutationObserver(function () { dirty = true; }).observe(document.documentElement, { attributes: true });
-  window.addEventListener('resize', function () { resize(); if (spin && !sel && !goal) fit(); });   // still the overview: refit to the new window
-  resize(); fit(); cam.zoom = goal.zoom; cam.tx = goal.tx; cam.ty = goal.ty; cam.tz = goal.tz; cam.oy = goal.oy; goal = null; loop();
+  function placeChrome() {
+    var c = $('card'), r = box(document.querySelector('.corner.r')), d = box($('dock')), top = (r ? r.bottom : 46) + 10;
+    var room = (d ? d.top : H - 110) - 10 - top;
+    c.style.top = top + 'px'; c.style.maxHeight = Math.max(120, W <= 640 ? Math.min(room, H * 0.45) : room) + 'px';
+  }
+  // a new window size: the overview is refitted (even mid-move) unless the user has zoomed, dragged or selected something
+  window.addEventListener('resize', function () { resize(); placeChrome(); if (!sel && !anchor && !userView) fit(); });
+  resize(); placeChrome(); fit(); ['zoom', 'tx', 'ty', 'tz', 'ox', 'oy'].forEach(function (k) { cam[k] = goal[k]; }); goal = null; loop();
   setScope(''); $('q').disabled = $('go').disabled = false;
   var qs = new URLSearchParams(location.search); if (qs.get('manual') && RDSOChat.MANUALS[qs.get('manual')]) setScope(qs.get('manual'));
   if (qs.get('q')) ask(qs.get('q'));
