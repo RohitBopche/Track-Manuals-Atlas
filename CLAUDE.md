@@ -7,7 +7,7 @@ Offline knowledge base + graph of Indian Railways track manuals (six so far). Ev
 - `docs/PROJECT_MASTER.md` is the authoritative spec and plan (about 60 KB). Start with "State now" at the top, then:
   - §1 principles, §24 validation gates, §29 AI guardrails, §33 handoff protocol, §34 guardrails against premature complexity, §40 phase plan and status table.
   - Find a section with `grep -n '^## \|^### ' docs/PROJECT_MASTER.md`, then read that line range.
-- `docs/DELIVERY_LOG.md` is master §37: dated, measured results of every sprint (§37.1 to §37.46 at time of writing, newest last). References to "§37.N" anywhere point here. Read the last few entries, not the whole file (about 130 KB).
+- `docs/DELIVERY_LOG.md` is master §37: dated, measured results of every sprint (§37.1 to §37.51 at time of writing, newest last). References to "§37.N" anywhere point here. Read the last few entries, not the whole file (about 130 KB).
 - `scripts/README.md` says what every script does and whether it is a rebuild step, a gate, a library, a tool or legacy.
 - `docs/archive/` is history (prototype README, old plans, Gemini logs). Do not take status, file paths or commands from it.
 

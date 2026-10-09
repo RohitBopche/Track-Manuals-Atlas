@@ -125,12 +125,13 @@ async function main() {
       out.concepts = g.concepts.filter(n => n.kind === 'concept').length; out.classes = g.concepts.filter(n => n.kind === 'class').length;
       g.select('ENT:sleeper'); await w(300); const card = document.getElementById('card');
       out.title = (card.querySelector('h2') || {}).innerText || ''; out.kinds = /Kinds:/.test(card.innerText) && card.querySelectorAll('[data-focus^="ENT:"]').length; out.hot = g.state().hot.length; out.sel = g.state().sel;
+      g.select('ENT:usfd'); await w(300); out.typed = /Detects:/.test(document.getElementById('card').innerText); g.select('ENT:sleeper'); await w(300);
       out.where = !!card.querySelector('[data-showwhere="sleeper"]'); out.note = /curated/.test(card.innerText);
       card.querySelector('[data-focus="ENT:psc_sleeper"]').click(); await w(300); out.next = g.state().sel;
       document.getElementById('concepts').click(); await w(150); out.offSel = g.state().sel; out.offCard = document.getElementById('card').hidden;
       document.getElementById('concepts').click(); await w(150); return out; })()`);
     console.log(t1b);
-    if (t1b.concepts < 100 || t1b.classes !== 13 || !/Sleeper/.test(t1b.title) || t1b.sel !== 'ENT:sleeper' || t1b.kinds < 3 || t1b.hot < 50 || !t1b.where || !t1b.note || t1b.next !== 'ENT:psc_sleeper') throw new Error('Test 1b failed ' + JSON.stringify(t1b));
+    if (t1b.concepts < 100 || t1b.classes !== 13 || !/Sleeper/.test(t1b.title) || t1b.sel !== 'ENT:sleeper' || t1b.kinds < 3 || t1b.hot < 50 || !t1b.where || !t1b.typed || !t1b.note || t1b.next !== 'ENT:psc_sleeper') throw new Error('Test 1b failed ' + JSON.stringify(t1b));
     await client.captureScreenshot('graph_concepts.png');
     await ev(`window.rdsoGraph.select('ENT:sleeper')`); await sleep(500);
     await client.captureScreenshot('graph_concept_selected.png');

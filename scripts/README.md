@@ -28,6 +28,7 @@ Roles: **rebuild** = a step of `rebuild_all.py` (run in that order); **Gate X** 
 | `drawing_links.py` | rebuild, lib | Clause to drawing-sheet citations. |
 | `build_annexures.py` | rebuild | Annexures, appendices, front matter and loose text as searchable units. |
 | `build_entities.py` | rebuild, lib | Concepts named in the text, taxonomy, co-mention links, limits per concept. |
+| `build_typed_relations.py` | rebuild | Typed relations between concepts (detected by, responsible for, performed with, causes) read from single sentences by cue patterns. |
 | `build_learning.py` | rebuild | Practice cards generated only from the manuals. |
 | `build_table_data.py` | rebuild | Browser file of tables with headers, for the chat. |
 | `build_clause_extras.py` | rebuild | Browser file of measurements and held drawings per clause. |

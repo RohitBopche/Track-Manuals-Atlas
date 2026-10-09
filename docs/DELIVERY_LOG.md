@@ -810,3 +810,30 @@ Checks: a dialogue test for the utility vehicle question, a sweep over the table
 - The form-item citation gives the annexure's first page (230); item 19 is on page 233.
 - The paragraph's legacy tolerance list still keeps only 5 values.
 - One grader (Claude).
+
+### 37.51 Typed relations between concepts, read from sentences — 2026-10-06
+
+**Why.** The entity layer (§37.46) had concepts and "named in the same sentence" links, but no statement of what relates to what: that a defect is found by a test method, who does an activity, what machine does a job, what causes what.
+
+**What was built.**
+- `scripts/build_typed_relations.py` (rebuild step) reads each sentence that names two concepts and writes `canonical/entity_typed_relations.jsonl`: one row per sentence in which the relation is stated, with the character spans of both concepts and of the cue words. Four types, each by explicit cue patterns: DETECTED_BY (defect to test method), RESPONSIBLE_FOR (role to activity, the role must be the subject of a modal verb or the "by" of a passive), PERFORMED_WITH (activity to machine, not machine parts), CAUSES (cause to defect, safety event or geometry, with a short gap).
+- Concept `stabilisation` added to the lexicon, and the alias CSM moved to the tamping machine concept (an audited row showed it names a tamping machine). The lexicon now has 131 concepts.
+- Vocabulary: DETECTED_BY, RESPONSIBLE_FOR, PERFORMED_WITH added to `relationship-types.json`.
+- Chat: "How is a flaw detected?", "What can USFD detect?", "Who inspects the track?", "What machine is used for tamping?", "What is the tamping machine used for?", "What causes buckling?" answer with the sentences that state the relation, each with manual, paragraph and page, and say the list is not complete. The class of the concept named decides which end of the relation it is.
+- 3D graph: the concept card lists the typed facts ("Detected by", "Detects", "Responsible for", "Done by", "Done with", "Used for", "Causes", "Caused by") with counts.
+- Gate AA checks every typed relation (both concepts and the cue words inside one sentence) and that the set equals the one read by hand in `eval/typed_relation_audit.json`, so any change forces a new reading. Gate Y asks every relation both ways (31 questions) and checks each quoted sentence against its paragraph.
+
+**Measured.**
+- 66 typed relations: DETECTED_BY 15, RESPONSIBLE_FOR 28, PERFORMED_WITH 17, CAUSES 6. (65 when first built; one more appeared when §37.50 made Para 702 whole, and was read and judged correct.)
+- Precision, read by hand, all 66: the first version extracted 88 relations of which 71 were correct (80.7%). The patterns were then tightened using exactly those errors; after that 64 of 66 are correct (97.0%). That second figure was measured on the sentences the tightening was tuned on, so it is optimistic.
+- Recall, rough: 66 sentences drawn at random among those naming a fitting pair of concepts, judged for whether the relation is stated: 18 state one, the extractor found 5 (28%): DETECTED_BY 5 of 12, RESPONSIBLE_FOR 0 of 4, PERFORMED_WITH 0 of 2. CAUSES had no candidate sentences under the pair definition of the sample, so it is not estimated.
+- Gate Y: 367 answered and 42 refused, unchanged from §37.50; 0 violations over 7,726 fragments. Before main's paragraph-boundary fix was merged, one existing question ("Who is responsible for patrolling the line during monsoon?") was answered by the typed list of roles instead of the paragraph; after the merge it is answered normally again.
+- Rebuild is reproducible; pytest, gates A to AA and browser suites were run (see the commit).
+
+**Limits.**
+- The patterns miss most statements: the manuals word them in many ways, and tables and lists are skipped. The chat therefore says it lists statements found, not all statements.
+- One reviewer who also wrote the patterns; the precision figure is optimistic and the recall sample is small.
+- CAUSES is thin (6) and the manuals state causes mostly in tables ("probable cause / remedy"), which are not read yet.
+- RESPONSIBLE_FOR says a sentence puts a role as the subject of an obligation for an activity; it is not a list of duties. For duties, the normal answer (the paragraph) is better.
+- Relations are stated per sentence; no relation is inferred across sentences or chained.
+

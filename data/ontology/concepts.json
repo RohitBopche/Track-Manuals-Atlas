@@ -859,6 +859,20 @@
    ]
   },
   {
+   "id": "stabilisation",
+   "label": "Track stabilisation",
+   "class": "Maintenance activity",
+   "aliases": [
+    "stabilisation",
+    "stabilization",
+    "stabilised",
+    "stabilized",
+    "consolidation",
+    "dynamic stabilisation",
+    "dynamic stabilization"
+   ]
+  },
+  {
    "id": "deep_screening",
    "label": "Deep screening / ballast cleaning",
    "class": "Maintenance activity",
@@ -1089,7 +1103,8 @@
     "universal tamping machine",
     "UNIMAT",
     "duomatic",
-    "tie tamper"
+    "tie tamper",
+    "CSM"
    ]
   },
   {
@@ -1103,7 +1118,6 @@
     "BCM",
     "ballast cleaner",
     "RM-80",
-    "CSM",
     "cutter bar"
    ]
   },
